@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <bean name="tags-list" class="java.util.ArrayList">
+        <constructor-arg>
+            <list>
+                <value>1=Account|S</value>
+                <value>6=AvgPx|F</value>
+                <value>11=ClOrdID|S</value>
+                <value>14=CumQty|F</value>
+                <value>17=ExecID|S</value>
+                <value>22=SecurityIDSource|s|1=CUSIP,4=ISIN,8=Exchange Symbol,A=Bloomberg Symbol</value>
+                <value>31=LastPx|F</value>
+                <value>32=LastQty|F</value>
+                <value>37=OrderID|S</value>
+                <value>38=OrderQty|F</value>
+                <value>39=OrdStatus|C|0=New,1=PartiallyFilled,2=Filled,3=DoneForDay,4=Canceled,5=Replaced,6=PendingCancel,8=Rejected</value>
+                <value>40=OrdType|C|0=Unknown,1=Market,2=Limit,P=Pegged</value>
+                <value>41=OrigClOrdID|S</value>
+                <value>44=Price|F</value>
+                <value>48=SecurityID|S</value>
+                <value>54=Side|C|1=Buy,2=Sell,5=SellShort,Z=None</value>
+                <value>55=Symbol|s</value>
+                <value>58=Text|S</value>
+                <value>59=TimeInForce|C|0=DAY,2=AtOpen,3=IOC,4=FOK,7=AtClose,C=STO,Z=Unknown</value>
+                <value>60=TransactTime|T</value>
+                <value>65=SymbolSfx|s</value>
+                <value>75=TradeDate|D</value>
+                <value>84=CxlQty|F</value>
+                <value>102=CxlRejReason|I|0=Too late to cancel,1=Unknown order,3=Order already in PendingCancel or PendingReplace,18=Invalid price increment,99=Other</value>
+                <value>103=OrdRejReason|I|1=Unknown symbol,2=Exchange closed,5=Unknown order,6=Duplicate order,13=Incorrect quantity,16=Price exceeds current price band,18=Invalid price increment,99=Other</value>
+                <value>107=SecurityDesc|s</value>
+                <value>110=MinQty|F</value>
+                <value>146=NoRelatedSym|I</value>
+                <value>150=ExecType|C|0=New,3=DoneForDay,4=Canceled,5=Replaced,6=PendingCancel,8=Rejected,A=PendingNew,E=PendingReplace,F=Trade,I=OrderStatus</value>
+                <value>151=LeavesQty|F</value>
+                <value>167=SecurityType|s|FUT=Future,OPT=Option,TBOND=USTreasuryBond,TNOTE=USTreasuryNote,TBILL=USTreasuryBill</value>
+                <value>210=MaxShow|F</value>
+                <value>223=CouponRate|F</value>
+                <value>231=ContractMultiplier|F</value>
+                <value>262=MDReqID|S</value>
+                <value>263=SubscriptionRequestType|C|0=Snapshot,1=Snapshot and subscribe,2=Disable</value>
+                <value>264=MarketDepth|I</value>
+                <value>265=MDUpdateType|I|0=Full,1=Incremental</value>
+                <value>266=AggregatedBook|C|Y=Aggregated,N=Not aggregated</value>
+                <value>268=NoMDEntries|I</value>
+                <value>269=MDEntryType|C|0=Bid,1=Offer,4=Opening Price,5=Closing Price,7=High Price,8=Low Price,9=VWAP,A=Imbalance,B=Trade Volume,q=Quote</value>
+                <value>270=MDEntryPx|F</value>
+                <value>271=MDEntrySize|F</value>
+                <value>276=QuoteCondition|s|A=Open,B=Closed</value>
+                <value>277=TradeCondition|s|P=Imbalance More Buyers,Q=Imbalance More Sellers,PQ=Balanced</value>
+                <value>281=MDReqRejReason|C|0=Unknown symbol,1=Duplicate MDReqID,5=Unsupported MarketDepth</value>
+                <value>320=SecurityReqID|S</value>
+                <value>393=TotNoRelatedSym|I</value>
+                <value>434=CxlRejResponseTo|C|1=OrderCancelRequest,2=OrderCancelReplaceRequest</value>
+                <value>541=MaturityDate|D</value>
+                <value>553=Username|s</value>
+                <value>554=Password|S</value>
+                <value>559=SecurityListRequestType|I|0=Symbol,4=All securities</value>
+                <value>560=SecurityRequestResult|I|0=Valid request,1=Invalid request,2=No instruments found,3=Not authorized,4=Temporarily unavailable,5=Not supported</value>
+                <value>715=ClearingBusinessDate|D</value>
+                <value>893=LastFragment|C|N=Not last,Y=Last</value>
+                <value>923=UserRequestID|S</value>
+                <value>924=UserRequestType|I|1=LogOnUser,2=LogOffUser</value>
+                <value>926=UserStatus|I|1=Logged in,2=Not logged in,3=User not recognized,4=Password incorrect,6=Other</value>
+                <value>927=UserStatusText|s</value>
+                <value>969=MinPriceIncrement|F</value>
+                <value>1607=SecurityRejectReason|I|1=Invalid instrument,2=Already exists,3=Not supported</value>
+                <value>5147=MDBook|C|A=Open,B=Close,C=Continuous</value>
+                <value>5148=MDBookPhase|C|A=Closed,B=All,C=OnlyNew,D=NonMatching,E=Matching</value>
+                <value>5385=MatchedQty|F</value>
+                <value>5386=ImbalanceQty|F</value>
+                <value>5388=MinQtyIncrement|F</value>
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <bean name="blocks-list" class="java.util.ArrayList">
+        <constructor-arg>
+            <list>
+                <value>Instrument|55,65,48,22,167,541,231,969,223,107,110,5388</value>
+                <value>MDFullGrp|268</value>
+                <value>OrderQtyData|38</value>
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <bean name="groups-list" class="java.util.ArrayList">
+        <constructor-arg>
+            <list>
+                <value>146|Instrument</value>
+                <value>268|269,270,271,276,277</value>
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <bean name="messages-list" class="java.util.ArrayList">
+        <constructor-arg>
+            <list>
+                <value>8=ExecutionReport|37,11,41,17,150,39,103,1,Instrument,54,40,44,59,32,31,151,14,75,60,210</value>
+                <value>9=OrderCancelReject|37,11,41,39,1,75,60,434,102</value>
+                <value>D=NewOrderSingle|11,1,Instrument,54,OrderQtyData,40,44,59,210</value>
+                <value>F=OrderCancelRequest|41,37,11,1,Instrument,54,60,OrderQtyData</value>
+                <value>G=OrderCancelReplaceRequest|37,41,11,1,Instrument,54,60,OrderQtyData,40,44,59,210</value>
+                <value>H=OrderStatusRequest|37,11,1,Instrument,54</value>
+                <value>V=MarketDataRequest|262,263,264,265,266</value>
+                <value>W=MarketDataSnapshot|264,262,Instrument,MDFullGrp,60</value>
+                <value>Y=MarketDataRequestReject|262,281,58</value>
+                <value>x=SecurityListRequest|320,559</value>
+                <value>y=SecurityList|715,320,560,60,393,893,146,1607</value>
+                <value>BE=UserRequest|923,924,553,554</value>
+                <value>BF=UserResponse|923,553,926,927</value>
+            </list>
+        </constructor-arg>
+    </bean>
+
+</beans>

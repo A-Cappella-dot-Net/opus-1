@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <bean name="settings" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>file:./config/config.properties</value>
+                <value>file:./config/config.${env}.properties</value>
+                <value>file:./config/config${instance}.properties</value>
+                <value>file:./config/config${instance}.upgraded.properties</value>
+            </list>
+        </property>
+        <property name="ignoreUnresolvablePlaceholders" value="true" />
+        <property name="ignoreResourceNotFound" value="true" />
+    </bean>
+
+    <import resource="fix-dictionary.xml"/>
+
+    <bean name="dictionary" class="net.a_cappella.cembalo.generator.Dictionary" init-method="generate">
+        <constructor-arg index="0" ref="tags-list" />
+        <constructor-arg index="1" ref="blocks-list" />
+        <constructor-arg index="2" ref="groups-list" />
+        <constructor-arg index="3" ref="messages-list" />
+
+        <property name="baseDirName" value="${base.dir.name}"/>
+        <property name="packageName" value="${package.name}"/>
+        <property name="className" value="FixConstants"/>
+    </bean>
+
+</beans>

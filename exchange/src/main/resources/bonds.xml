@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+	<bean name="instrumentsCache" class="net.a_cappella.cembalo.InstrumentsCache">
+        <constructor-arg index="0" value="cash" />
+        <constructor-arg index="1">
+			<list>
+				<value>2Y|912828Q45|0.875|03/31/2018|1000000.0|1.0|1.0|0.0078125|1|20</value>
+				<value>3Y|912828P95|1.0|03/15/2019|1000000.0|1.0|1.0|0.0078125|1|20</value>
+				<value>5Y|912828Q37|1.25|03/31/2021|1000000.0|1.0|1.0|0.0078125|1|20</value>
+				<value>7Y|912828Q29|1.5|03/31/2023|1000000.0|1.0|1.0|0.0078125|1|20</value>
+				<value>10Y|912828P46|1.625|02/15/2026|1000000.0|1.0|1.0|0.015625|1|20</value>
+				<value>30Y|912810RQ3|2.5|02/15/2046|1000000.0|1.0|1.0|0.03125|1|20</value>
+			</list>
+        </constructor-arg>
+	</bean>
+
+</beans>

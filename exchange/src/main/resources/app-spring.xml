@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <import resource="allegroBeans.xml"/>
+
+    <import resource="presto-msg-insts.xml"/>
+    <import resource="presto-msg-insts-list.xml"/>
+    <import resource="presto-msg-insts-pool.xml"/>
+    <import resource="exchange-msg-init.xml"/>
+
+	<import resource="fix-dictionary.xml"/>
+	<bean name="dictionary" class="net.a_cappella.cembalo.generator.Dictionary">
+		<constructor-arg index="0" ref="tags-list" />
+		<constructor-arg index="1" ref="blocks-list" />
+		<constructor-arg index="2" ref="groups-list" />
+		<constructor-arg index="3" ref="messages-list" />
+		<property name="orderIdTagTypeOverride" value="true" />
+	</bean>
+
+	<import resource="bonds.xml"/>
+    <!-- import resource="futures.xml"/ -->
+
+    <bean name="tightLoopThread" class="net.a_cappella.continuo.utils.tightloop.TightLoopThread" init-method="start">
+        <property name="microThreshold" value="${server.micro.threshold}" />
+        <property name="idleStrategy" value="${server.idle.strategy}"/>
+    </bean>
+
+    <bean name="msgCoder" class="net.a_cappella.continuo.msg.MsgCoder" />
+
+    <import resource="credentials.xml"/>
+
+	<bean name="internalTimer" class="net.a_cappella.cembalo.timer.InternalTimer">
+		<constructor-arg name="schedule">
+            <list>
+				<bean class="net.a_cappella.cembalo.timer.ListScheduleEntry">
+					<constructor-arg name="time" value="${timer.auctions.open.time}" />
+					<constructor-arg name="actions">
+						<list>
+							<bean class="net.a_cappella.cembalo.timer.TimerAction">
+								<constructor-arg name="book" value="OPEN_BK" />
+								<constructor-arg name="operation" value="OPEN" />
+							</bean>
+							<bean class="net.a_cappella.cembalo.timer.TimerAction">
+								<constructor-arg name="book" value="OPEN_BK" />
+								<constructor-arg name="operation" value="ALL" />
+							</bean>
+							<bean class="net.a_cappella.cembalo.timer.TimerAction">
+								<constructor-arg name="book" value="CLOSE_BK" />
+								<constructor-arg name="operation" value="OPEN" />
+							</bean>
+							<bean class="net.a_cappella.cembalo.timer.TimerAction">
+								<constructor-arg name="book" value="CLOSE_BK" />
+								<constructor-arg name="operation" value="ALL" />
+							</bean>
+							<bean class="net.a_cappella.cembalo.timer.TimerAction">
+								<constructor-arg name="book" value="CONTINUOUS_BK" />
+								<constructor-arg name="operation" value="OPEN" />
+							</bean>
+							<bean class="net.a_cappella.cembalo.timer.TimerAction">
+								<constructor-arg name="book" value="CONTINUOUS_BK" />
+								<constructor-arg name="operation" value="NON_MATCHING" />
+							</bean>
+						</list>
+					</constructor-arg>
+				</bean>
+
+				<bean class="net.a_cappella.cembalo.timer.RepeatScheduleEntry">
+					<constructor-arg name="time" value="${timer.open.auction.close.time}" />
+					<constructor-arg name="interval" value="${timer.open.auction.interval}" />
+					<constructor-arg name="repeatAction">
+						<bean class="net.a_cappella.cembalo.timer.RepeatTimerAction">
+							<constructor-arg name="book" value="OPEN_BK" />
+							<constructor-arg name="operation" value="IMBALANCE" />
+							<constructor-arg name="count" value="${timer.open.auction.imbalance.count}" />
+						</bean>
+					</constructor-arg>
+					<constructor-arg name="slotAction">
+						<bean class="net.a_cappella.cembalo.timer.SlotTimerAction">
+							<constructor-arg name="book" value="OPEN_BK" />
+							<constructor-arg name="operation" value="ONLY_NEW" />
+							<constructor-arg name="slot" value="${timer.open.auction.cutoff.slot}" />
+						</bean>
+					</constructor-arg>
+				</bean>
+
+				<bean class="net.a_cappella.cembalo.timer.ListScheduleEntry">
+					<constructor-arg name="time" value="${timer.open.auction.close.time}" />
+					<constructor-arg name="actions">
+						<list>
+							<bean class="net.a_cappella.cembalo.timer.TimerAction">
+								<constructor-arg name="book" value="OPEN_BK" />
+								<constructor-arg name="operation" value="AUCTION" />
+							</bean>
+							<bean class="net.a_cappella.cembalo.timer.TimerAction">
+								<constructor-arg name="book" value="OPEN_BK" />
+								<constructor-arg name="operation" value="CLOSE" />
+							</bean>
+							<bean class="net.a_cappella.cembalo.timer.TimerAction">
+								<constructor-arg name="book" value="CONTINUOUS_BK" />
+								<constructor-arg name="operation" value="MATCHING" />
+							</bean>
+						</list>
+					</constructor-arg>
+				</bean>
+
+				<bean class="net.a_cappella.cembalo.timer.RepeatScheduleEntry">
+					<constructor-arg name="time" value="${timer.close.auction.close.time}" />
+					<constructor-arg name="interval" value="${timer.close.auction.interval}" />
+					<constructor-arg name="repeatAction">
+						<bean class="net.a_cappella.cembalo.timer.RepeatTimerAction">
+							<constructor-arg name="book" value="CLOSE_BK" />
+							<constructor-arg name="operation" value="IMBALANCE" />
+							<constructor-arg name="count" value="${timer.close.auction.imbalance.count}" />
+						</bean>
+					</constructor-arg>
+					<constructor-arg name="slotAction">
+						<bean class="net.a_cappella.cembalo.timer.SlotTimerAction">
+							<constructor-arg name="book" value="CLOSE_BK" />
+							<constructor-arg name="operation" value="ONLY_NEW" />
+							<constructor-arg name="slot" value="${timer.close.auction.cutoff.slot}" />
+						</bean>
+					</constructor-arg>
+				</bean>
+
+				<bean class="net.a_cappella.cembalo.timer.ListScheduleEntry">
+					<constructor-arg name="time" value="${timer.close.auction.close.time}" />
+					<constructor-arg name="actions">
+						<list>
+							<bean class="net.a_cappella.cembalo.timer.TimerAction">
+								<constructor-arg name="book" value="CONTINUOUS_BK" />
+								<constructor-arg name="operation" value="CLOSE" />
+							</bean>
+							<bean class="net.a_cappella.cembalo.timer.TimerAction">
+								<constructor-arg name="book" value="CLOSE_BK" />
+								<constructor-arg name="operation" value="AUCTION" />
+							</bean>
+							<bean class="net.a_cappella.cembalo.timer.TimerAction">
+								<constructor-arg name="book" value="CLOSE_BK" />
+								<constructor-arg name="operation" value="CLOSE" />
+							</bean>
+						</list>
+					</constructor-arg>
+				</bean>
+
+            </list>
+		</constructor-arg>
+
+		<constructor-arg name="fineTuneMillis" value="${fine.tune.millis}" />
+	</bean>
+
+	<bean name="traderManager" class="net.a_cappella.cembalo.TraderManager">
+        <constructor-arg index="0" ref="${ecn.credentials}" />
+	</bean>
+
+    <bean name="server" class="net.a_cappella.cembalo.ExchangeServer" init-method="start">
+        <constructor-arg index="0" value="${connection.info}" />
+        <constructor-arg index="1" ref="msgCoder" />
+        <constructor-arg index="2" ref="instrumentsCache" />
+        <constructor-arg index="3" ref="traderManager" />
+        <constructor-arg index="4" ref="internalTimer" />
+		<property name="dictionary" ref="dictionary"/>
+		<property name="connectionTimeoutMicros" value="${connection.timeout.micros}"/>
+    </bean>
+
+    <!-- bean name="incrementalIdGenerator" class="common.utils.IncrementalIdGenerator">
+        <constructor-arg index="0" value="../" />
+        <constructor-arg index="1" value="${idGen.prefix}" />
+        <constructor-arg index="2" value="yyMMdd" />
+        <constructor-arg index="3" value="1000" />
+    </bean -->
+
+    <!-- import resource="jmx.xml"/ -->
+</beans>

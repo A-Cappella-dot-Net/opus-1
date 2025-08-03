@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <bean name="madrigal.fix.repeating.group" class="net.a_cappella.continuo.managed.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.cembalo.fix.FixRepeatingGroup" />
+    </bean>
+
+    <bean name="madrigal.fix.fields" class="net.a_cappella.continuo.managed.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.cembalo.fix.FixFields" />
+    </bean>
+
+	<bean name="exchange-msg-insts-list-1" class="java.util.ArrayList">
+        <constructor-arg index="0" type="java.util.Collection">
+            <list>
+                <ref bean="madrigal.fix.fields"/>
+                <ref bean="madrigal.fix.repeating.group"/>
+            </list>
+        </constructor-arg>
+	</bean>
+
+	<bean name="exchange-obj-insts-pool-1" class="java.util.ArrayList">
+		<constructor-arg>
+			<list>
+				<bean class="net.a_cappella.continuo.managed.Pool">
+					<constructor-arg name="instantiator" ref="madrigal.fix.repeating.group" />
+					<constructor-arg name="initialSize" value="10" />
+					<constructor-arg name="incrementSize" value="10" />
+				</bean>
+				<bean class="net.a_cappella.continuo.managed.Pool">
+					<constructor-arg name="instantiator" ref="madrigal.fix.fields" />
+					<constructor-arg name="initialSize" value="10" />
+					<constructor-arg name="incrementSize" value="10" />
+				</bean>
+			</list>
+		</constructor-arg>
+	</bean>
+
+	<bean class="net.a_cappella.continuo.managed.ObjectInitializer">
+        <!-- property name="msgInstantiators" ref="exchange-msg-insts-list-1"/ -->
+        <property name="msgPools" ref="exchange-obj-insts-pool-1"/>
+	</bean>
+
+
+
+    <bean name="madrigal.fix.message" class="net.a_cappella.continuo.managed.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.cembalo.fix.FixMessage" />
+    </bean>
+
+	<bean name="exchange-msg-insts-list-2" class="java.util.ArrayList">
+        <constructor-arg index="0" type="java.util.Collection">
+            <list>
+                <ref bean="madrigal.fix.message"/>
+            </list>
+        </constructor-arg>
+	</bean>
+
+	<bean name="exchange-obj-insts-pool-2" class="java.util.ArrayList">
+		<constructor-arg>
+			<list>
+				<bean class="net.a_cappella.continuo.managed.Pool">
+					<constructor-arg name="instantiator" ref="madrigal.fix.message" />
+					<constructor-arg name="initialSize" value="10" />
+					<constructor-arg name="incrementSize" value="10" />
+				</bean>
+			</list>
+		</constructor-arg>
+	</bean>
+
+	<bean class="net.a_cappella.continuo.managed.ObjectInitializer">
+        <!-- property name="msgInstantiators" ref="exchange-msg-insts-list-2"/ -->
+        <property name="msgPools" ref="exchange-obj-insts-pool-2"/>
+	</bean>
+
+
+
+    <bean name="exchange.timer.msg" class="net.a_cappella.continuo.managed.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.cembalo.message.TimerMsgs" />
+    </bean>
+
+	<bean name="exchange-msg-insts-list-3" class="java.util.ArrayList">
+        <constructor-arg index="0" type="java.util.Collection">
+            <list>
+                <ref bean="exchange.timer.msg"/>
+            </list>
+        </constructor-arg>
+	</bean>
+
+	<bean name="exchange-msg-insts-pool-3" class="java.util.ArrayList">
+		<constructor-arg>
+			<list>
+				<bean class="net.a_cappella.continuo.managed.Pool">
+					<constructor-arg name="instantiator" ref="exchange.timer.msg" />
+					<constructor-arg name="initialSize" value="10" />
+					<constructor-arg name="incrementSize" value="10" />
+				</bean>
+			</list>
+		</constructor-arg>
+	</bean>
+
+	<bean class="net.a_cappella.continuo.managed.ObjectInitializer">
+        <!-- property name="msgInstantiators" ref="exchange-msg-insts-list-3"/ -->
+        <property name="msgPools" ref="exchange-msg-insts-pool-3"/>
+	</bean>
+
+
+
+
+
+</beans>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+	<bean name="instrumentsCache" class="net.a_cappella.cembalo.InstrumentsCache">
+        <constructor-arg index="0" value="future" />
+        <constructor-arg index="1">
+			<list>
+				<value>TUM6|ZTM6|06/30/2016|200000.0|1.0|1.0|0.0078125|1|20</value>
+				<value>FVM6|ZFM6|06/30/2016|100000.0|1.0|1.0|0.0078125|1|20</value>
+				<value>TYM6|ZNM6|06/30/2016|100000.0|1.0|1.0|0.015625|1|20</value>
+				<value>UXYM6|TNM6|06/30/2016|100000.0|1.0|1.0|0.015625|1|20</value>
+				<value>WNM6|UBM6|06/30/2016|100000.0|1.0|1.0|0.03125|1|20</value>
+				<value>USM6|ZBM6|06/30/2016|100000.0|1.0|1.0|0.03125|1|20</value>
+			</list>
+        </constructor-arg>
+	</bean>
+
+</beans>

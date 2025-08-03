@@ -1,0 +1,27 @@
+[versions]
+guava = "33.4.5-jre" # 23.0
+spring-framework = "6.2.9"
+hdrhistogram = "2.1.4"
+affinity = "3.20.0"
+agrona = "1.22.0"
+trove = "3.0.3"
+slf4j = "1.7.12"
+log4j = "2.17.1"
+mockito = "5.18.0"
+hamcrest = "3.0"
+junit-bom = "5.13.3"
+cucumber-bom = "7.24.0"
+
+[libraries]
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
+spring-framework = { module = "org.springframework:spring-context-support", version.ref = "spring-framework" }
+hdrhistogram = { module = "org.hdrhistogram:HdrHistogram", version.ref = "hdrhistogram" }
+affinity = { module = "net.openhft:affinity", version.ref = "affinity" }
+agrona = { module = "org.agrona:agrona", version.ref = "agrona" }
+trove = { module = "net.sf.trove4j:trove4j", version.ref = "trove" }
+slf4j = { module = "org.slf4j:slf4j-log4j12", version.ref = "slf4j" }
+log4j = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }
+mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-bom" }
+cucumber-bom = { module = "io.cucumber:cucumber-bom", version.ref = "cucumber-bom" }
