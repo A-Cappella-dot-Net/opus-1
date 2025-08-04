@@ -19,9 +19,9 @@ public class InternalTimer {
 
     private final long _nowFineTunedMillis;
     private final List<TimeAndMessages> _timesAndMessages;
-    private final ITimerEventListener _listener;
+    private ITimerEventListener _listener;
 
-    private Delayer<TimeAndMessages> _timeAndMessagesDelayer = new Delayer<>("TimeAndMessages",
+    private final Delayer<TimeAndMessages> _timeAndMessagesDelayer = new Delayer<>("TimeAndMessages",
             timeAndMessages -> {
                 try {
                     fineTuneDelay(timeAndMessages._timeOfEvent);
