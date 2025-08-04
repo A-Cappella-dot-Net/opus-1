@@ -1,7 +1,7 @@
 [versions]
 guava = "33.4.5-jre" # 23.0
 spring-framework = "6.2.9"
-hdrhistogram = "2.1.4"
+hdrhistogram = "2.2.2"
 affinity = "3.20.0"
 agrona = "1.22.0"
 trove = "3.0.3"
