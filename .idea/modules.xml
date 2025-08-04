@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/buildSrc/a-cappella.buildSrc.iml" filepath="$PROJECT_DIR$/.idea/modules/buildSrc/a-cappella.buildSrc.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/utilities/a-cappella.cembalo.iml" filepath="$PROJECT_DIR$/.idea/modules/utilities/a-cappella.cembalo.iml" />
     </modules>
   </component>
 </project>
