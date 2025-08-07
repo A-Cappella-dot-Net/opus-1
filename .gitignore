@@ -6,3 +6,4 @@ build
 /buildSrc/.kotlin/
 /cembalo/target/
 
+/.idea/workspace.xml

@@ -3,5 +3,5 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.10.0"
 }
 
-rootProject.name = "a-cappella"
+rootProject.name = "opus.1"
 include("continuo", "cembalo", "exchange")
