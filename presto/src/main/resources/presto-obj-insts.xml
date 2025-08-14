@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <bean name="presto.ft.member.obj" class="net.a_cappella.continuo.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.presto.obj.FtMemberObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.presto.obj.FtMemberCoder" />
+    </bean>
+    <bean name="presto.ft.monitor.obj" class="net.a_cappella.continuo.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.presto.obj.FtMonitorObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.presto.obj.FtMonitorCoder" />
+    </bean>
+    <bean name="presto.snp.request" class="net.a_cappella.continuo.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.presto.obj.SnapRequestObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.presto.obj.SnapRequestCoder" />
+    </bean>
+    <bean name="presto.snp.timeout" class="net.a_cappella.continuo.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.presto.obj.SnapTimeoutObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.presto.obj.SnapTimeoutCoder" />
+    </bean>
+    <bean name="presto.map" class="net.a_cappella.continuo.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.presto.obj.MapObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.presto.obj.MapCoder" />
+    </bean>
+    <bean name="presto.test" class="net.a_cappella.continuo.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.presto.obj.TestObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.presto.obj.TestCoder" />
+    </bean>
+    <bean name="presto.ping" class="net.a_cappella.continuo.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.presto.obj.PingObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.presto.obj.PingCoder" />
+    </bean>
+    <bean name="presto.seq.no" class="net.a_cappella.continuo.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.presto.obj.SeqNoObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.presto.obj.SeqNoCoder" />
+    </bean>
+
+</beans>

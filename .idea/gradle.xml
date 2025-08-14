@@ -23,6 +23,7 @@
             <option value="$PROJECT_DIR$/cembalo" />
             <option value="$PROJECT_DIR$/continuo" />
             <option value="$PROJECT_DIR$/exchange" />
+            <option value="$PROJECT_DIR$/presto" />
           </set>
         </option>
       </GradleProjectSettings>

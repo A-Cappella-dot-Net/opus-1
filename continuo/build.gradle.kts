@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.slf4j) // TODO CVE-2019-17571 9.8
+    implementation(libs.slf4j)
     implementation(libs.log4j)
     implementation(libs.spring.framework)
 

@@ -4,4 +4,8 @@ plugins {
 }
 
 rootProject.name = "opus-1"
-include("continuo", "cembalo", "exchange")
+
+include("continuo")
+include("cembalo")
+include("exchange")
+include("presto")

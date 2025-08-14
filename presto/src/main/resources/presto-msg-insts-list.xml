@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <!-- references objects defined in presto-msg-insts.xml -->
+
+    <bean name="presto-msg-insts-list" class="java.util.ArrayList">
+        <constructor-arg index="0" type="java.util.Collection">
+            <list>
+                <ref bean="presto.bytes"/>
+                <ref bean="presto.versioned.string"/>
+                <ref bean="presto.force.disconnect"/>
+                <ref bean="presto.registration.request"/>
+                <ref bean="presto.registration.response"/>
+                <ref bean="presto.ft.member.msg"/>
+                <ref bean="presto.ft.monitor.msg"/>
+                <ref bean="presto.source.ports"/>
+                <ref bean="presto.paths.subjects"/>
+                <ref bean="allegro.test.msg"/>
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <bean class="net.a_cappella.continuo.ObjectInitializer">
+        <property name="msgInstantiators" ref="presto-msg-insts-list"/>
+    </bean>
+
+</beans>

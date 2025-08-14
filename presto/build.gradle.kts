@@ -3,13 +3,6 @@ plugins {
     id("maven-publish")
 }
 
-tasks.register<JavaExec>("genFixConstants") {
-    classpath = sourceSets.main.get().runtimeClasspath
-    mainClass.set("net.a_cappella.cembalo.generator.Dictionary")
-    args = listOf(
-    )
-}
-
 val mockitoAgent = configurations.create("mockitoAgent")
 
 dependencies {
@@ -20,21 +13,14 @@ dependencies {
 
     implementation(libs.slf4j)
     implementation(libs.log4j) // why exclude and then include back???
-    implementation(libs.spring.framework)
 
     implementation(libs.guava)
 
-    implementation(libs.agrona)
     implementation(libs.trove)
 
-    testImplementation(libs.hamcrest)
+    testImplementation(libs.hdrhistogram)
 
-    testImplementation(platform(libs.cucumber.bom))
-    testImplementation("io.cucumber:cucumber-java")
-    testImplementation("io.cucumber:cucumber-junit-platform-engine")
-
-    testImplementation(platform(libs.junit.bom))
-    testImplementation("org.junit.platform:junit-platform-suite-engine")
+    testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 
     testImplementation(libs.mockito)
@@ -57,7 +43,7 @@ publishing {
     publications {
         create<MavenPublication>("mavenJava") {
             groupId = "net.a-cappella"
-            artifactId = "cembalo"
+            artifactId = "presto"
             version = "1.0.0-SNAPSHOT" // or dynamic version as above
 
             from(components["java"]) // Or "kotlin" for Kotlin projects

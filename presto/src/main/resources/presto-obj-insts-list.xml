@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <!-- references objects defined in presto-obj-insts.xml -->
+
+    <bean name="presto-obj-insts-list" class="java.util.ArrayList">
+        <constructor-arg index="0" type="java.util.Collection">
+            <list>
+                <ref bean="presto.ft.member.obj"/>
+                <ref bean="presto.ft.monitor.obj"/>
+                <ref bean="presto.snp.request"/>
+                <ref bean="presto.snp.timeout"/>
+                <ref bean="presto.map"/>
+                <ref bean="presto.test"/>
+                <ref bean="presto.ping"/>
+                <ref bean="presto.seq.no"/>
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <bean class="net.a_cappella.continuo.ObjectInitializer">
+        <property name="msgInstantiators" ref="presto-obj-insts-list"/>
+    </bean>
+
+</beans>

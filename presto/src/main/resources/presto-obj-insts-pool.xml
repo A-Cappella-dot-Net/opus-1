@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <!-- references objects defined in presto-obj-insts.xml -->
+
+    <bean name="presto-obj-insts-pool" class="java.util.ArrayList">
+        <constructor-arg>
+            <list>
+                <!-- Obj -->
+                <!--
+                                <bean class="net.a_cappella.continuo.Pool">
+                                    <constructor-arg name="instantiator" ref="presto.snp.request" />
+                                    <constructor-arg name="initialSize" value="10" />
+                                    <constructor-arg name="incrementSize" value="10" />
+                                </bean>
+                                <bean class="net.a_cappella.continuo.Pool">
+                                    <constructor-arg name="instantiator" ref="presto.snp.timeout" />
+                                    <constructor-arg name="initialSize" value="10" />
+                                    <constructor-arg name="incrementSize" value="10" />
+                                </bean>
+                -->
+                <bean class="net.a_cappella.continuo.Pool">
+                    <constructor-arg name="instantiator" ref="presto.ft.member.obj" />
+                    <constructor-arg name="initialSize" value="10" />
+                    <constructor-arg name="incrementSize" value="10" />
+                </bean>
+                <bean class="net.a_cappella.continuo.Pool">
+                    <constructor-arg name="instantiator" ref="presto.ft.monitor.obj" />
+                    <constructor-arg name="initialSize" value="10" />
+                    <constructor-arg name="incrementSize" value="10" />
+                </bean>
+                <bean class="net.a_cappella.continuo.Pool">
+                    <constructor-arg name="instantiator" ref="presto.map" />
+                    <constructor-arg name="initialSize" value="10" />
+                    <constructor-arg name="incrementSize" value="10" />
+                </bean>
+                <bean class="net.a_cappella.continuo.Pool">
+                    <constructor-arg name="instantiator" ref="presto.test" />
+                    <constructor-arg name="initialSize" value="10" />
+                    <constructor-arg name="incrementSize" value="10" />
+                </bean>
+                <bean class="net.a_cappella.continuo.Pool">
+                    <constructor-arg name="instantiator" ref="presto.ping" />
+                    <constructor-arg name="initialSize" value="10" />
+                    <constructor-arg name="incrementSize" value="10" />
+                </bean>
+                <bean class="net.a_cappella.continuo.Pool">
+                    <constructor-arg name="instantiator" ref="presto.seq.no" />
+                    <constructor-arg name="initialSize" value="10" />
+                    <constructor-arg name="incrementSize" value="10" />
+                </bean>
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <bean class="net.a_cappella.continuo.ObjectInitializer">
+        <property name="msgPools" ref="presto-obj-insts-pool"/>
+    </bean>
+
+</beans>
