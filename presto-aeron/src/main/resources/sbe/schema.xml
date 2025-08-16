@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+                   xmlns:xi="http://www.w3.org/2001/XInclude"
+                   package="sbe.generated"
+                   id="1"
+                   version="0"
+                   semanticVersion="1.0"
+                   description="Presto Messages SBE schema"
+                   byteOrder="littleEndian">
+
+    <xi:include href="common.xml"/>
+
+    <types>
+        <type name="GroupNameType" length="48" primitiveType="char" semanticType="String"/>
+        <type name="SubjectNameType" length="32" primitiveType="char" semanticType="String"/>
+        <type name="CommandNameType" length="8" primitiveType="char" semanticType="String"/>
+
+        <enum name="SbeMyEnum" encodingType="uint8">
+            <validValue name="ZERO">0</validValue>
+            <validValue name="ONE">1</validValue>
+            <validValue name="TWO">2</validValue>
+            <validValue name="THREE">3</validValue>
+        </enum>
+        <enum name="FtMsgOpEnum" encodingType="uint8">
+            <validValue name="ACTIVATE">0</validValue>
+            <validValue name="DEACTIVATE">1</validValue>
+            <validValue name="DISCONNECT">2</validValue>
+            <validValue name="DUPLICATE">3</validValue>
+        </enum>
+    </types>
+
+    <sbe:message name="AdHocs" id="1" description="Ad Hoc Fields">
+        <data name="adHocs" id="1" type="varDataEncoding"/>
+    </sbe:message>
+
+
+
+
+    <sbe:message name="CombinedSbePrestoHeaderObj" id="99" description="SbePrestoHeader message">
+        <field name="sbePrestoHeader" id="0" type="CombinedSbePrestoHeader"/>
+    </sbe:message>
+
+    <sbe:message name="FtMemberObj" id="101" description="FtMember message">
+        <field name="groupName" id="1" type="GroupNameType"/>
+        <field name="instance" id="2" type="int32"/>
+        <field name="action" id="3" type="FtMsgOpEnum"/>
+        <field name="sliceNo" id="4" type="int32"/>
+        <field name="ofSlices" id="5" type="int32"/>
+        <field name="ts" id="6" type="int64"/>
+    </sbe:message>
+
+    <sbe:message name="FtMonitorObj" id="102" description="FtMonitor message">
+        <field name="groupName" id="1" type="GroupNameType"/>
+        <field name="actives" id="2" type="int32"/>
+        <field name="ts" id="3" type="int64"/>
+    </sbe:message>
+
+    <sbe:message name="SnapRequestObj" id="103" description="Snap request message">
+        <data name="sql" id="1" type="varStringEncoding"/>
+    </sbe:message>
+
+    <sbe:message name="SnapTimeoutObj" id="104" description="Snap Timeout message">
+        <field name="ts" id="1" type="int64"/>
+    </sbe:message>
+
+    <sbe:message name="MapObj" id="105" description="Presto Map Message">
+        <data name="mapData" id="1" type="varDataEncoding"/>
+    </sbe:message>
+
+    <sbe:message name="PingObj" id="107" description="Ping message">
+        <field name="id" id="1" type="int32"/>
+        <field name="payload" id="2" type="int64"/>
+    </sbe:message>
+
+    <sbe:message name="TestObj" id="108" description="Test message containing all Presto primitive types">
+        <field name="aShort" id="1" type="int16"/>
+        <field name="anInt" id="2" type="int32"/>
+        <field name="aChar" id="3" type="uint16"/>
+
+        <field name="aLong" id="4" type="int64"/>
+
+        <field name="aTimestamp" id="5" type="int64"/>
+        <field name="aNanos" id="6" type="int64"/>
+        <field name="aTime" id="7" type="int32"/>
+        <field name="aDate" id="8" type="int32"/>
+
+        <field name="aFloat" id="9" type="float"/>
+        <field name="aDouble" id="10" type="double"/>
+
+        <field name="aBoolean" id="11" type="SbeBoolean"/>
+        <field name="anEnum" id="12" type="SbeMyEnum"/>
+
+        <data name="aString" id="13" type="varStringEncoding"/>
+    </sbe:message>
+
+    <sbe:message name="CacheCmdObj" id="109" description="Cache Command">
+        <field name="command" id="1" type="CommandNameType"/>
+        <field name="cacheSubject" id="2" type="SubjectNameType"/>
+        <data name="whereClause" id="3" type="varStringEncoding"/>
+    </sbe:message>
+
+    <sbe:message name="SeqNoObj" id="110" description="SeqNo message">
+        <field name="seqNo" id="1" type="int64"/>
+    </sbe:message>
+
+</sbe:messageSchema>

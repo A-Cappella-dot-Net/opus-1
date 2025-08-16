@@ -45,7 +45,7 @@ public abstract class ObjImpl extends Poolable implements Obj {
     private Map<String, Object> _adHocs = new HashMap<>();
 
     static {
-        setRtgCtor("net.a_cappella.presto.ps.RtgImpl"); // TODO can this be done in a different way?
+        setRtgCtor("net.a_cappella.presto.msg.RtgImpl"); // TODO can this be done in a different way?
     }
 
     public static void setRtgCtor(String rtgClassName) {

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<types>
+    <type name="MonIdType" length="32" primitiveType="char" semanticType="String"/>
+
+    <composite name="messageHeader" description="SBE Header">
+        <type name="blockLength" primitiveType="uint16"/>
+        <type name="templateId" primitiveType="uint16"/>
+        <type name="schemaId" primitiveType="uint16"/>
+        <type name="version" primitiveType="uint16"/>
+    </composite>
+    <composite name="groupSizeEncoding" description="Repeating group dimensions">
+        <type name="blockLength" primitiveType="uint16"/>
+        <type name="numInGroup" primitiveType="uint16"/>
+    </composite>
+    <composite name="varStringEncoding">
+        <type name="length" primitiveType="uint32" maxValue="1073741824"/>
+        <type name="varData" primitiveType="uint8" length="0" characterEncoding="UTF-8" presence="optional"/>
+    </composite>
+    <composite name="varDataEncoding">
+        <type name="length" primitiveType="uint32" maxValue="1073741824"/>
+        <type name="varData" primitiveType="uint8" length="0" presence="optional"/>
+    </composite>
+    <enum name="SbeBoolean" encodingType="uint8">
+        <validValue name="FALSE">0</validValue>
+        <validValue name="TRUE">1</validValue>
+    </enum>
+
+    <enum name="SbePubType" encodingType="char">
+        <validValue name="UNK"> </validValue>
+        <validValue name="PUB">P</validValue>
+        <validValue name="SNP">Q</validValue>
+        <validValue name="SNP_MSG">S</validValue>
+        <validValue name="SNP_BEGIN">B</validValue>
+        <validValue name="SNP_END">E</validValue>
+        <validValue name="SNP_TIMEOUT">T</validValue>
+        <validValue name="SNP_HWM">H</validValue>
+    </enum>
+
+    <composite name="CombinedSbePrestoHeader" description="Combined SBE and Presto Header">
+        <!-- SBE -->
+        <type name="blockLength" primitiveType="uint16"/>
+        <type name="templateId" primitiveType="uint16"/>
+        <type name="schemaId" primitiveType="uint16"/>
+        <type name="version" primitiveType="uint16"/>
+        <!-- Presto -->
+        <type name="subject" primitiveType="char" length="32" characterEncoding="ASCII"/>
+        <ref name="backPressured" type="SbeBoolean"/>
+        <ref name="onLoopback" type="SbeBoolean"/>
+        <ref name="pubType" type="SbePubType"/>
+        <type name="requestId" primitiveType="int64"/>
+        <type name="originClient" primitiveType="char" length="32" characterEncoding="ASCII"/>
+        <type name="mine" primitiveType="int16"/>
+        <type name="tsNanos" primitiveType="int64"/>
+        <type name="serialId" primitiveType="int64"/>
+        <type name="seqNo" primitiveType="int64"/>
+    </composite>
+</types>
