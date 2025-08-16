@@ -11,7 +11,7 @@ import net.a_cappella.presto.msg.FtMemberMsg;
 import net.a_cappella.presto.msg.FtMonitorMsg;
 import net.a_cappella.presto.msg.VersionedStringMsg;
 import net.a_cappella.presto.obj.ObjImpl;
-import net.a_cappella.presto.ps.RtgImpl;
+import net.a_cappella.presto.msg.RtgImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
