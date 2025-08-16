@@ -10,6 +10,8 @@ import net.a_cappella.presto.ft.upgrade.VersionedParamsCache;
 import net.a_cappella.presto.msg.FtMemberMsg;
 import net.a_cappella.presto.msg.FtMonitorMsg;
 import net.a_cappella.presto.msg.VersionedStringMsg;
+import net.a_cappella.presto.obj.ObjImpl;
+import net.a_cappella.presto.ps.RtgImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
@@ -43,6 +45,8 @@ public abstract class CollectiveTestBase {
     protected static final String FT_GROUP = "GRP";
 
     static {
+        ObjImpl.setRtgCtor(RtgImpl.class.getName());
+
         try {
             ForceDisconnect fd;
             MsgInstantiator forceDisconnectInstantiator =
