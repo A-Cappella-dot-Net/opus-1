@@ -22,7 +22,7 @@
         </constructor-arg>
     </bean>
 
-    <bean class="net.a_cappella.continuo.ObjectInitializer">
+    <bean class="net.a_cappella.continuo.managed.ObjectInitializer">
         <property name="msgInstantiators" ref="presto-obj-insts-list"/>
     </bean>
 

@@ -11,52 +11,52 @@
         <constructor-arg>
             <list>
                 <!-- Msg -->
-                <bean class="net.a_cappella.continuo.Pool">
+                <bean class="net.a_cappella.continuo.managed.Pool">
                     <constructor-arg name="instantiator" ref="presto.bytes" />
                     <constructor-arg name="initialSize" value="10" />
                     <constructor-arg name="incrementSize" value="10" />
                 </bean>
-                <bean class="net.a_cappella.continuo.Pool">
+                <bean class="net.a_cappella.continuo.managed.Pool">
                     <constructor-arg name="instantiator" ref="presto.versioned.string" />
                     <constructor-arg name="initialSize" value="10" />
                     <constructor-arg name="incrementSize" value="10" />
                 </bean>
-                <bean class="net.a_cappella.continuo.Pool">
+                <bean class="net.a_cappella.continuo.managed.Pool">
                     <constructor-arg name="instantiator" ref="presto.force.disconnect" />
                     <constructor-arg name="initialSize" value="10" />
                     <constructor-arg name="incrementSize" value="10" />
                 </bean>
-                <bean class="net.a_cappella.continuo.Pool">
+                <bean class="net.a_cappella.continuo.managed.Pool">
                     <constructor-arg name="instantiator" ref="presto.registration.request" />
                     <constructor-arg name="initialSize" value="10" />
                     <constructor-arg name="incrementSize" value="10" />
                 </bean>
-                <bean class="net.a_cappella.continuo.Pool">
+                <bean class="net.a_cappella.continuo.managed.Pool">
                     <constructor-arg name="instantiator" ref="presto.registration.response" />
                     <constructor-arg name="initialSize" value="10" />
                     <constructor-arg name="incrementSize" value="10" />
                 </bean>
-                <bean class="net.a_cappella.continuo.Pool">
+                <bean class="net.a_cappella.continuo.managed.Pool">
                     <constructor-arg name="instantiator" ref="presto.ft.member.msg" />
                     <constructor-arg name="initialSize" value="10" />
                     <constructor-arg name="incrementSize" value="10" />
                 </bean>
-                <bean class="net.a_cappella.continuo.Pool">
+                <bean class="net.a_cappella.continuo.managed.Pool">
                     <constructor-arg name="instantiator" ref="presto.ft.monitor.msg" />
                     <constructor-arg name="initialSize" value="10" />
                     <constructor-arg name="incrementSize" value="10" />
                 </bean>
-                <bean class="net.a_cappella.continuo.Pool">
+                <bean class="net.a_cappella.continuo.managed.Pool">
                     <constructor-arg name="instantiator" ref="presto.source.ports" />
                     <constructor-arg name="initialSize" value="10" />
                     <constructor-arg name="incrementSize" value="10" />
                 </bean>
-                <bean class="net.a_cappella.continuo.Pool">
+                <bean class="net.a_cappella.continuo.managed.Pool">
                     <constructor-arg name="instantiator" ref="presto.paths.subjects" />
                     <constructor-arg name="initialSize" value="10" />
                     <constructor-arg name="incrementSize" value="10" />
                 </bean>
-                <bean class="net.a_cappella.continuo.Pool">
+                <bean class="net.a_cappella.continuo.managed.Pool">
                     <constructor-arg name="instantiator" ref="allegro.test.msg" />
                     <constructor-arg name="initialSize" value="10" />
                     <constructor-arg name="incrementSize" value="10" />
@@ -65,7 +65,7 @@
         </constructor-arg>
     </bean>
 
-    <bean class="net.a_cappella.continuo.ObjectInitializer">
+    <bean class="net.a_cappella.continuo.managed.ObjectInitializer">
         <property name="msgPools" ref="presto-msg-insts-pool"/>
     </bean>
 

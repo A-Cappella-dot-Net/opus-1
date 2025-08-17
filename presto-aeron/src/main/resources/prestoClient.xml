@@ -5,7 +5,7 @@
            http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
-    <bean name="msgCoder" class="allegro.msg.MsgCoder" />
+    <bean name="msgCoder" class="net.a_cappella.continuo.msg.MsgCoder" />
 
     <bean name="tightLoopThread" class="allegro.utils.tightloop.TightLoopThread" init-method="start">
         <property name="microThreshold" value="${client.micro.threshold}" />
