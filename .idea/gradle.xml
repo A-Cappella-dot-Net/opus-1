@@ -26,6 +26,7 @@
             <option value="$PROJECT_DIR$/exchange" />
             <option value="$PROJECT_DIR$/presto" />
             <option value="$PROJECT_DIR$/presto-aeron" />
+            <option value="$PROJECT_DIR$/test-presto" />
           </set>
         </option>
       </GradleProjectSettings>
