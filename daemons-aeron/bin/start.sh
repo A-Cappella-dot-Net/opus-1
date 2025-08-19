@@ -71,7 +71,7 @@ LOG_NAME="${APP_HOME}/logs/${APP_NAME}${INSTANCE}-${CURRENT_DATE}.log"
 
 GC_LOG_NAME="${APP_HOME}/logs/${APP_NAME}${INSTANCE}-${CURRENT_DATE}-gc.log"
 
-ADD_OPENS=--add-opens java.base/sun.nio.ch=ALL-UNNAMED
+ADD_OPENS="--add-opens java.base/sun.nio.ch=ALL-UNNAMED"
 
 VM_ARGS="-Dinstance=${INSTANCE} -Xms${HEAP_SIZE} -Xmx${HEAP_SIZE} ${GC_ARGS}${GC_LOG_NAME} ${ADD_OPENS}"
 
