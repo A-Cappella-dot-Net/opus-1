@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+                   xmlns:xi="http://www.w3.org/2001/XInclude"
+                   package="sbe.generated"
+                   id="1"
+                   version="0"
+                   semanticVersion="1.0"
+                   description="Presto Messages SBE schema"
+                   byteOrder="littleEndian">
+
+    <xi:include href="../../../../../presto-aeron/src/main/resources/sbe/common.xml"/>
+
+    <types>
+        <type name="UidType" length="16" primitiveType="char" semanticType="String"/>
+        <type name="PwdType" length="16" primitiveType="char" semanticType="String"/>
+        <type name="EcnType" length="8" primitiveType="char" semanticType="String"/>
+        <type name="InstrumentIdType" length="16" primitiveType="char" semanticType="String"/>
+        <type name="ClientIdType" length="32" primitiveType="char" semanticType="String"/>
+        <type name="FillIdType" length="32" primitiveType="char" semanticType="String"/>
+        <type name="OrderIdType" length="32" primitiveType="char" semanticType="String"/>
+
+        <enum name="SbeBookEnum" encodingType="char">
+            <validValue name="OPEN">O</validValue>
+            <validValue name="CLOSE">C</validValue>
+            <validValue name="CONTINUOUS">T</validValue>
+        </enum>
+        <enum name="SbeGatewayTypeEnum" encodingType="char">
+            <validValue name="MARKET_DATA">M</validValue>
+            <validValue name="ORDER_MANAGER">O</validValue>
+        </enum>
+        <enum name="SbeMarketStatusEnum" encodingType="char">
+            <validValue name="OPEN">O</validValue>
+            <validValue name="CLOSED">C</validValue>
+        </enum>
+        <enum name="SbeInstrStatusEnum" encodingType="char">
+            <validValue name="OPEN">O</validValue>
+            <validValue name="CLOSED">C</validValue>
+        </enum>
+        <enum name="SbeInstrPhaseEnum" encodingType="char">
+            <validValue name="CLOSED">C</validValue>
+            <validValue name="ALL">A</validValue>
+            <validValue name="ONLY_NEW">N</validValue>
+            <validValue name="NON_MATCHING">Z</validValue>
+            <validValue name="MATCHING">M</validValue>
+        </enum>
+        <enum name="SbeModeEnum" encodingType="char">
+            <validValue name="REQUEST">Q</validValue>
+            <validValue name="RESPONSE">S</validValue>
+        </enum>
+        <enum name="SbeLogOpEnum" encodingType="char">
+            <validValue name="login">I</validValue>
+            <validValue name="logout">O</validValue>
+        </enum>
+        <enum name="SbeUserStatusEnum" encodingType="char">
+            <validValue name="Off">0</validValue>
+            <validValue name="On">1</validValue>
+        </enum>
+        <enum name="SbeOrdTypeEnum" encodingType="char">
+            <validValue name="MARKET">1</validValue>
+            <validValue name="LIMIT">2</validValue>
+            <validValue name="PEGGED">P</validValue>
+        </enum>
+        <enum name="SbeTimeInForceEnum" encodingType="char">
+            <validValue name="DAY">0</validValue>
+            <validValue name="AtOpen">2</validValue>
+            <validValue name="IOC">3</validValue>
+            <validValue name="FOK">4</validValue>
+            <validValue name="AtClose">7</validValue>
+            <validValue name="STO">S</validValue>
+        </enum>
+        <enum name="SbeSideEnum" encodingType="char">
+            <validValue name="Buy">B</validValue>
+            <validValue name="Sell">S</validValue>
+            <validValue name="Short">T</validValue>
+            <validValue name="None">N</validValue>
+        </enum>
+        <enum name="SbeReqTypeEnum" encodingType="char">
+            <validValue name="ADD">A</validValue>
+            <validValue name="RWT">R</validValue>
+            <validValue name="DEL">D</validValue>
+        </enum>
+        <enum name="SbeOrdStatusEnum" encodingType="char">
+            <validValue name="ACK">A</validValue>
+            <validValue name="DONE">D</validValue>
+            <validValue name="FILL">F</validValue>
+            <validValue name="NAK">N</validValue>
+            <validValue name="CXL">X</validValue>
+        </enum>
+    </types>
+
+
+
+
+    <sbe:message name="CredentialsObj" id="1001" description="Madrigal Credentials">
+        <field name="uid" id="1" type="UidType"/>
+
+        <field name="pwd" id="2" type="PwdType"/>
+        <field name="ts" id="3" type="int64"/>
+    </sbe:message>
+
+    <sbe:message name="EcnCredentialsObj" id="1002" description="Ecn Credentials">
+        <field name="uid" id="1" type="UidType"/>
+        <field name="ecn" id="2" type="EcnType"/>
+
+        <field name="ecnUid" id="3" type="UidType"/>
+        <field name="ecnPwd" id="4" type="PwdType"/>
+        <field name="ts" id="5" type="int64"/>
+    </sbe:message>
+
+    <sbe:message name="MarketStatusObj" id="1003" description="Market Status">
+        <field name="ecn" id="1" type="EcnType"/>
+        <field name="gwt" id="2" type="SbeGatewayTypeEnum"/>
+
+        <field name="status" id="3" type="SbeMarketStatusEnum"/>
+        <field name="ts" id="4" type="int64"/>
+    </sbe:message>
+
+    <sbe:message name="EcnInstrumentObj" id="1004" description="Instrument">
+        <field name="securityID" id="1" type="InstrumentIdType"/>
+        <field name="symbol" id="2" type="InstrumentIdType"/>
+        <field name="ecn" id="3" type="EcnType"/>
+
+        <field name="maturityDate" id="4" type="int32"/>
+        <field name="couponRate" id="5" type="double"/>
+        <field name="contractMultiplier" id="6" type="double"/>
+        <field name="minPriceIncrement" id="7" type="double"/>
+        <field name="minQty" id="8" type="double"/>
+        <field name="minQtyIncrement" id="9" type="double"/>
+        <field name="ts" id="10" type="int64"/>
+    </sbe:message>
+
+    <sbe:message name="EcnInstrStatusObj" id="1005" description="Instrument Status">
+        <field name="ecn" id="3" type="EcnType"/>
+        <field name="securityID" id="1" type="InstrumentIdType"/>
+        <field name="book" id="2" type="SbeBookEnum"/>
+        <field name="status" id="4" type="SbeInstrStatusEnum"/>
+        <field name="phase" id="5" type="SbeInstrPhaseEnum"/>
+        <field name="ts" id="10" type="int64"/>
+    </sbe:message>
+
+    <sbe:message name="EcnImbalanceObj" id="1006" description="Imbalance">
+        <field name="ecn" id="3" type="EcnType"/>
+        <field name="securityID" id="1" type="InstrumentIdType"/>
+        <field name="book" id="2" type="SbeBookEnum"/>
+        <field name="auction" id="4" type="SbeBoolean"/>
+        <field name="side" id="5" type="SbeSideEnum"/>
+        <field name="matched" id="6" type="double"/>
+        <field name="surplus" id="7" type="double"/>
+        <field name="price" id="8" type="double"/>
+        <field name="ts" id="10" type="int64"/>
+    </sbe:message>
+
+    <sbe:message name="EcnPriceObj" id="1007" description="Price">
+        <field name="ecn" id="1" type="EcnType"/>
+        <field name="instrId" id="2" type="InstrumentIdType"/>
+        <field name="bid0" id="10" type="double"/>
+        <field name="bid1" id="11" type="double"/>
+        <field name="bid2" id="12" type="double"/>
+        <field name="bid3" id="13" type="double"/>
+        <field name="bid4" id="14" type="double"/>
+        <field name="bidSize0" id="15" type="double"/>
+        <field name="bidSize1" id="16" type="double"/>
+        <field name="bidSize2" id="17" type="double"/>
+        <field name="bidSize3" id="18" type="double"/>
+        <field name="bidSize4" id="19" type="double"/>
+        <field name="offer0" id="20" type="double"/>
+        <field name="offer1" id="21" type="double"/>
+        <field name="offer2" id="22" type="double"/>
+        <field name="offer3" id="23" type="double"/>
+        <field name="offer4" id="24" type="double"/>
+        <field name="offerSize0" id="25" type="double"/>
+        <field name="offerSize1" id="26" type="double"/>
+        <field name="offerSize2" id="27" type="double"/>
+        <field name="offerSize3" id="28" type="double"/>
+        <field name="offerSize4" id="29" type="double"/>
+        <field name="ts" id="3" type="int64"/>
+        <field name="tsx" id="4" type="int64"/>
+        <field name="stale" id="5" type="SbeBoolean"/>
+    </sbe:message>
+
+    <sbe:message name="UserStatusObj" id="1008" description="User Status Request and Response">
+        <field name="mode" id="1" type="SbeModeEnum"/>
+        <field name="uid" id="2" type="UidType"/>
+        <field name="clId" id="3" type="ClientIdType"/>
+        <field name="op" id="4" type="SbeLogOpEnum"/>
+        <field name="pwd" id="5" type="PwdType"/>
+        <field name="forceLogout" id="6" type="SbeBoolean"/>
+        <field name="rejectIfLoggedIn" id="7" type="SbeBoolean"/>
+        <field name="status" id="8" type="SbeUserStatusEnum"/>
+        <field name="reqStatus" id="9" type="SbeUserStatusEnum"/>
+        <field name="ts" id="10" type="int64"/>
+        <data name="text" id="11" type="varStringEncoding"/>
+    </sbe:message>
+
+    <sbe:message name="EcnUserStatusObj" id="1009" description="Ecn User Status Request and Response">
+        <field name="mode" id="1" type="SbeModeEnum"/>
+        <field name="instance" id="2" type="int32"/>
+        <field name="uid" id="3" type="UidType"/>
+        <field name="ecn" id="4" type="EcnType"/>
+        <field name="ecnUid" id="5" type="UidType"/>
+        <field name="op" id="6" type="SbeLogOpEnum"/>
+        <field name="ecnPwd" id="7" type="PwdType"/>
+        <field name="status" id="8" type="SbeUserStatusEnum"/>
+        <field name="ts" id="9" type="int64"/>
+        <data name="text" id="10" type="varStringEncoding"/>
+    </sbe:message>
+
+    <sbe:message name="OrderObj" id="1010" description="Order">
+        <field name="mode" id="1" type="SbeModeEnum"/>
+        <field name="ecn" id="2" type="EcnType"/>
+        <field name="uid" id="3" type="UidType"/>
+        <field name="ordId" id="4" type="OrderIdType"/>
+        <field name="instrId" id="5" type="InstrumentIdType"/>
+
+        <field name="ver" id="6" type="int32"/>
+        <field name="clOrdId" id="7" type="OrderIdType"/>
+        <field name="ordType" id="9" type="SbeOrdTypeEnum"/>
+        <field name="timeInForce" id="10" type="SbeTimeInForceEnum"/>
+        <field name="side" id="11" type="SbeSideEnum"/>
+        <field name="price" id="12" type="double"/>
+        <field name="orderQty" id="13" type="double"/>
+        <field name="shownQty" id="14" type="double"/>
+        <field name="randomMax" id="15" type="int32"/>
+        <field name="reqType" id="16" type="SbeReqTypeEnum"/>
+        <field name="useNative" id="17" type="SbeBoolean"/>
+        <field name="ts" id="31" type="int64"/>
+        <field name="tsx" id="32" type="int64"/>
+        <field name="ecnOrdId" id="19" type="OrderIdType"/>
+        <field name="fillId" id="33" type="FillIdType"/>
+        <field name="execId" id="18" type="int64"/>
+        <field name="status" id="20" type="SbeOrdStatusEnum"/>
+        <field name="lastQty" id="21" type="double"/>
+        <field name="lastPx" id="22" type="double"/>
+        <field name="leavesQty" id="23" type="double"/>
+        <field name="cumQty" id="24" type="double"/>
+        <field name="avgPx" id="25" type="double"/>
+        <field name="ftDone" id="26" type="SbeBoolean"/>
+        <field name="done" id="27" type="SbeBoolean"/>
+        <data name="text" id="28" type="varStringEncoding"/>
+    </sbe:message>
+
+    <sbe:message name="FinalizeOrderObj" id="1011" description="Finalize Order Command">
+        <field name="ecn" id="1" type="EcnType"/>
+        <field name="ordId" id="2" type="OrderIdType"/>
+        <field name="ts" id="3" type="int64"/>
+    </sbe:message>
+
+    <sbe:message name="MidFeedObj" id="1012" description="Driving Mid Price">
+        <field name="instrId" id="1" type="InstrumentIdType"/>
+
+        <field name="mid" id="2" type="double"/>
+        <field name="ts" id="3" type="int64"/>
+    </sbe:message>
+
+</sbe:messageSchema>
