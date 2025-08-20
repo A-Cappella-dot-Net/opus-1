@@ -1,0 +1,159 @@
+package net.a_cappella.madrigal.common.obj;
+
+import net.a_cappella.continuo.ObjPriority;
+import net.a_cappella.continuo.obj.Coder;
+import net.a_cappella.continuo.obj.meta.FieldMetaInfo;
+import net.a_cappella.continuo.obj.meta.FieldType;
+import net.a_cappella.continuo.obj.meta.ObjMetaInfo;
+import net.a_cappella.continuo.utils.Utils;
+import net.a_cappella.madrigal.common.constants.MadrigalConstants;
+import net.a_cappella.madrigal.common.constants.MadrigalGatewayType;
+import net.a_cappella.madrigal.common.constants.MadrigalMarketStatus;
+import net.a_cappella.presto.monitor.IStaleable;
+import net.a_cappella.presto.obj.ObjImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Constructor;
+import java.util.Arrays;
+
+import static net.a_cappella.madrigal.common.constants.MadrigalMarketStatus.CLOSED;
+
+public class MarketStatusObj extends ObjImpl implements IStaleable {
+    private static final Logger log = LoggerFactory.getLogger(MarketStatusObj.class);
+
+	@Override
+	public int getMsgType() { return MadrigalConstants.TYPE_MARKET_STATUS; }
+    @Override
+	public String getDefaultSubject() { return MadrigalConstants.SUBJ_MARKET_STATUS; }
+
+    @Override
+	public void setStaticFields(Constructor<? extends Coder> codCtor, ObjPriority priority) throws Exception {
+		_codCtor = codCtor;
+		_priority = priority;
+		_staticMetaInfo.updateMetaInfoFromInstance(this);
+    }
+
+	private static Constructor<? extends Coder> _codCtor;
+    @Override
+	public Constructor<? extends Coder> getCoderConstructor() {
+		return _codCtor;
+	}
+
+	private static ObjPriority _priority;
+    @Override
+	public ObjPriority getPriority() {
+		return _priority;
+	}
+
+    private static final ObjMetaInfo _staticMetaInfo = new ObjMetaInfo(
+    		Arrays.asList(
+                    new FieldMetaInfo("ecn"),
+                    new FieldMetaInfo("gwt")
+            ),
+            Arrays.asList(
+                    new FieldMetaInfo("status"),
+                    new FieldMetaInfo("ts", FieldType.TIMESTAMP)
+            ),
+            128);
+    @Override
+    public ObjMetaInfo getObjMetaInfo() {
+        return _staticMetaInfo;
+    }
+
+    private String _ecn;
+    private MadrigalGatewayType _gwt;
+    private MadrigalMarketStatus _status;
+	private long _ts;
+
+	@Override // IStaleable
+	public void stale() {
+		_status = CLOSED;
+		_ts = System.currentTimeMillis();
+	}
+	public boolean isStale() {
+		return _status == CLOSED;
+	}
+
+	@Override // IPoolable
+	public void reset() {
+		super.reset();
+
+		_ecn = null;
+		_gwt = null;
+		_status = null;
+		_ts = 0;
+	}
+
+	public void set(String ecn, MadrigalGatewayType gwt, MadrigalMarketStatus status, long ts) {
+        _ecn = ecn;
+        _gwt = gwt;
+        _status = status;
+        _ts = ts;
+	}
+
+    public String getEcn() {
+		return _ecn;
+	}
+	public void setEcn(String ecn) {
+		_ecn = ecn;
+	}
+    public MadrigalGatewayType getGwt() {
+		return _gwt;
+	}
+	public void setGwt(MadrigalGatewayType gwt) {
+		_gwt = gwt;
+	}
+	public MadrigalMarketStatus getStatus() {
+		return _status;
+	}
+	public void setStatus(MadrigalMarketStatus status) {
+		_status = status;
+	}
+	public long getTs() {
+		return _ts;
+	}
+	public void setTs(long ts) {
+		_ts = ts;
+	}
+
+    @Override
+	public String getString(String fieldName) throws Exception {
+		if ("ecn".equalsIgnoreCase(fieldName)) return _ecn;
+		return super.getString(fieldName); // throws exception
+	}
+
+	@Override
+	public void setString(String fieldName, String value) throws Exception {
+		if ("ecn".equalsIgnoreCase(fieldName)) _ecn = value;
+		else super.setString(fieldName, value); // throws exception
+	}
+
+	@Override
+	public long getTimestamp(String fieldName) throws Exception {
+		if ("ts".equalsIgnoreCase(fieldName)) return _ts;
+		return super.getTimestamp(fieldName); // throws exception
+	}
+	@Override
+	public void setTimestamp(String fieldName, long value) throws Exception {
+		if ("ts".equalsIgnoreCase(fieldName)) _ts = value;
+		else super.setTimestamp(fieldName, value); // throws exception
+	}
+
+	@Override
+	public Enum<?> getEnum(String fieldName) throws Exception {
+		if ("status".equalsIgnoreCase(fieldName)) return _status;
+		if ("gwt".equalsIgnoreCase(fieldName)) return _gwt;
+		return super.getEnum(fieldName); // throws exception
+	}
+
+	public void setEnum(String fieldName, Enum<?> value) throws Exception {
+		if ("status".equalsIgnoreCase(fieldName)) _status = (MadrigalMarketStatus) value;
+		if ("gwt".equalsIgnoreCase(fieldName)) _gwt = (MadrigalGatewayType) value;
+		else super.setEnum(fieldName, value); // throws exception
+	}
+
+	public String toString() {
+		return ((log.isDebugEnabled())?(super.toString()+" "):"")+"{"+_ecn+" "+_gwt+" "+_status+" "+Utils.formatMillis(_ts)+"}";
+	}
+}

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <bean name="madrigal.credentials" class="net.a_cappella.continuo.managed.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.madrigal.common.obj.CredentialsObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.madrigal.common.obj.CredentialsCoder" />
+    </bean>
+    <bean name="madrigal.ecn.credentials" class="net.a_cappella.continuo.managed.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.madrigal.common.obj.EcnCredentialsObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.madrigal.common.obj.EcnCredentialsCoder" />
+    </bean>
+    <bean name="madrigal.mid.feed" class="net.a_cappella.continuo.managed.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.madrigal.common.obj.MidFeedObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.madrigal.common.obj.MidFeedCoder" />
+    </bean>
+    <bean name="madrigal.market.status" class="net.a_cappella.continuo.managed.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.madrigal.common.obj.MarketStatusObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.madrigal.common.obj.MarketStatusCoder" />
+    </bean>
+    <bean name="madrigal.ecn.instrument" class="net.a_cappella.continuo.managed.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.madrigal.common.obj.EcnInstrumentObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.madrigal.common.obj.EcnInstrumentCoder" />
+    </bean>
+    <bean name="madrigal.ecn.instr.status" class="net.a_cappella.continuo.managed.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.madrigal.common.obj.EcnInstrStatusObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.madrigal.common.obj.EcnInstrStatusCoder" />
+    </bean>
+    <bean name="madrigal.ecn.price" class="net.a_cappella.continuo.managed.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.madrigal.common.obj.EcnPriceObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.madrigal.common.obj.EcnPriceCoder" />
+        <constructor-arg name="priority" value="CONFL" />
+    </bean>
+    <bean name="madrigal.ecn.imbalance" class="net.a_cappella.continuo.managed.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.madrigal.common.obj.EcnImbalanceObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.madrigal.common.obj.EcnImbalanceCoder" />
+    </bean>
+    <bean name="madrigal.order" class="net.a_cappella.continuo.managed.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.madrigal.common.obj.OrderObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.madrigal.common.obj.OrderCoder" />
+        <constructor-arg name="priority" value="HI_PRI" />
+    </bean>
+    <bean name="madrigal.finalize.order" class="net.a_cappella.continuo.managed.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.madrigal.common.obj.FinalizeOrderObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.madrigal.common.obj.FinalizeOrderCoder" />
+    </bean>
+    <bean name="madrigal.user.status" class="net.a_cappella.continuo.managed.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.madrigal.common.obj.UserStatusObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.madrigal.common.obj.UserStatusCoder" />
+    </bean>
+    <bean name="madrigal.ecn.user.status" class="net.a_cappella.continuo.managed.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.madrigal.common.obj.EcnUserStatusObj" />
+        <constructor-arg name="codClassName" value="net.a_cappella.madrigal.common.obj.EcnUserStatusCoder" />
+    </bean>
+
+</beans>

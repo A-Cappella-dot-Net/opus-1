@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+	<!-- references objects defined in madrigal-obj-insts.xml -->
+
+	<bean name="madrigal-obj-insts-list" class="java.util.ArrayList">
+        <constructor-arg index="0" type="java.util.Collection">
+            <list>
+                <ref bean="madrigal.credentials"/>
+                <ref bean="madrigal.ecn.credentials"/>
+                <ref bean="madrigal.mid.feed"/>
+                <ref bean="madrigal.market.status"/>
+                <ref bean="madrigal.ecn.instrument"/>
+                <ref bean="madrigal.ecn.instr.status"/>
+                <ref bean="madrigal.ecn.price"/>
+                <ref bean="madrigal.ecn.imbalance"/>
+                <ref bean="madrigal.order"/>
+                <ref bean="madrigal.finalize.order"/>
+                <ref bean="madrigal.user.status"/>
+                <ref bean="madrigal.ecn.user.status"/>
+            </list>
+        </constructor-arg>
+	</bean>
+
+	<bean class="allegro.managed.ObjectInitializer">
+        <property name="msgInstantiators" ref="madrigal-obj-insts-list"/>
+	</bean>
+
+</beans>
