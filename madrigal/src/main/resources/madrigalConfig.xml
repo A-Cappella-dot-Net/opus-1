@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <import resource="allegroBeans.xml"/>
+
+    <import resource="presto-msg-insts.xml"/>
+    <import resource="presto-msg-insts-list.xml"/>
+    <import resource="presto-msg-insts-pool.xml"/>
+
+    <import resource="presto-obj-insts.xml"/>
+    <import resource="presto-obj-insts-list.xml"/>
+    <import resource="presto-obj-insts-pool.xml"/>
+
+    <import resource="madrigal-obj-insts.xml"/>
+    <import resource="madrigal-obj-insts-list.xml"/>
+
+</beans>

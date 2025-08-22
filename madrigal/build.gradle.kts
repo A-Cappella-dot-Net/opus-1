@@ -6,12 +6,7 @@ plugins {
 val mockitoAgent = configurations.create("mockitoAgent")
 
 dependencies {
-    api(project(":presto")) {
-        exclude(group = "org.slf4j", module = "slf4j-log4j12")
-        exclude(group = "org.apache.logging.log4j", module = "log4j-core")
-    }
-
-    api(project(":cembalo")) {
+    api(project(":madrigal-aeron")) {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
         exclude(group = "org.apache.logging.log4j", module = "log4j-core")
     }
@@ -21,9 +16,14 @@ dependencies {
 
     implementation(libs.guava)
 
-    implementation(libs.spring.framework)
+    implementation(libs.trove)
 
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
+    testImplementation(platform(libs.cucumber.bom))
+    testImplementation("io.cucumber:cucumber-java")
+    testImplementation("io.cucumber:cucumber-junit-platform-engine")
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation("org.junit.platform:junit-platform-suite-engine")
     testImplementation("org.junit.jupiter:junit-jupiter")
 
     testImplementation(libs.mockito)
