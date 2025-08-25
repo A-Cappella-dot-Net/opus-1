@@ -49,7 +49,7 @@ public class CukeLhClient implements PrestoClient {
 		long execId = cukeEr.getExecId();
 
 		OrderObj er = _executionReportsMap.remove(execId);
-		assertNotNull(er, "No ERs found for execId "+execId + ". Available execIds: " + Arrays.stream(_executionReportsMap.keys()).boxed().collect(Collectors.toList()));
+		assertNotNull(er, "No ERs found for execId "+execId + ". Available execIds: " + Arrays.stream(_executionReportsMap.keys()).boxed().toList());
 		assertEquals(cukeEr, CukeOrder.adapt(er));
 	}
 
@@ -68,31 +68,31 @@ public class CukeLhClient implements PrestoClient {
     }
 
     @Override
-    public long snapSubscribe(String sql, ISubscriptionListener subListener) {
+    public long snapSubscribe(String sql, ISubscriptionListener subListener) throws Exception {
     	return _sns.snapSubscribe(sql, subListener);
     }
     @Override
-    public long snapSubscribe(String sql, ISubscriptionListener subListener, IMergeManager mergeManager) {
+    public long snapSubscribe(String sql, ISubscriptionListener subListener, IMergeManager mergeManager) throws Exception {
     	return _sns.snapSubscribe(sql, subListener, mergeManager);
     }
     @Override
-    public long snapSubscribe(SqlParserResult sqlComps, ISubscriptionListener subListener) {
+    public long snapSubscribe(SqlParserResult sqlComps, ISubscriptionListener subListener) throws Exception {
     	return _sns.snapSubscribe(sqlComps, subListener);
     }
     @Override
-    public long snap(String sql, ISubscriptionListener subListener) {
+    public long snap(String sql, ISubscriptionListener subListener) throws Exception {
     	return _sns.snap(sql, subListener);
     }
     @Override
-    public long snap(SqlParserResult sqlComps, ISubscriptionListener subListener) {
+    public long snap(SqlParserResult sqlComps, ISubscriptionListener subListener) throws Exception {
     	return _sns.snap(sqlComps, subListener);
     }
     @Override
-    public long subscribe(String sql, ISubscriptionListener subListener) {
+    public long subscribe(String sql, ISubscriptionListener subListener)throws Exception  {
     	return _sns.subscribe(sql, subListener);
     }
     @Override
-    public long subscribe(SqlParserResult sqlComps, ISubscriptionListener subListener) {
+    public long subscribe(SqlParserResult sqlComps, ISubscriptionListener subListener) throws Exception {
     	return _sns.subscribe(sqlComps, subListener);
     }
     @Override

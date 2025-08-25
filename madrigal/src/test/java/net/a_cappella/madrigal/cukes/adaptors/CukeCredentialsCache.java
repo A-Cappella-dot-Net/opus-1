@@ -9,7 +9,7 @@ import java.util.Map;
 public class CukeCredentialsCache implements ICredentialsCache {
     protected Map<String, CukeEcnCredentials> _ecnCredentialsCache = new HashMap<>(); // <uid, EcnCredentialsObj>
     {
-    	_ecnCredentialsCache.put("uid", new CukeEcnCredentials("uid", "ecn", "ecnUid"));
+        _ecnCredentialsCache.put("uid", new CukeEcnCredentials("uid", "ecn", "ecnUid", "ecnPwd"));
     }
 
     @Override

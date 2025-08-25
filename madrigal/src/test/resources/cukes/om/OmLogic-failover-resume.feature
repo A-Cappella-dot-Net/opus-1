@@ -185,7 +185,7 @@ Scenario: 1YA-1: After failover order picks up from where it left off and fills 
   When trader logging into exchange triggers activation of all trader orders
   Then one or more execution reports are sent to client for parent order
 	| reqType | status | ordId | ver | fillId | ecnOrdId | execId | timeInForce | side | price | qty  | shownQty | lastQty | lastPx | leavesQty | cumQty | avgPx | text | ftDone | done  |
-	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    | 0  .0 |      | false  | false |
+	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    |   0.0 |      | false  | false |
 	| ADD     | FILL   | 00001 | 0   |      1 | x0-00001 | 1002   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 2.0     | 102.0  | 8.0       | 2.0    | 102.0 |      | false  | false |
   And one or more children orders are sent to exchange
 	| reqType | clOrdID   | side | qty  | shownQty | px    | tif |
@@ -218,7 +218,7 @@ Scenario: 1YA-2: After failover order picks up from where it left off and fills 
   When trader logging into exchange triggers activation of all trader orders
   Then one or more execution reports are sent to client for parent order
 	| reqType | status | ordId | ver | fillId | ecnOrdId | execId | timeInForce | side | price | qty  | shownQty | lastQty | lastPx | leavesQty | cumQty | avgPx | text | ftDone | done  |
-	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    | 0  .0 |      | false  | false |
+	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    |   0.0 |      | false  | false |
 	| ADD     | FILL   | 00001 | 0   |      1 | x0-00001 | 1002   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 2.0     | 102.0  | 8.0       | 2.0    | 102.0 |      | false  | false |
   And one or more children orders are sent to exchange
 	| reqType | clOrdID   | side | qty  | shownQty | px    | tif |
@@ -258,7 +258,7 @@ Scenario: 1YB-1: Shortcut mode. RWT is fully FILLed for the remainder of the siz
   When trader logging into exchange triggers activation of all trader orders
   Then one or more execution reports are sent to client for parent order
 	| reqType | status | ordId | ver | fillId | ecnOrdId | execId | timeInForce | side | price | qty  | shownQty | lastQty | lastPx | leavesQty | cumQty | avgPx | text | ftDone | done  |
-	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    | 0  .0 |      | false  | false |
+	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    |   0.0 |      | false  | false |
 	| ADD     | FILL   | 00001 | 0   |      1 | x0-00001 | 1002   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 6.0     | 102.0  | 4.0       | 6.0    | 102.0 |      | false  | false |
   And one or more children orders are sent to exchange
 	| reqType | clOrdID   | side | qty  | shownQty | px    | tif |
@@ -296,7 +296,7 @@ Scenario: 1YB-2: Non Shortcut mode. RWT is fully FILLed for the remainder of the
   When trader logging into exchange triggers activation of all trader orders
   Then one or more execution reports are sent to client for parent order
 	| reqType | status | ordId | ver | fillId | ecnOrdId | execId | timeInForce | side | price | qty  | shownQty | lastQty | lastPx | leavesQty | cumQty | avgPx | text | ftDone | done  |
-	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    | 0  .0 |      | false  | false |
+	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    |   0.0 |      | false  | false |
 	| ADD     | FILL   | 00001 | 0   |      1 | x0-00001 | 1002   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 6.0     | 102.0  | 4.0       | 6.0    | 102.0 |      | false  | false |
   And one or more children orders are sent to exchange
 	| reqType | clOrdID   | side | qty  | shownQty | px    | tif |
@@ -340,7 +340,7 @@ Scenario Outline: 1YB-3: Shortcut mode. RWT quantity is less than / equal to the
   Then no child order is sent to exchange
   And one or more execution reports are sent to client for parent order
 	| reqType | status      | ordId | ver | fillId | ecnOrdId | execId | timeInForce | side | price | qty      | shownQty | lastQty | lastPx | leavesQty      | cumQty | avgPx | text      | ftDone | done  |
-	| ADD     | ACK         | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0     | 10.0     | 0.0     | NaN    | 10.0           | 0.0    | 0  .0 |           | false  | false |
+	| ADD     | ACK         | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0     | 10.0     | 0.0     | NaN    | 10.0           | 0.0    |   0.0 |           | false  | false |
 	| ADD     | FILL        | 00001 | 0   |      1 | x0-00001 | 1002   | DAY         | Buy  | 102.0 | 10.0     | 10.0     | 6.0     | 102.0  | 4.0            | 6.0    | 102.0 |           | false  | false |
 	| RWT     | <rwtStatus> | 00001 | 1   |        |          | 1003   | DAY         | Buy  | 102.1 | <rwtQty> | <rwtQty> | 0.0     | NaN    | <nakLeavesQty> | 6.0    | 102.0 | <rwtText> | <done> | <done> |
 
@@ -367,7 +367,7 @@ Scenario: 1YB-4: Non Shortcut mode. Strict RWT. RWT quantity is less than the qu
   When trader logging into exchange triggers activation of all trader orders
   Then one or more execution reports are sent to client for parent order
 	| reqType | status | ordId | ver | fillId | ecnOrdId | execId | timeInForce | side | price | qty  | shownQty | lastQty | lastPx | leavesQty | cumQty | avgPx | text | ftDone | done  |
-	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    | 0  .0 |      | false  | false |
+	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    |   0.0 |      | false  | false |
 	| ADD     | FILL   | 00001 | 0   |      1 | x0-00001 | 1002   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 6.0     | 102.0  | 4.0       | 6.0    | 102.0 |      | false  | false |
   And one or more children orders are sent to exchange
 	| reqType | clOrdID   | side | qty  | shownQty | px    | tif |
@@ -407,7 +407,7 @@ Scenario: 1YB-5: Non Shortcut mode. Lax RWT. RWT quantity is less than the quant
   When trader logging into exchange triggers activation of all trader orders
   Then one or more execution reports are sent to client for parent order
 	| reqType | status | ordId | ver | fillId | ecnOrdId | execId | timeInForce | side | price | qty  | shownQty | lastQty | lastPx | leavesQty | cumQty | avgPx | text | ftDone | done  |
-	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    | 0  .0 |      | false  | false |
+	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    |   0.0 |      | false  | false |
 	| ADD     | FILL   | 00001 | 0   |      1 | x0-00001 | 1002   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 6.0     | 102.0  | 4.0       | 6.0    | 102.0 |      | false  | false |
   And one or more children orders are sent to exchange
 	| reqType | clOrdID   | side | qty  | shownQty | px    | tif |
@@ -446,7 +446,7 @@ Scenario: 1YB-6: Non Shortcut mode. Lax RWT. RWT quantity is less than the quant
   When trader logging into exchange triggers activation of all trader orders
   Then one or more execution reports are sent to client for parent order
 	| reqType | status | ordId | ver | fillId | ecnOrdId | execId | timeInForce | side | price | qty  | shownQty | lastQty | lastPx | leavesQty | cumQty | avgPx | text | ftDone | done  |
-	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    | 0  .0 |      | false  | false |
+	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    |   0.0 |      | false  | false |
 	| ADD     | FILL   | 00001 | 0   |      1 | x0-00001 | 1002   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 6.0     | 102.0  | 4.0       | 6.0    | 102.0 |      | false  | false |
   And one or more children orders are sent to exchange
 	| reqType | clOrdID   | side | qty  | shownQty | px    | tif |
@@ -495,7 +495,7 @@ Scenario: 1YC-1: Non Shortcut Mode. DEL is ACKed.
   When trader logging into exchange triggers activation of all trader orders
   Then one or more execution reports are sent to client for parent order
 	| reqType | status | ordId | ver | fillId | ecnOrdId | execId | timeInForce | side | price | qty  | shownQty | lastQty | lastPx | leavesQty | cumQty | avgPx | text | ftDone | done  |
-	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    | 0  .0 |      | false  | false |
+	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    |   0.0 |      | false  | false |
 	| ADD     | FILL   | 00001 | 0   |      1 | x0-00001 | 1002   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 2.0     | 102.0  | 8.0       | 2.0    | 102.0 |      | false  | false |
   And one or more children orders are sent to exchange
 	| reqType | clOrdID   | side | qty  | shownQty | px    | tif |
@@ -529,7 +529,7 @@ Scenario: 1YC-2: Shortcut Mode. DEL is ACKed.
   When trader logging into exchange triggers activation of all trader orders
   Then one or more execution reports are sent to client for parent order
 	| reqType | status | ordId | ver | fillId | ecnOrdId | execId | timeInForce | side | price | qty  | shownQty | lastQty | lastPx | leavesQty | cumQty | avgPx | text | ftDone | done  |
-	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    | 0  .0 |      | false  | false |
+	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    |   0.0 |      | false  | false |
 	| ADD     | FILL   | 00001 | 0   |      1 | x0-00001 | 1002   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 2.0     | 102.0  | 8.0       | 2.0    | 102.0 |      | false  | false |
   | DEL     | ACK    | 00001 | 1   |        |          | 1003   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 8.0       | 2.0    | 102.0 |      | true   | true  |
 
@@ -547,7 +547,7 @@ Scenario: 1ZA: Order continues from where it left off.
   When trader logging into exchange triggers activation of all trader orders
   Then one or more execution reports are sent to client for parent order
 	| reqType | status | ordId | ver | fillId | ecnOrdId | execId | timeInForce | side | price | qty  | shownQty | lastQty | lastPx | leavesQty | cumQty | avgPx | text | ftDone | done  |
-	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    | 0  .0 |      | false  | false |
+	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    |   0.0 |      | false  | false |
 	| ADD     | FILL   | 00001 | 0   |      1 | x0-00001 | 1002   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 10.0    | 102.0  | 0.0       | 10.0   | 102.0 |      | true   | true  |
   Then no child order is sent to exchange
 
@@ -565,7 +565,7 @@ Scenario: 1ZC: DEL is NAKed.
   When trader logging into exchange triggers activation of all trader orders
   Then one or more execution reports are sent to client for parent order
 	| reqType | status | ordId | ver | fillId | ecnOrdId | execId | timeInForce | side | price | qty  | shownQty | lastQty | lastPx | leavesQty | cumQty | avgPx | text                    | ftDone | done  |
-	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    | 0  .0 |                         | false  | false |
+	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    |   0.0 |                         | false  | false |
 	| ADD     | FILL   | 00001 | 0   |      1 | x0-00001 | 1002   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 10.0    | 102.0  | 0.0       | 10.0   | 102.0 |                         | true   | true  |
 	| DEL     | NAK    | 00001 | 1   |        |          | 1003   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 0.0       | 10.0   | 102.0 | Order already completed | false  | true  |
   Then no child order is sent to exchange
@@ -589,7 +589,7 @@ Scenario Outline: 1ZD: Shortcut mode. RWT and DEL are NAKed. DEL goal is the las
   When trader logging into exchange triggers activation of all trader orders
   Then one or more execution reports are sent to client for parent order
 	| reqType | status | ordId | ver | fillId | ecnOrdId | execId | timeInForce | side | price | qty  | shownQty | lastQty | lastPx | leavesQty | cumQty | avgPx | text                    | ftDone | done  |
-	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    | 0  .0 |                         | false  | false |
+	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    |   0.0 |                         | false  | false |
 	| ADD     | FILL   | 00001 | 0   |      1 | x0-00001 | 1002   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 10.0    | 102.0  | 0.0       | 10.0   | 102.0 |                         | true   | true  |
 	| RWT     | NAK    | 00001 | 1   |        |          | 1003   | DAY         | Buy  | 102.1 | 12.0 | 12.0     | 0.0     | NaN    | 2.0       | 10.0   | 102.0 | <nakText>               | false  | true  |
 	| DEL     | NAK    | 00001 | 2   |        |          | 1004   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 0.0       | 10.0   | 102.0 | Order already completed | false  | true  |

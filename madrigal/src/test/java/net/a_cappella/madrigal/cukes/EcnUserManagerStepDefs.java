@@ -66,7 +66,7 @@ public class EcnUserManagerStepDefs {
 	}
 
 	@When("^ecn user managers are started$")
-	public void ecnUserManagersAreStarted(List<CukeAppInfo> appInfos) {
+	public void ecnUserManagersAreStarted(List<CukeAppInfo> appInfos) throws Exception {
 		for (CukeAppInfo appInfo : appInfos) {
 			assertNotNull(_managersAndPublishedObjects);
 			int instance = appInfo.getInstance();

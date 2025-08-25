@@ -96,7 +96,7 @@ Scenario: 1YA: An Un-ACKed ADD and an un-processed partial FILL. The order is AC
   When trader logging into exchange triggers activation of all trader orders
   Then one or more execution reports are sent to client for parent order
 	| reqType | status | ordId | ver | fillId | ecnOrdId | execId | timeInForce | side | price | qty  | shownQty | lastQty | lastPx | leavesQty | cumQty | avgPx | text                    | ftDone | done  |
-	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    | 0  .0 |                         | false  | false |
+	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    |   0.0 |                         | false  | false |
 	| ADD     | FILL   | 00001 | 0   |      2 | x0-00001 | 1002   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 2.0     | 102.0  | 8.0       | 2.0    | 102.0 |                         | false  | false |
 	| ADD     | CXL    | 00001 | 0   |        | x0-00001 | 1003   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 8.0       | 2.0    | 102.0 | cancel on failover      | true   | true  |
 
@@ -114,7 +114,7 @@ Scenario: 1YB: The ADD ACK and partial FILL coming from exchange was missed due 
   When trader logging into exchange triggers activation of all trader orders
   Then one or more execution reports are sent to client for parent order
 	| reqType | status | ordId | ver | fillId | ecnOrdId | execId | timeInForce | side | price | qty  | shownQty | lastQty | lastPx | leavesQty | cumQty | avgPx | text                    | ftDone | done  |
-	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    | 0  .0 |                         | false  | false |
+	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    |   0.0 |                         | false  | false |
 	| ADD     | FILL   | 00001 | 0   |      2 | x0-00001 | 1002   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 2.0     | 102.0  | 8.0       | 2.0    | 102.0 |                         | false  | false |
 	| ADD     | CXL    | 00001 | 0   |        | x0-00001 | 1003   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 8.0       | 2.0    | 102.0 | cancel on failover      | true   | true  |
 	| RWT     | NAK    | 00001 | 1   |        |          | 1004   | DAY         | Buy  | 102.1 | 12.0 | 12.0     | 0.0     | NaN    | 10.0      | 2.0    | 102.0 | Order already completed | false  | true  |
@@ -138,7 +138,7 @@ Scenario Outline: 1YD: The ADD ACK and partial FILL coming from exchange was mis
   When trader logging into exchange triggers activation of all trader orders
   Then one or more execution reports are sent to client for parent order
 	| reqType | status | ordId | ver | fillId | ecnOrdId | execId | timeInForce | side | price | qty  | shownQty | lastQty | lastPx | leavesQty | cumQty | avgPx | text                    | ftDone | done  |
-	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    | 0  .0 |                         | false  | false |
+	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    |   0.0 |                         | false  | false |
 	| ADD     | FILL   | 00001 | 0   |      2 | x0-00001 | 1002   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 2.0     | 102.0  | 8.0       | 2.0    | 102.0 |                         | false  | false |
 	| ADD     | CXL    | 00001 | 0   |        | x0-00001 | 1003   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 8.0       | 2.0    | 102.0 | cancel on failover      | true   | true  |
 	| RWT     | NAK    | 00001 | 1   |        |          | 1004   | DAY         | Buy  | 102.1 | 12.0 | 12.0     | 0.0     | NaN    | 10.0      | 2.0    | 102.0 | <text>                  | false  | true  |
@@ -179,7 +179,7 @@ Scenario: 1ZC: Un-ACKed ADD and DEL, and an un-processed full FILL. The order is
   When trader logging into exchange triggers activation of all trader orders
   Then one or more execution reports are sent to client for parent order
 	| reqType | status | ordId | ver | fillId | ecnOrdId | execId | timeInForce | side | price | qty  | shownQty | lastQty | lastPx | leavesQty | cumQty | avgPx | text                    | ftDone | done  |
-	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    | 0  .0 |                         | false  | false |
+	| ADD     | ACK    | 00001 | 0   |        |          | 1001   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 10.0      | 0.0    |   0.0 |                         | false  | false |
 	| ADD     | FILL   | 00001 | 0   |      2 | x0-00001 | 1002   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 10.0    | 102.0  | 0.0       | 10.0   | 102.0 |                         | true   | true  |
 	| DEL     | NAK    | 00001 | 1   |        |          | 1003   | DAY         | Buy  | 102.0 | 10.0 | 10.0     | 0.0     | NaN    | 0.0       | 10.0   | 102.0 | Order already completed | false  | true  |
 

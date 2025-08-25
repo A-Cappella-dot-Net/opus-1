@@ -66,7 +66,7 @@ public class MadrigalUserManagerStepDefs {
 	}
 
 	@When("^user manager services are started$")
-	public void userManagerServicesAreStarted(List<CukeAppInfo> appInfos) {
+    public void userManagerServicesAreStarted(List<CukeAppInfo> appInfos) throws Exception {
 		for (CukeAppInfo appInfo : appInfos) {
 			assertNotNull(_servicesAndPublishedObjects);
 			int instance = appInfo.getInstance();

@@ -1,12 +1,18 @@
 package net.a_cappella.madrigal.cukes.adaptors.um;
 
+import io.cucumber.java.DataTableType;
 import net.a_cappella.continuo.collective.AppInfo;
 
-public class CukeAppInfo {
-	private final short instance;
+import java.util.Map;
 
-	public CukeAppInfo(short instance) {
-		this.instance = instance;
+public class CukeAppInfo {
+	private short instance;
+
+	@DataTableType
+	public static CukeAppInfo dttCukeAppInfo(Map<String, String> entry) {
+		CukeAppInfo cai = new CukeAppInfo();
+		cai.instance = Short.parseShort(entry.get("instance"));
+		return cai;
 	}
 
 	public short getInstance() {

@@ -1,24 +1,32 @@
 package net.a_cappella.madrigal.cukes.adaptors.um;
 
+import io.cucumber.java.DataTableType;
 import net.a_cappella.madrigal.common.constants.MadrigalLogOp;
 import net.a_cappella.madrigal.common.constants.MadrigalUserStatus;
 import net.a_cappella.madrigal.common.obj.UserStatusObj;
 
-public class CukeUserStatus {
-	private final String uid;
-	private final String clId;
-	private final String op;
-	private final String status;
-	private final String reqStatus;
-	private final String text;
+import java.util.Map;
 
-	public CukeUserStatus(String uid, String clId, String op, String status, String reqStatus, String text) {
-		this.uid = uid;
-		this.clId = clId;
-		this.op = op;
-		this.status = status;
-		this.reqStatus = reqStatus;
-		this.text = text;
+import static com.google.common.base.Strings.nullToEmpty;
+
+public class CukeUserStatus {
+	private String uid;
+	private String clId;
+	private String op;
+	private String status;
+	private String reqStatus;
+	private String text;
+
+	@DataTableType
+	public static CukeUserStatus cukeUserStatusEntry(Map<String, String> entry) {
+		CukeUserStatus cus = new CukeUserStatus();
+		cus.uid = entry.get("uid");
+		cus.clId = entry.get("clId");
+		cus.op = entry.get("op");
+		cus.status = entry.get("status");
+		cus.reqStatus = entry.get("reqStatus");
+		cus.text = nullToEmpty(entry.get("text"));
+		return cus;
 	}
 
 	public String getUid() {

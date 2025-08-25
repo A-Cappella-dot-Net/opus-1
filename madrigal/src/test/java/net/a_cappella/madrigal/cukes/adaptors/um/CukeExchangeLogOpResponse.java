@@ -1,14 +1,21 @@
 package net.a_cappella.madrigal.cukes.adaptors.um;
 
-public class CukeExchangeLogOpResponse {
-	private final String ecnUid;
-	private final String status;
-	private final String text;
+import io.cucumber.java.DataTableType;
 
-	public CukeExchangeLogOpResponse(String ecnUid, String status, String text) {
-		this.ecnUid = ecnUid;
-		this.status = status;
-		this.text = text;
+import java.util.Map;
+
+public class CukeExchangeLogOpResponse {
+	private String ecnUid;
+	private String status;
+	private String text;
+
+	@DataTableType
+	public static CukeExchangeLogOpResponse dttCukeExchangeLogOpResponse(Map<String, String> entry) {
+		CukeExchangeLogOpResponse resp = new CukeExchangeLogOpResponse();
+		resp.ecnUid = entry.get("ecnUid");
+		resp.status = entry.get("status");
+		resp.text = entry.get("text");
+		return resp;
 	}
 
 	public String getEcnUid() {

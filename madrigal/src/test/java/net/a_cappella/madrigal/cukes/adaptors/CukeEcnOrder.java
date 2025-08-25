@@ -1,9 +1,14 @@
 package net.a_cappella.madrigal.cukes.adaptors;
 
+import io.cucumber.java.DataTableType;
 import net.a_cappella.madrigal.common.constants.MadrigalOrdType;
 import net.a_cappella.madrigal.common.constants.MadrigalReqType;
 import net.a_cappella.madrigal.common.constants.MadrigalSide;
 import net.a_cappella.madrigal.common.constants.MadrigalTimeInForce;
+
+import java.util.Map;
+
+import static net.a_cappella.madrigal.CukeUtils.*;
 
 public class CukeEcnOrder {
     private final MadrigalReqType reqType; // {ADD,DEL,RWT}
@@ -19,7 +24,25 @@ public class CukeEcnOrder {
     private String ecnOrdId;
 	private String origClOrdId;
 
-    public CukeEcnOrder(
+	@DataTableType
+	public static CukeEcnOrder cukeEcnOrder(Map<String, String> entry) {
+		return new CukeEcnOrder(
+				parseMadrigalReqType(entry.get("reqType")), // {ADD,DEL,RWT}
+				entry.get("ecnUid"),
+				entry.get("clOrdID"),
+				entry.get("symbol"),
+				parseMadrigalOrdType(entry.get("ordType")),
+				parseMadrigalTimeInForce(entry.get("tif")),
+				MadrigalSide.valueOf(entry.get("side")),
+				parseDoubleNaN(entry.get("px")),
+				parseDouble(entry.get("qty")),
+				parseDoubleNaN(entry.get("shownQty")),
+				entry.get("ecnOrdId"),
+				entry.get("origClOrdId")
+		);
+	}
+
+	public CukeEcnOrder(
             MadrigalReqType reqType, // {ADD,DEL,RWT}
             String ecnUid,
             String clOrdID,

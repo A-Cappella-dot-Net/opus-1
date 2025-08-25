@@ -1,15 +1,21 @@
 package net.a_cappella.madrigal.cukes.adaptors.um;
 
+import io.cucumber.java.DataTableType;
 import net.a_cappella.presto.ft.constants.FtMsgOp;
 import net.a_cappella.presto.obj.FtMemberObj;
 
-public class CukeFtMember {
-	private final int instance;
-	private final String action;
+import java.util.Map;
 
-	public CukeFtMember(int instance, String action) {
-		this.instance = instance;
-		this.action = action;
+public class CukeFtMember {
+	private int instance;
+	private String action;
+
+	@DataTableType
+	public static CukeFtMember cukeFtMemberEntry(Map<String, String> entry) {
+		CukeFtMember cfm = new CukeFtMember();
+		cfm.instance = Integer.parseInt(entry.get("instance"));
+		cfm.action = entry.get("action");
+		return cfm;
 	}
 
 	public int getInstance() {

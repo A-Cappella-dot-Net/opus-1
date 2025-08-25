@@ -1,25 +1,31 @@
 package net.a_cappella.madrigal.cukes.adaptors;
 
+import io.cucumber.java.DataTableType;
 import net.a_cappella.madrigal.common.obj.EcnPriceObj;
+
+import java.util.Map;
+
+import static net.a_cappella.madrigal.CukeUtils.parseDouble;
+import static net.a_cappella.madrigal.CukeUtils.parseDoubleNaN;
 
 public class CukeEcnPrice {
 	private String ecn;
 	private String instrId;
 
-	private final double bid0 = Double.NaN;
-	private final double bidSize0 = Double.NaN;
-	private final double ask0 = Double.NaN;
-	private final double askSize0 = Double.NaN;
+	private double bid0;
+	private double bidSize0;
+	private double ask0;
+	private double askSize0;
 
-	private final double bid1 = Double.NaN;
-	private final double bidSize1 = Double.NaN;
-	private final double ask1 = Double.NaN;
-	private final double askSize1 = Double.NaN;
+	private double bid1;
+	private double bidSize1;
+	private double ask1;
+	private double askSize1;
 
-	private final double bid2 = Double.NaN;
-	private final double bidSize2 = Double.NaN;
-	private final double ask2 = Double.NaN;
-	private final double askSize2 = Double.NaN;
+	private double bid2;
+	private double bidSize2;
+	private double ask2;
+	private double askSize2;
 
 	public String getEcn() {
 		return ecn;
@@ -62,6 +68,26 @@ public class CukeEcnPrice {
 	}
 	public double getAskSize2() {
 		return askSize2;
+	}
+
+	@DataTableType
+	public static CukeEcnPrice dttCukeEcnPrice(Map<String, String> entry) {
+		CukeEcnPrice cep = new CukeEcnPrice();
+		cep.ecn = entry.get("ecn");
+		cep.instrId = entry.get("instrId");
+		cep.bid0 = parseDoubleNaN(entry.get("bid0"));
+		cep.bidSize0 = parseDouble(entry.get("bidSize0"));
+		cep.ask0 = parseDoubleNaN(entry.get("ask0"));
+		cep.askSize0 = parseDouble(entry.get("askSize0"));
+		cep.bid1 = parseDoubleNaN(entry.get("bid1"));
+		cep.bidSize1 = parseDouble(entry.get("bidSize1"));
+		cep.ask1 = parseDoubleNaN(entry.get("ask1"));
+		cep.askSize1 = parseDouble(entry.get("askSize1"));
+		cep.bid2 = parseDoubleNaN(entry.get("bid2"));
+		cep.bidSize2 = parseDouble(entry.get("bidSize2"));
+		cep.ask2 = parseDoubleNaN(entry.get("ask2"));
+		cep.askSize2 = parseDouble(entry.get("askSize2"));
+		return cep;
 	}
 
 	public EcnPriceObj adapt() {
@@ -185,5 +211,4 @@ public class CukeEcnPrice {
 			return false;
 		return true;
 	}
-
 }

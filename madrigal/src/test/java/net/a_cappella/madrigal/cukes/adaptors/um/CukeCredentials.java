@@ -1,16 +1,22 @@
 package net.a_cappella.madrigal.cukes.adaptors.um;
 
+import io.cucumber.java.DataTableType;
 import net.a_cappella.madrigal.common.obj.CredentialsObj;
 
-public class CukeCredentials {
-	private final short instance;
-	private final String uid;
-	private final String pwd;
+import java.util.Map;
 
-	public CukeCredentials(short instance, String uid, String pwd) {
-		this.instance = instance;
-		this.uid = uid;
-		this.pwd = pwd;
+public class CukeCredentials {
+	private short instance;
+	private String uid;
+	private String pwd;
+
+	@DataTableType
+	public static CukeCredentials dttCukeCredentials(Map<String, String> entry) {
+		CukeCredentials cc = new CukeCredentials();
+		cc.instance = Short.parseShort(entry.get("instance"));
+		cc.uid = entry.get("uid");
+		cc.pwd = entry.get("pwd");
+		return cc;
 	}
 
 	public short getInstance() {

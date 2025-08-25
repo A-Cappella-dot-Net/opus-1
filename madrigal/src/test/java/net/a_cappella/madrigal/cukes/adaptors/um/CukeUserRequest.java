@@ -1,23 +1,29 @@
 package net.a_cappella.madrigal.cukes.adaptors.um;
 
+import io.cucumber.java.DataTableType;
 import net.a_cappella.madrigal.common.constants.MadrigalLogOp;
 import net.a_cappella.madrigal.common.obj.UserStatusObj;
 
-public class CukeUserRequest {
-	private final String uid;
-	private final String pwd;
-	private final String clId;
-	private final String op;
-	private final boolean rejectIfLoggedIn;
-	private final boolean forceLogout;
+import java.util.Map;
 
-	public CukeUserRequest(String uid, String pwd, String clId, String op, boolean rejectIfLoggedIn, boolean forceLogout) {
-		this.uid = uid;
-		this.pwd = pwd;
-		this.clId = clId;
-		this.op = op;
-		this.rejectIfLoggedIn = rejectIfLoggedIn;
-		this.forceLogout = forceLogout;
+public class CukeUserRequest {
+	private String uid;
+	private String pwd;
+	private String clId;
+	private String op;
+	private boolean rejectIfLoggedIn;
+	private boolean forceLogout;
+
+	@DataTableType
+	public CukeUserRequest dttCukeUserRequest(Map<String, String> entry) {
+		CukeUserRequest cur = new CukeUserRequest();
+		cur.uid = entry.get("uid");
+		cur.pwd = entry.get("pwd");
+		cur.clId = entry.get("clId");
+		cur.op = entry.get("op");
+		cur.rejectIfLoggedIn = Boolean.parseBoolean(entry.get("rejectIfLoggedIn"));
+		cur.forceLogout = Boolean.parseBoolean(entry.get("forceLogout"));
+		return cur;
 	}
 
 	public String getUid() {

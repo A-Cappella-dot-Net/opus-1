@@ -1,9 +1,22 @@
 package net.a_cappella.madrigal.cukes.adaptors.um;
 
+import io.cucumber.java.DataTableType;
+
+import java.util.Map;
+
 public class CukeExchangeLogOp {
 	private final String op;
 	private final String uid;
 	private final String pwd;
+
+	@DataTableType
+	public static CukeExchangeLogOp dttCukeExchangeLogOp(Map<String, String> entry) {
+		return new CukeExchangeLogOp(
+				entry.get("op"),
+				entry.get("uid"),
+				entry.get("pwd")
+		);
+	}
 
 	public CukeExchangeLogOp(String op, String uid, String pwd) {
 		this.op = op;

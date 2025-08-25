@@ -1,7 +1,12 @@
 package net.a_cappella.madrigal.cukes.adaptors;
 
+import io.cucumber.java.DataTableType;
 import net.a_cappella.madrigal.common.constants.MadrigalActionOnFailover;
 import net.a_cappella.madrigal.om.logic.DelRetryType;
+
+import java.util.Map;
+
+import static net.a_cappella.madrigal.CukeUtils.*;
 
 public class OrderManagerServiceConfig {
 	private DelRetryType delRetryType;
@@ -13,27 +18,20 @@ public class OrderManagerServiceConfig {
 	private Boolean strictRwt;
 	private MadrigalActionOnFailover actionOnFailover;
 
-    public OrderManagerServiceConfig() {
-    }
+	@DataTableType
+	public static OrderManagerServiceConfig dttOrderManagerServiceConfig(Map<String, String> entry) {
+		OrderManagerServiceConfig omc = new OrderManagerServiceConfig();
 
-    public OrderManagerServiceConfig(
-            DelRetryType delRetryType,
-            Integer delRetryConstant,
-            Boolean nativeIocSupported,
-            Boolean conflateRequests,
-            Boolean processOnePendingRequestAtATime,
-            Boolean useDelAddForPriceChange,
-            Boolean strictRwt,
-            MadrigalActionOnFailover actionOnFailover
-    ) {
-        if (delRetryType != null) this.delRetryType = delRetryType;
-        this.delRetryConstant = delRetryConstant;
-        this.nativeIocSupported = nativeIocSupported;
-        this.conflateRequests = conflateRequests;
-        this.processOnePendingRequestAtATime = processOnePendingRequestAtATime;
-        this.useDelAddForPriceChange = useDelAddForPriceChange;
-        this.strictRwt = strictRwt;
-        this.actionOnFailover = actionOnFailover;
+		omc.delRetryType = DelRetryType.getEnumFromName(entry.get("delRetryType"));
+		omc.delRetryConstant = parseInteger(entry.get("delRetryConstant"));
+		omc.nativeIocSupported = parseBoolean(entry.get("nativeIocSupported"));
+		omc.conflateRequests = parseBoolean(entry.get("conflateRequests"));
+		omc.processOnePendingRequestAtATime = parseBoolean(entry.get("processOnePendingRequestAtATime"));
+		omc.useDelAddForPriceChange = parseBoolean(entry.get("useDelAddForPriceChange"));
+		omc.strictRwt = parseBoolean(entry.get("strictRwt"));
+		omc.actionOnFailover = parseMadrigalActionOnFailover(entry.get("actionOnFailover"));
+
+		return omc;
     }
 
 	public DelRetryType getDelRetryType(DelRetryType defaultValue) {

@@ -1,5 +1,6 @@
 package net.a_cappella.madrigal.cukes.adaptors;
 
+import io.cucumber.java.DataTableType;
 import net.a_cappella.continuo.utils.Utils;
 import net.a_cappella.madrigal.ICredentialsCache;
 import net.a_cappella.madrigal.IInstrumentCache;
@@ -11,6 +12,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Date;
 import java.util.Map;
 
+import static com.google.common.base.Strings.nullToEmpty;
+import static net.a_cappella.madrigal.CukeUtils.*;
 import static net.a_cappella.madrigal.common.constants.MadrigalMode.REQUEST;
 import static net.a_cappella.madrigal.common.constants.MadrigalReqType.*;
 
@@ -64,7 +67,56 @@ public class CukeOrder {
 
     }
 
-    public CukeOrder(
+	@DataTableType
+	public static CukeOrder dttCukeOrder(Map<String, String> entry) {
+		CukeOrder co = new CukeOrder();
+		co.mode = parseMadrigalMode(entry.get("mode")); // {REQUEST,RESPONSE}
+		co.reqType = MadrigalReqType.valueOf(entry.get("reqType")); // {ADD,DEL,RWT}
+
+		// invariants
+		co.ecn = entry.get("ecn");
+		co.ordId = entry.get("ordId");
+		co.uid = entry.get("uid");
+		co.ecnUid = entry.get("ecnUid");
+		co.instrId = entry.get("instrId");
+		co.ecnInstrId = entry.get("ecnInstrId");
+		co.ordType = parseMadrigalOrdType(entry.get("ordType"));
+		co.timeInForce = parseMadrigalTimeInForce(entry.get("timeInForce"));
+		co.side = parseMadrigalSide(entry.get("side"));
+
+		// ids
+		co.ver = parseVer(entry.get("ver"));
+		co.clOrdId = entry.get("clOrdId");
+
+		// requestGoal
+		co.price = parseDoubleNaN(entry.get("price"));
+		co.qty = parseDouble(entry.get("qty"));
+		co.shownQty = parseDouble(entry.get("shownQty"));
+		co.randomMax = parseInt(entry.get("randomMax"));
+
+		// er fields
+		co.fillId = nullToEmpty(entry.get("fillId"));
+		co.execId = parseLong(entry.get("execId"));
+		co.ecnOrdId = nullToEmpty(entry.get("ecnOrdId"));
+		co.status = parseMadrigalOrdStatus(entry.get("status"));
+		co.text = nullToEmpty(entry.get("text"));
+		co.ftDone = Boolean.parseBoolean(entry.get("ftDone"));
+		co.done = Boolean.parseBoolean(entry.get("done"));
+		co.ts = parseLong(entry.get("ts"));
+		co.tsx = parseLong(entry.get("tsx"));
+		co.lastQty = parseDouble(entry.get("lastQty"));
+		co.lastPx = parseDoubleNaN(entry.get("lastPx"));
+
+		// cumulative
+		co.leavesQty = parseDouble(entry.get("leavesQty"));
+		co.cumQty = parseDouble(entry.get("cumQty"));
+		co.avgPx = parseDoubleNaN(entry.get("avgPx"));
+		co.useNative = Boolean.parseBoolean(entry.get("useNative"));
+
+		return co;
+	}
+
+	private CukeOrder(
             MadrigalMode mode, // {REQUEST,RESPONSE}
             MadrigalReqType reqType, // {ADD,DEL,RWT}
 

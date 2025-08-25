@@ -1,9 +1,12 @@
 package net.a_cappella.madrigal.cukes.adaptors.um;
 
+import io.cucumber.java.DataTableType;
 import net.a_cappella.madrigal.common.constants.MadrigalLogOp;
 import net.a_cappella.madrigal.common.constants.MadrigalMode;
 import net.a_cappella.madrigal.common.constants.MadrigalUserStatus;
 import net.a_cappella.madrigal.common.obj.EcnUserStatusObj;
+
+import java.util.Map;
 
 public class CukeEcnUserStatus {
     private String mode;
@@ -17,6 +20,22 @@ public class CukeEcnUserStatus {
     private final String text;	// RESPONSE
 
     private int instance; // RESPONSE
+
+	@DataTableType
+	public static CukeEcnUserStatus cukeEcnUserStatusEntry(Map<String, String> entry) {
+		return new CukeEcnUserStatus(
+				entry.get("mode"),
+				entry.get("uid"),
+				entry.get("ecn"),
+				entry.get("ecnUid"),
+				entry.get("op"),
+				entry.get("ecnPwd"),
+				entry.get("status"),
+				entry.get("text"),
+				0
+		);
+	}
+
 
     public CukeEcnUserStatus(String mode, String uid, String ecn, String ecnUid, String op, String ecnPwd, String status, String text, int instance) {
     	this.mode = mode;

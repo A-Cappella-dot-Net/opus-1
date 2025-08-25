@@ -81,28 +81,28 @@
     <logger name="net.a_cappella.cembalo.ExchangeClient">
         <level value="DEBUG" />
     </logger>
-    <logger name="net.a_cappella.madrigal.core.om.RootOrderHandler">
+    <logger name="net.a_cappella.madrigal.om.RootOrderHandler">
         <level value="DEBUG" />
     </logger>
-    <logger name="net.a_cappella.madrigal.core.om.OrderHandler">
+    <logger name="net.a_cappella.madrigal.om.OrderHandler">
         <level value="DEBUG" />
     </logger>
-    <logger name="net.a_cappella.madrigal.core.om.strategy.NativeStrategy">
+    <logger name="net.a_cappella.madrigal.om.strategy.NativeStrategy">
         <level value="DEBUG" />
     </logger>
-    <logger name="net.a_cappella.madrigal.core.om.strategy.SimulatedIocStrategy">
+    <logger name="net.a_cappella.madrigal.om.strategy.SimulatedIocStrategy">
         <level value="DEBUG" />
     </logger>
-    <logger name="net.a_cappella.madrigal.core.om.strategy.SimulatedIbgRwtStrategy">
+    <logger name="net.a_cappella.madrigal.om.strategy.SimulatedIbgRwtStrategy">
         <level value="DEBUG" />
     </logger>
-    <logger name="net.a_cappella.madrigal.core.om.strategy.SniperStrategy">
+    <logger name="net.a_cappella.madrigal.om.strategy.SniperStrategy">
         <level value="DEBUG" />
     </logger>
-    <logger name="net.a_cappella.madrigal.core.om.strategy.ResumeOnFailoverStrategy">
+    <logger name="net.a_cappella.madrigal.om.strategy.ResumeOnFailoverStrategy">
         <level value="DEBUG" />
     </logger>
-    <logger name="net.a_cappella.madrigal.core.cukes.adaptors.CukeOrderManagerAdaptor">
+    <logger name="net.a_cappella.madrigal.cukes.adaptors.CukeOrderManagerAdaptor">
         <level value="DEBUG" />
     </logger>
 

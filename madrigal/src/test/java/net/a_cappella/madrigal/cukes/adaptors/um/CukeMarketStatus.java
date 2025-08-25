@@ -1,18 +1,24 @@
 package net.a_cappella.madrigal.cukes.adaptors.um;
 
+import io.cucumber.java.DataTableType;
 import net.a_cappella.madrigal.common.constants.MadrigalGatewayType;
 import net.a_cappella.madrigal.common.constants.MadrigalMarketStatus;
 import net.a_cappella.madrigal.common.obj.MarketStatusObj;
+
+import java.util.Map;
 
 public class CukeMarketStatus {
 	String ecn;
 	String gwt;
 	String status;
 
-	public CukeMarketStatus(String ecn, String gwt, String status) {
-		this.ecn = ecn;
-		this.gwt = gwt;
-		this.status = status;
+	@DataTableType
+	public static CukeMarketStatus cukeMarketStatusEntry(Map<String, String> entry) {
+		CukeMarketStatus cms = new CukeMarketStatus();
+		cms.ecn = entry.get("ecn");
+		cms.gwt = entry.get("gwt");
+		cms.status = entry.get("status");
+		return cms;
 	}
 
 	public String getEcn() {
