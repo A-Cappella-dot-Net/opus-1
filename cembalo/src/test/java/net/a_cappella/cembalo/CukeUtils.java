@@ -12,7 +12,6 @@ public class CukeUtils {
     public static double parseDouble(String str) {
         if (str == null) return 0.0;
         if (str.trim().isEmpty()) return 0.0;
-        if ("NaN".equalsIgnoreCase(str)) return Double.NaN;
         return Double.parseDouble(str);
     }
 }

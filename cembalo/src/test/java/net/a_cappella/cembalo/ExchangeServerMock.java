@@ -1,18 +1,13 @@
 package net.a_cappella.cembalo;
 
-//import static org.junit.Assert.assertEquals;
-//import static org.junit.Assert.assertFalse;
-//import static org.junit.Assert.assertNotNull;
-//import static org.junit.Assert.assertNull;
-//import static org.junit.Assert.assertTrue;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import static org.mockito.Mockito.mock;
+import net.a_cappella.cembalo.beans.Imbalance;
+import net.a_cappella.cembalo.beans.InstrumentStatus;
+import net.a_cappella.cembalo.beans.MarketDataSnapshot;
+import net.a_cappella.cembalo.constants.*;
+import net.a_cappella.cembalo.constants.Operation;
+import net.a_cappella.cembalo.cukes.adaptors.*;
+import net.a_cappella.cembalo.message.TimerMsg;
+import net.a_cappella.cembalo.message.TimerMsgs;
 
 import java.nio.channels.SelectionKey;
 import java.util.ArrayList;
@@ -21,25 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import net.a_cappella.cembalo.beans.Imbalance;
-import net.a_cappella.cembalo.beans.InstrumentStatus;
-import net.a_cappella.cembalo.beans.MarketDataSnapshot;
-import net.a_cappella.cembalo.constants.Book;
-import net.a_cappella.cembalo.constants.ExecType;
-import net.a_cappella.cembalo.constants.Operation;
-import net.a_cappella.cembalo.constants.OrdStatus;
-import net.a_cappella.cembalo.constants.OrdType;
-import net.a_cappella.cembalo.constants.Side;
-import net.a_cappella.cembalo.constants.TimeInForce;
-import net.a_cappella.cembalo.cukes.adaptors.CukeAuctionLevel;
-import net.a_cappella.cembalo.cukes.adaptors.CukeBookOrder;
-import net.a_cappella.cembalo.cukes.adaptors.CukeExecutionReport;
-import net.a_cappella.cembalo.cukes.adaptors.CukeImbalance;
-import net.a_cappella.cembalo.cukes.adaptors.CukeMarketDataSnapshot;
-import net.a_cappella.cembalo.cukes.adaptors.CukeOrder;
-import net.a_cappella.cembalo.cukes.adaptors.CukeRejection;
-import net.a_cappella.cembalo.message.TimerMsg;
-import net.a_cappella.cembalo.message.TimerMsgs;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 public class ExchangeServerMock implements IExchangeServer {
     private static final double EPSILON = 0.00000001;

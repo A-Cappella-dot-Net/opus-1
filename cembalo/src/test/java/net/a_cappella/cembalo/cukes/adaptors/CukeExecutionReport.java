@@ -6,6 +6,7 @@ import net.a_cappella.continuo.utils.Utils;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.google.common.base.Strings.nullToEmpty;
 import static net.a_cappella.cembalo.CukeUtils.parseDouble;
 import static net.a_cappella.cembalo.CukeUtils.parseDoubleNaN;
 
@@ -86,7 +87,7 @@ public class CukeExecutionReport {
         this.leavesQty = leavesQty;
         this.avgPx = avgPx;
 
-        this.text = emptyStringIfNull(text);
+        this.text = nullToEmpty(text);
     }
 
 
@@ -170,9 +171,5 @@ public class CukeExecutionReport {
                 shownQty+"/"+qty+"@"+price+" "+
                 execType+" "+ordStatus+" "+
                 lastQty+"@"+lastPx+"/"+leavesQty+"/"+cumQty+"@"+avgPx+" "+text+"}";
-    }
-
-    private static String emptyStringIfNull(String str) {
-        return (str==null) ? "" : str;
     }
 }
