@@ -1,37 +1,41 @@
 package net.a_cappella.cembalo.cukes.adaptors;
 
+import io.cucumber.java.DataTableType;
 import net.a_cappella.continuo.utils.Utils;
 
+import java.util.Map;
 import java.util.Objects;
 
+import static net.a_cappella.cembalo.CukeUtils.parseDouble;
+import static net.a_cappella.cembalo.CukeUtils.parseDoubleNaN;
+
 public class CukeOrder {
-    private final long ordId;
-    private final String clOrdId;
-    private final String uid;
-    private final String secId;
-    private final double price;
+    private long ordId;
+    private String clOrdId;
+    private String uid;
+    private String secId;
+    private double price;
     private double shownQty;
-    private final double qty;
-    private final String side;
-    private final String ordType;
-    private final String tif;
+    private double qty;
+    private String side;
+    private String ordType;
+    private String tif;
 
-    public CukeOrder(
-            String uid, long ordId, String clOrdId,
-            String secId, String ordType, String tif,
-            String side, double shownQty, double qty, double price) {
+    @DataTableType
+    public static CukeOrder dttCukeOrder(Map<String, String> entry) {
+        CukeOrder co = new CukeOrder();
+        co.uid = entry.get("uid");
+        co.ordId = Long.parseLong(entry.get("ordId"));
+        co.clOrdId = entry.get("clOrdId");
 
-        this.uid = uid;
-        this.ordId = ordId;
-        this.clOrdId = clOrdId;
-
-        this.secId = secId;
-        this.ordType = ordType;
-        this.tif = tif;
-        this.side = side;
-        this.shownQty = shownQty;
-        this.qty = qty;
-        this.price = price;
+        co.secId = entry.get("secId");
+        co.ordType = entry.get("ordType");
+        co.tif = entry.get("tif");
+        co.side = entry.get("side");
+        co.shownQty = parseDouble(entry.get("shownQty"));
+        co.qty = parseDouble(entry.get("qty"));
+        co.price = parseDoubleNaN(entry.get("price"));
+        return co;
     }
 
     public String getUid() {

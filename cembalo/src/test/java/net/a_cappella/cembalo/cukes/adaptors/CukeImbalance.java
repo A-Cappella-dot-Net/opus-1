@@ -1,13 +1,29 @@
 package net.a_cappella.cembalo.cukes.adaptors;
 
+import io.cucumber.java.DataTableType;
 import net.a_cappella.cembalo.beans.Imbalance;
+
+import java.util.Map;
+
+import static net.a_cappella.cembalo.CukeUtils.parseDouble;
+import static net.a_cappella.cembalo.CukeUtils.parseDoubleNaN;
 
 public class CukeImbalance {
 
-    private double price;
-    private double matched;
-    private double surplus;
-    private String side;
+    private final double price;
+    private final double matched;
+    private final double surplus;
+    private final String side;
+
+    @DataTableType
+    public static CukeImbalance dttCukeImbalance(Map<String, String> entry) {
+        return new CukeImbalance(
+                parseDoubleNaN(entry.get("price")),
+                parseDouble(entry.get("matched")),
+                parseDouble(entry.get("surplus")),
+                entry.get("side")
+        );
+    }
 
     public CukeImbalance(double price, double matched, double surplus, String side) {
         this.price = price;

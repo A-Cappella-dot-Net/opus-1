@@ -1,8 +1,13 @@
 package net.a_cappella.cembalo.cukes.adaptors;
 
+import io.cucumber.java.DataTableType;
 import net.a_cappella.continuo.utils.Utils;
 
+import java.util.Map;
 import java.util.Objects;
+
+import static net.a_cappella.cembalo.CukeUtils.parseDouble;
+import static net.a_cappella.cembalo.CukeUtils.parseDoubleNaN;
 
 
 public class CukeExecutionReport {
@@ -27,6 +32,30 @@ public class CukeExecutionReport {
     private final String execType;
     private final String ordStatus;
     private final String text;
+
+    @DataTableType
+    public static CukeExecutionReport dttCukeExecutionReport(Map<String, String> entry) {
+        return new CukeExecutionReport(
+                entry.get("uid"),
+                Long.parseLong(entry.get("ordId")),
+                entry.get("clOrdId"),
+                entry.get("secId"),
+                entry.get("ordType"),
+                entry.get("tif"),
+                entry.get("side"),
+                parseDouble(entry.get("shownQty")),
+                parseDouble(entry.get("qty")),
+                parseDoubleNaN(entry.get("price")),
+                entry.get("execType"),
+                entry.get("ordStatus"),
+                parseDouble(entry.get("lastQty")),
+                parseDoubleNaN(entry.get("lastPx")),
+                parseDouble(entry.get("cumQty")),
+                parseDouble(entry.get("leavesQty")),
+                parseDoubleNaN(entry.get("avgPx")),
+                entry.get("text")
+        );
+    }
 
     public CukeExecutionReport(
             String uid, long ordId, String clOrdId,

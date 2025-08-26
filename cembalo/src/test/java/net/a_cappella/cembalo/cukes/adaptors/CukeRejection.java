@@ -1,5 +1,8 @@
 package net.a_cappella.cembalo.cukes.adaptors;
 
+import io.cucumber.java.DataTableType;
+
+import java.util.Map;
 import java.util.Objects;
 
 public class CukeRejection {
@@ -8,6 +11,17 @@ public class CukeRejection {
     private final long ordId;
     private final String ordStatus;
     private final String text;
+
+    @DataTableType
+    public static CukeRejection cukeRejection(Map<String, String> entry) {
+        return new CukeRejection(
+                entry.get("uid"),
+                Long.parseLong(entry.get("ordId")),
+                entry.get("clOrdId"),
+                entry.get("ordStatus"),
+                entry.get("text")
+        );
+    }
 
     public CukeRejection(String uid, long ordId, String clOrdId, String ordStatus, String text) {
         this.uid = uid;

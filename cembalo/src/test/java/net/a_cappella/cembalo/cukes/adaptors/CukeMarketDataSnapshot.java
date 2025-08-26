@@ -1,10 +1,16 @@
 package net.a_cappella.cembalo.cukes.adaptors;
 
+import io.cucumber.java.DataTableType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.a_cappella.cembalo.beans.MarketDataSnapshot;
 import net.a_cappella.cembalo.beans.MarketDataSnapshotEntry;
+
+import java.util.Map;
+
+import static net.a_cappella.cembalo.CukeUtils.parseDouble;
+import static net.a_cappella.cembalo.CukeUtils.parseDoubleNaN;
 
 public class CukeMarketDataSnapshot {
     private static final Logger log = LoggerFactory.getLogger(CukeMarketDataSnapshot.class);
@@ -31,101 +37,92 @@ public class CukeMarketDataSnapshot {
     private Double askQ4;
     private Double ask4;
 
-    public CukeMarketDataSnapshot() {}
+    @DataTableType
+    public static CukeMarketDataSnapshot marketDataSnapshotEntry(Map<String, String> entry) {
+        CukeMarketDataSnapshot mds = new CukeMarketDataSnapshot();
+        mds.bidQ4 = parseDouble(entry.get("bidQ4"));
+        mds.bid4  = parseDoubleNaN(entry.get("bid4"));
+        mds.bidQ3 = parseDouble(entry.get("bidQ3"));
+        mds.bid3  = parseDoubleNaN(entry.get("bid3"));
+        mds.bidQ2 = parseDouble(entry.get("bidQ2"));
+        mds.bid2  = parseDoubleNaN(entry.get("bid2"));
+        mds.bidQ1 = parseDouble(entry.get("bidQ1"));
+        mds.bid1  = parseDoubleNaN(entry.get("bid1"));
+        mds.bidQ0 = parseDouble(entry.get("bidQ0"));
+        mds.bid0  = parseDoubleNaN(entry.get("bid0"));
 
-    public CukeMarketDataSnapshot(
-            double bidQ4, double bid4, double bidQ3, double bid3, double bidQ2, double bid2, double bidQ1, double bid1, double bidQ0, double bid0,
-            double askQ0, double ask0, double askQ1, double ask1, double askQ2, double ask2, double askQ3, double ask3, double askQ4, double ask4
-    ) {
-        this.bidQ4 = bidQ4;
-        this.bid4  = bid4;
-        this.bidQ3 = bidQ3;
-        this.bid3  = bid3;
-        this.bidQ2 = bidQ2;
-        this.bid2  = bid2;
-        this.bidQ1 = bidQ1;
-        this.bid1  = bid1;
-        this.bidQ0 = bidQ0;
-        this.bid0  = bid0;
-
-        this.askQ0 = askQ0;
-        this.ask0  = ask0;
-        this.askQ1 = askQ1;
-        this.ask1  = ask1;
-        this.askQ2 = askQ2;
-        this.ask2  = ask2;
-        this.askQ3 = askQ3;
-        this.ask3  = ask3;
-        this.askQ4 = askQ4;
-        this.ask4  = ask4;
+        mds.askQ0 = parseDouble(entry.get("askQ0"));
+        mds.ask0  = parseDoubleNaN(entry.get("ask0"));
+        mds.askQ1 = parseDouble(entry.get("askQ1"));
+        mds.ask1  = parseDoubleNaN(entry.get("ask1"));
+        mds.askQ2 = parseDouble(entry.get("askQ2"));
+        mds.ask2  = parseDoubleNaN(entry.get("ask2"));
+        mds.askQ3 = parseDouble(entry.get("askQ3"));
+        mds.ask3  = parseDoubleNaN(entry.get("ask3"));
+        mds.askQ4 = parseDouble(entry.get("askQ4"));
+        mds.ask4  = parseDoubleNaN(entry.get("ask4"));
+        return mds;
     }
 
     public double getBidQ0() {
         return bidQ0;
-//		return (bidQ0 == null) ? 0.0 : bidQ0;
     }
     public double getBid0() {
         return bid0;
-//		return (bid0 == null) ? Double.NaN : bid0;
     }
     public double getBidQ1() {
         return bidQ1;
-//		return (bidQ1 == null) ? 0.0 : bidQ1;
     }
     public double getBid1() {
         return bid1;
-//		return (bid1 == null) ? Double.NaN : bid1;
     }
     public double getBidQ2() {
-        return (bidQ2 == null) ? 0.0 : bidQ2;
+        return bidQ2;
     }
     public double getBid2() {
-        return (bid2 == null) ? Double.NaN : bid2;
+        return bid2;
     }
     public double getBidQ3() {
-        return (bidQ3 == null) ? 0.0 : bidQ3;
+        return bidQ3;
     }
     public double getBid3() {
-        return (bid3 == null) ? Double.NaN : bid3;
+        return bid3;
     }
     public double getBidQ4() {
-        return (bidQ4 == null) ? 0.0 : bidQ4;
+        return bidQ4;
     }
     public double getBid4() {
-        return (bid4 == null) ? Double.NaN : bid4;
+        return bid4;
     }
     public double getAskQ0() {
         return ask0;
-//		return (askQ0 == null) ? 0.0 : askQ0;
     }
     public double getAsk0() {
         return askQ0;
-//		return (ask0 == null) ? Double.NaN : ask0;
     }
     public double getAskQ1() {
         return askQ1;
-//		return (askQ1 == null) ? 0.0 : askQ1;
     }
     public double getAsk1() {
-        return (ask1 == null) ? Double.NaN : ask1;
+        return ask1;
     }
     public double getAskQ2() {
-        return (askQ2 == null) ? 0.0 : askQ2;
+        return askQ2;
     }
     public double getAsk2() {
-        return (ask2 == null) ? Double.NaN : ask2;
+        return ask2;
     }
     public double getAskQ3() {
-        return (askQ3 == null) ? 0.0 : askQ3;
+        return askQ3;
     }
     public double getAsk3() {
-        return (ask3 == null) ? Double.NaN : ask3;
+        return ask3;
     }
     public double getAskQ4() {
-        return (askQ4 == null) ? 0.0 : askQ4;
+        return askQ4;
     }
     public double getAsk4() {
-        return (ask4 == null) ? Double.NaN : ask4;
+        return ask4;
     }
 
     public static CukeMarketDataSnapshot adapt(MarketDataSnapshot mds) {

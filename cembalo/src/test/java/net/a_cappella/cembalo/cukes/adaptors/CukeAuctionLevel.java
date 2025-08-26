@@ -2,10 +2,15 @@ package net.a_cappella.cembalo.cukes.adaptors;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import io.cucumber.java.DataTableType;
 import net.a_cappella.cembalo.AccumulatingLevel;
 import net.a_cappella.cembalo.AccumulatingOrderBook;
 import net.a_cappella.cembalo.AuctionLevel;
+
+import static net.a_cappella.cembalo.CukeUtils.parseDouble;
+import static net.a_cappella.cembalo.CukeUtils.parseDoubleNaN;
 
 public class CukeAuctionLevel {
 
@@ -17,6 +22,20 @@ public class CukeAuctionLevel {
     private final double matched;
     private final double surplus;
     private final String surplusSide;
+
+    @DataTableType
+    public static CukeAuctionLevel dttCukeAuctionLevel(Map<String, String> entry) {
+        return new CukeAuctionLevel(
+                parseDoubleNaN(entry.get("price")),
+                parseDouble(entry.get("bidSize")),
+                parseDouble(entry.get("offerSize")),
+                parseDouble(entry.get("bidPressure")),
+                parseDouble(entry.get("offerPressure")),
+                parseDouble(entry.get("matched")),
+                parseDouble(entry.get("surplus")),
+                entry.get("surplusSide")
+        );
+    }
 
     public CukeAuctionLevel(
             double price,

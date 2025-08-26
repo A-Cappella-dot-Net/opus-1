@@ -2,8 +2,10 @@ package net.a_cappella.cembalo.cukes.adaptors;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
+import io.cucumber.java.DataTableType;
 import net.a_cappella.cembalo.AccumulatingLevel;
 import net.a_cappella.cembalo.AccumulatingOrderBook;
 import net.a_cappella.cembalo.ContinuousLevel;
@@ -12,6 +14,9 @@ import net.a_cappella.cembalo.constants.OrdType;
 import net.a_cappella.cembalo.constants.Side;
 import net.a_cappella.cembalo.constants.TimeInForce;
 import net.a_cappella.continuo.utils.Utils;
+
+import static net.a_cappella.cembalo.CukeUtils.parseDouble;
+import static net.a_cappella.cembalo.CukeUtils.parseDoubleNaN;
 
 public class CukeBookOrder {
 
@@ -31,6 +36,27 @@ public class CukeBookOrder {
     private final double cumQty;
     private final double leavesQty;
     private final double avgPx;
+
+    @DataTableType
+    public static CukeBookOrder dttCukeBookOrder(Map<String, String> entry) {
+        return new CukeBookOrder(
+                entry.get("uid"),
+                Long.parseLong(entry.get("ordId")),
+                entry.get("clOrdId"),
+                entry.get("secId"),
+                entry.get("ordType"),
+                entry.get("tif"),
+                entry.get("side"),
+                parseDouble(entry.get("shownQty")),
+                parseDouble(entry.get("qty")),
+                parseDoubleNaN(entry.get("price")),
+                parseDoubleNaN(entry.get("lastQty")),
+                parseDoubleNaN(entry.get("lastPx")),
+                parseDouble(entry.get("cumQty")),
+                parseDouble(entry.get("leavesQty")),
+                parseDoubleNaN(entry.get("avgPx"))
+        );
+    }
 
     public CukeBookOrder(
             String uid, long ordId, String clOrdId,
@@ -63,13 +89,12 @@ public class CukeBookOrder {
 
 
     private static CukeBookOrder book(Order order) {
-        CukeBookOrder bookOrder = new CukeBookOrder(
+       return new CukeBookOrder(
                 order._user, order._orderID, order._clOrdID,
                 order._securityID, OrdType.toString(order._ordType), TimeInForce.toString(order._tif),
                 Side.toString(order._side), order._shownSize, order._size, order._price,
                 order._lastQty, order._lastPx, order._cumQty, order._leavesQty, order._avgPx
         );
-        return bookOrder;
     }
     public static List<CukeBookOrder> book(ContinuousLevel continuousLevel) {
         List<CukeBookOrder> cukeOrders = new ArrayList<>();
