@@ -11,7 +11,7 @@ import static io.cucumber.junit.platform.engine.Constants.*;
 @IncludeEngines("cucumber")
 @SelectClasspathResource("src/test/resources/cukes")
 @ConfigurationParameter(key = FEATURES_PROPERTY_NAME, value = "src/test/resources/cukes")
-@ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value = "pretty, html:target/cucumber-reports/cucumber.html")
+@ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value = "pretty, html:build/cucumber-reports/cucumber.html")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "net/a_cappella/cembalo/cukes")
 public class RunCukesTest {
 }
