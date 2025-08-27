@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <import resource="madrigalConfig.xml"/>
+    <import resource="prestoClient.xml"/>
+
+    <bean name="swingPublisher" class="net.a_cappella.datapublisher.DataPublisher" lazy-init="true" init-method="init">
+        <constructor-arg index="0" ref="client"/>
+    </bean>
+
+	<bean name="swingBeanGetter" class="net.a_cappella.madrigal.common.interfaces.ISwingBeanGetter">
+		<lookup-method name="getBean" bean="swingPublisher"/>
+	</bean>
+
+	<bean name="startGui" class="net.a_cappella.madrigal.common.utils.StartOnEventDispatchThread" init-method="start">
+		<constructor-arg ref="swingBeanGetter"/>
+	</bean>
+
+    <!-- import resource="jmx.xml"/ -->
+</beans>
