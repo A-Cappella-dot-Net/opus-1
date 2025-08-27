@@ -24,6 +24,7 @@
             <option value="$PROJECT_DIR$/continuo" />
             <option value="$PROJECT_DIR$/credentials" />
             <option value="$PROJECT_DIR$/daemons-aeron" />
+            <option value="$PROJECT_DIR$/data-subscriber" />
             <option value="$PROJECT_DIR$/exchange" />
             <option value="$PROJECT_DIR$/madrigal" />
             <option value="$PROJECT_DIR$/madrigal-aeron" />
