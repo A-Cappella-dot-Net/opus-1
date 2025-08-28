@@ -9,7 +9,7 @@ echo APPS_HOME: %APPS_HOME%
 
 set TARGET_MACHINE=%~1
 
-@REM scp -p %APPS_HOME%\credentials\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
+scp -p %APPS_HOME%\credentials\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
 
 scp -p %APPS_HOME%\daemons-aeron\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
 

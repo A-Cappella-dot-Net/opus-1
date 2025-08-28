@@ -76,7 +76,7 @@
         <level value="INFO" />
     </logger>
 
-    <logger name="net.a_cappella.allegro.utils.tightloop.TightLoopThread">
+    <logger name="net.a_cappella.continuo.utils.tightloop.TightLoopThread">
         <level value="INFO" />
     </logger>
 

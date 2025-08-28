@@ -74,7 +74,7 @@
 		</constructor-arg>
 	</bean>
 
-	<bean class="allegro.managed.ObjectInitializer">
+	<bean class="net.a_cappella.continuo.managed.ObjectInitializer">
         <property name="msgPools" ref="madrigal-obj-insts-pool"/>
 	</bean>
 

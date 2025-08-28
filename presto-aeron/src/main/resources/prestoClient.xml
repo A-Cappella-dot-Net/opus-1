@@ -7,18 +7,18 @@
 
     <bean name="msgCoder" class="net.a_cappella.continuo.msg.MsgCoder" />
 
-    <bean name="tightLoopThread" class="allegro.utils.tightloop.TightLoopThread" init-method="start">
+    <bean name="tightLoopThread" class="net.a_cappella.continuo.utils.tightloop.TightLoopThread" init-method="start">
         <property name="microThreshold" value="${client.micro.threshold}" />
         <property name="idleStrategy" value="${client.idle.strategy}"/>
         <property name="pinToCpu" value="${pin.tlt.to.cpu}"/>
     </bean>
 
-    <bean name="pubHelper" class="presto.ps.PublicationHelper">
+    <bean name="pubHelper" class="net.a_cappella.presto.ps.PublicationHelper">
         <property name="retriesOnBackPressure" value="${retries.on.back.pressure}"/>
         <property name="sleepNanosOnBackPressureRetry" value="${sleep.nanos.on.back.pressure.retry}"/>
     </bean>
 
-    <bean name="client" class="presto.ps.AeronClient" init-method="start" scope="singleton">
+    <bean name="client" class="net.a_cappella.presto.ps.AeronClient" init-method="start" scope="singleton">
         <constructor-arg index="0" ref="msgCoder" />
         <constructor-arg index="1" value="${connection.info}" />
         <constructor-arg index="2" value="${mon.conf.interval}" />

@@ -2,6 +2,7 @@ package net.a_cappella.continuo.managed;
 
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
+import java.util.List;
 
 import net.a_cappella.continuo.ObjPriority;
 import net.a_cappella.continuo.msg.ITypedMsg;
@@ -19,7 +20,7 @@ public class MsgInstantiator {
     }
     private String _className;
     private Class<?>[] _argTypes;
-    private String[] _argClassNames;
+    private List<String> _argClassNames;
     private Object[] _args;
     private Constructor<?> _ctor;
 
@@ -72,35 +73,36 @@ public class MsgInstantiator {
         }
     }
 
-    public MsgInstantiator(String className, String[] argClassNames, Object[] args) throws Exception {
+    public MsgInstantiator(String className, List<String> argClassNames, List<Object> args) throws Exception {
         this(className, null, null, argClassNames, args);
     }
-    public MsgInstantiator(String className, String codClassName, ObjPriority priority, String[] argClassNames, Object[] args) {
-        if (argClassNames.length!=args.length) {
-            log.error("MsgInstantiator argClassNames="+Arrays.toString(argClassNames)+" and args="+Arrays.toString(args)+" do NOT have the SAME size; ignoring...");
+    public MsgInstantiator(String className, String codClassName, ObjPriority priority, List<String> argClassNames, List<Object> args) {
+        log.info("5. MsgInstantiator({}, {}, {}, {}, {})", className, codClassName, priority, argClassNames, args);
+        if (argClassNames.size() != args.size()) {
+            log.error("MsgInstantiator argClassNames="+argClassNames+" and args="+args+" do NOT have the SAME size; ignoring...");
             _allGood = false;
             return;
         }
 
         _className = className;
         _argClassNames = argClassNames;
-        _argTypes = new Class<?>[argClassNames.length];
-        _args = new Object[argClassNames.length];
+        _argTypes = new Class<?>[argClassNames.size()];
+        _args = new Object[argClassNames.size()];
 
         try {
             _class = Class.forName(_className);
 
-            for (int i=0; i<argClassNames.length; i++) {
-                String argClassName = argClassNames[i];
+            for (int i=0; i<argClassNames.size(); i++) {
+                String argClassName = argClassNames.get(i);
                 if ("int".equals(argClassName)) {
                     _argTypes[i] = int.class;
-                    _args[i] = Integer.valueOf((String) args[i]);
+                    _args[i] = Integer.valueOf((String) args.get(i));
                 } else if ("Integer".equals(argClassName) || "java.lang.Integer".equals(argClassName)) {
                     _argTypes[i] = Integer.class;
-                    _args[i] = Integer.valueOf((String) args[i]);
+                    _args[i] = Integer.valueOf((String) args.get(i));
                 } else {
                     _argTypes[i] = Class.forName(argClassName);
-                    _args[i] = args[i];
+                    _args[i] = args.get(i);
                 }
             }
 
@@ -128,6 +130,6 @@ public class MsgInstantiator {
     @Override
     public String toString() {
         return _objType + ":" + _className+
-                (_argClassNames==null?"":(" "+Arrays.toString(_argClassNames)+" "+Arrays.toString(_args)));
+                (_argClassNames==null?"":(" "+_argClassNames+" "+Arrays.toString(_args)));
     }
 }

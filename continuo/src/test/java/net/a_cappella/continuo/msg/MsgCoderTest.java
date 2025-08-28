@@ -29,7 +29,7 @@ public class MsgCoderTest {
             MsgInstantiator registrationResponseInstantiator =
                     new MsgInstantiator(RegistrationResponse.class.getName());
             MsgInstantiator bytesInstantiator =
-                    new MsgInstantiator(Bytes.class.getName(), new String[] {Integer.class.getName()}, new Object[] {"1024"});
+                    new MsgInstantiator(Bytes.class.getName(), List.of(Integer.class.getName()), List.of("1024"));
             List<MsgInstantiator> msgInstantiators = Arrays.asList(
                     registrationRequestInstantiator,
                     registrationResponseInstantiator,
