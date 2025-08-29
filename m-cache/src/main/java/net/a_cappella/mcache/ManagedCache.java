@@ -1,9 +1,5 @@
 package net.a_cappella.mcache;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
 import net.a_cappella.continuo.managed.MsgInstantiator;
 import net.a_cappella.continuo.managed.ObjectManager;
 import net.a_cappella.continuo.managed.Pool;
@@ -13,16 +9,17 @@ import net.a_cappella.presto.obj.CacheCmdCoder;
 import net.a_cappella.presto.obj.CacheCmdObj;
 import net.a_cappella.presto.obj.FtMemberObj;
 import net.a_cappella.presto.ps.PrestoClient;
-
-import net.a_cappella.continuo.utils.interner.HashMap;
-
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedOperationParameter;
 import org.springframework.jmx.export.annotation.ManagedOperationParameters;
 import org.springframework.jmx.export.annotation.ManagedResource;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static net.a_cappella.continuo.PrestoConstants.SUBJ_FT_MEMBER;
 import static net.a_cappella.presto.ft.constants.FtMsgOp.ACTIVATE;
