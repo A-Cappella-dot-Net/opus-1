@@ -1,7 +1,7 @@
 [versions]
 apache-text = "1.14.0"
 guava = "33.4.5-jre" # 23.0
-spring-framework = "6.2.9"
+spring-framework = "6.2.10"
 hdrhistogram = "2.2.2"
 affinity = "3.20.0"
 agrona = "1.22.0"
