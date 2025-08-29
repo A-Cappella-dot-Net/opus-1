@@ -77,7 +77,6 @@ public class MsgInstantiator {
         this(className, null, null, argClassNames, args);
     }
     public MsgInstantiator(String className, String codClassName, ObjPriority priority, List<String> argClassNames, List<Object> args) {
-        log.info("5. MsgInstantiator({}, {}, {}, {}, {})", className, codClassName, priority, argClassNames, args);
         if (argClassNames.size() != args.size()) {
             log.error("MsgInstantiator argClassNames="+argClassNames+" and args="+args+" do NOT have the SAME size; ignoring...");
             _allGood = false;
