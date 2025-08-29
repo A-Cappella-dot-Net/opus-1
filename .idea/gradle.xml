@@ -27,6 +27,7 @@
             <option value="$PROJECT_DIR$/data-publisher" />
             <option value="$PROJECT_DIR$/data-subscriber" />
             <option value="$PROJECT_DIR$/exchange" />
+            <option value="$PROJECT_DIR$/m-cache" />
             <option value="$PROJECT_DIR$/madrigal" />
             <option value="$PROJECT_DIR$/madrigal-aeron" />
             <option value="$PROJECT_DIR$/madrigal-common" />

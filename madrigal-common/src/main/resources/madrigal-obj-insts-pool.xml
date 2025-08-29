@@ -10,62 +10,62 @@
 	<bean name="madrigal-obj-insts-pool" class="java.util.ArrayList">
 		<constructor-arg>
 			<list>
-				<!-- bean class="allegro.managed.Pool">
+				<!-- bean class="net.a_cappella.continuo.managed.Pool">
 					<constructor-arg name="instantiator" ref="madrigal.credentials" />
 					<constructor-arg name="initialSize" value="10" />
 					<constructor-arg name="incrementSize" value="10" />
 				</bean>
-				<bean class="allegro.managed.Pool">
+				<bean class="net.a_cappella.continuo.managed.Pool">
 					<constructor-arg name="instantiator" ref="madrigal.ecn.credentials" />
 					<constructor-arg name="initialSize" value="10" />
 					<constructor-arg name="incrementSize" value="10" />
 				</bean -->
-				<bean class="allegro.managed.Pool">
+				<bean class="net.a_cappella.continuo.managed.Pool">
 					<constructor-arg name="instantiator" ref="madrigal.mid.feed" />
 					<constructor-arg name="initialSize" value="10" />
 					<constructor-arg name="incrementSize" value="10" />
 				</bean>
-				<bean class="allegro.managed.Pool">
+				<bean class="net.a_cappella.continuo.managed.Pool">
 					<constructor-arg name="instantiator" ref="madrigal.market.status" />
 					<constructor-arg name="initialSize" value="10" />
 					<constructor-arg name="incrementSize" value="10" />
 				</bean>
-				<bean class="allegro.managed.Pool">
+				<bean class="net.a_cappella.continuo.managed.Pool">
 					<constructor-arg name="instantiator" ref="madrigal.ecn.instrument" />
 					<constructor-arg name="initialSize" value="10" />
 					<constructor-arg name="incrementSize" value="10" />
 				</bean>
-				<bean class="allegro.managed.Pool">
+				<bean class="net.a_cappella.continuo.managed.Pool">
 					<constructor-arg name="instantiator" ref="madrigal.ecn.instr.status" />
 					<constructor-arg name="initialSize" value="10" />
 					<constructor-arg name="incrementSize" value="10" />
 				</bean>
-				<bean class="allegro.managed.Pool">
+				<bean class="net.a_cappella.continuo.managed.Pool">
 					<constructor-arg name="instantiator" ref="madrigal.ecn.price" />
 					<constructor-arg name="initialSize" value="10" />
 					<constructor-arg name="incrementSize" value="10" />
 				</bean>
-				<bean class="allegro.managed.Pool">
+				<bean class="net.a_cappella.continuo.managed.Pool">
 					<constructor-arg name="instantiator" ref="madrigal.ecn.imbalance" />
 					<constructor-arg name="initialSize" value="10" />
 					<constructor-arg name="incrementSize" value="10" />
 				</bean>
-				<bean class="allegro.managed.Pool">
+				<bean class="net.a_cappella.continuo.managed.Pool">
 					<constructor-arg name="instantiator" ref="madrigal.user.status" />
 					<constructor-arg name="initialSize" value="10" />
 					<constructor-arg name="incrementSize" value="10" />
 				</bean>
-				<bean class="allegro.managed.Pool">
+				<bean class="net.a_cappella.continuo.managed.Pool">
 					<constructor-arg name="instantiator" ref="madrigal.ecn.user.status" />
 					<constructor-arg name="initialSize" value="10" />
 					<constructor-arg name="incrementSize" value="10" />
 				</bean>
-				<bean class="allegro.managed.Pool">
+				<bean class="net.a_cappella.continuo.managed.Pool">
 					<constructor-arg name="instantiator" ref="madrigal.order" />
 					<constructor-arg name="initialSize" value="10" />
 					<constructor-arg name="incrementSize" value="10" />
 				</bean>
-				<bean class="allegro.managed.Pool">
+				<bean class="net.a_cappella.continuo.managed.Pool">
 					<constructor-arg name="instantiator" ref="madrigal.finalize.order" />
 					<constructor-arg name="initialSize" value="10" />
 					<constructor-arg name="incrementSize" value="10" />

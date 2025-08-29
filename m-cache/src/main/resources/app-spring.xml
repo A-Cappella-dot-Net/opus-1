@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <import resource="madrigalConfig.xml"/>
+    <import resource="madrigal-obj-insts-pool.xml"/>
+    <import resource="prestoClient.xml"/>
+
+    <bean name="tradeDate" class="net.a_cappella.madrigal.common.utils.TradeDateUtils" >
+        <constructor-arg index="0" value="${trade.date.change.time}" />
+        <constructor-arg index="1" value="${trade.date.time.zone}" />
+    </bean>
+
+	<bean name="managed-subjects-list" class="java.util.ArrayList">
+        <constructor-arg index="0" type="java.util.Collection">
+            <list>
+                <!-- do not remove from cache -->
+                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                    <constructor-arg index="0" value="select * from credentials" />
+                </bean>
+                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                    <constructor-arg index="0" value="select * from ecn.credentials" />
+                </bean>
+                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                    <constructor-arg index="0" value="select * from market.status" />
+                </bean>
+                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                    <constructor-arg index="0" value="select * from ecn.instrument" />
+                </bean>
+                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                    <constructor-arg index="0" value="select * from ecn.instr.status" />
+                </bean>
+                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                    <constructor-arg index="0" value="select * from monitor" />
+                </bean>
+                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                    <constructor-arg index="0" value="select * from ecn.price" />
+                </bean>
+                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                    <constructor-arg index="0" value="select * from ecn.imbalance" />
+                </bean>
+                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                    <constructor-arg index="0" value="select * from mid.feed" />
+                </bean>
+                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                    <constructor-arg index="0" value="select * from user.status where mode=RESPONSE" />
+                </bean>
+                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                    <constructor-arg index="0" value="select * from ecn.user.status where mode=RESPONSE" />
+                </bean>
+
+                <!-- remove state when receiving a finalize.order message -->
+                <bean class="net.a_cappella.mcache.OrderStateManagedSubject">
+                    <constructor-arg index="0" value="select * from order" />
+                    <constructor-arg index="1" value="select * from finalize.order" />
+                    <constructor-arg index="2" ref="tradeDate"/>
+                </bean>
+
+                <!-- remove from cache at EOD -->
+                <bean class="net.a_cappella.mcache.SeqNoManagedSubject">
+                    <constructor-arg index="0" value="select * from seq.no" />
+                    <constructor-arg index="1" ref="tradeDate"/>
+                </bean>
+            </list>
+        </constructor-arg>
+	</bean>
+
+    <bean name="managedCache" class="net.a_cappella.mcache.ManagedCache" init-method="init">
+        <constructor-arg index="0" ref="client" />
+        <constructor-arg index="1" ref="managed-subjects-list" />
+    </bean>
+
+    <import resource="jmx.xml"/>
+</beans>
