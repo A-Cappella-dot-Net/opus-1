@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <import resource="madrigalConfig.xml"/>
+    <import resource="madrigal-obj-insts-pool.xml"/>
+    <import resource="prestoClient.xml"/>
+
+    <bean name="msgCoder" class="net.a_cappella.continuo.msg.MsgCoder" />
+
+    <bean name="tightLoopThread" class="net.a_cappella.continuo.utils.tightloop.TightLoopThread" init-method="start">
+        <property name="microThreshold" value="${client.micro.threshold}" />
+        <property name="idleStrategy" value="${client.idle.strategy}"/>
+        <property name="pinToCpu" value="${pin.tlt.to.cpu}"/>
+    </bean>
+
+    <bean name="pubHelper" class="net.a_cappella.presto.ps.PublicationHelper">
+        <property name="retriesOnBackPressure" value="${retries.on.back.pressure}"/>
+        <property name="sleepNanosOnBackPressureRetry" value="${sleep.nanos.on.back.pressure.retry}"/>
+    </bean>
+
+    <bean name="serializer" class="net.a_cappella.presto.ps.AeronSerializer" init-method="start" >
+        <constructor-arg index="0" ref="tightLoopThread" />
+        <constructor-arg index="1" ref="pubHelper" />
+        <constructor-arg index="2" value="${tracker.list.size}" />
+        <constructor-arg index="3" value="${tracker.cell.buffer.size}" />
+    </bean>
+
+    <bean name="service" class="net.a_cappella.presto.serializer.SerializerService" init-method="init" >
+        <constructor-arg index="0" ref="client" />
+        <constructor-arg index="1" ref="serializer" />
+    </bean>
+
+    <!-- import resource="jmx.xml"/ -->
+</beans>
