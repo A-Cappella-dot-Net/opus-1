@@ -2,18 +2,26 @@ package net.a_cappella.presto.ps;
 
 import java.util.Arrays;
 
+/**
+ * This histogram is intended to record the distribution of the number of messages processed in a poll operation.
+ * For example,  max=10 [195798034, 950122, 1856, 309, 121, 96, 69, 62, 34, 30, 152, 0]
+ * signifies that there at most 10 messages processes in a poll operation, there were 195798034 poll operations that
+ * resulted in no messages being processed, there were 950122 poll operations that resulted in one message being
+ * processed, there were 152 poll operations that resulted in 10 or more messages being processed, and there were no
+ * poll operations that resulted in an error condition.
+ */
 public class SimpleHistogram {
-    private final int _size;
-    private final int[] _h;
-    private int _max = Integer.MIN_VALUE;
+    private final int _size; // the number of buckets in the histogram is size + 2
+    private final int[] _h; // the histogram buckets
+    private int _max = Integer.MIN_VALUE; // the maximum recorded value
 
     public SimpleHistogram(int size) {
         _size = size;
-        _h = new int[size+1];
+        _h = new int[size+2];
     }
 
     public void reset() {
-        for (int i=0; i<_size+1; i++) {
+        for (int i=0; i<_size+2; i++) {
             _h[i] = 0;
         }
     }
@@ -21,7 +29,7 @@ public class SimpleHistogram {
     public void recordValue(int i) {
         _max = Math.max(i, _max);
         if (i<0) {
-            _h[0]++;
+            _h[_size+1]++;
         } else if (i>_size) {
             _h[_size]++;
         } else {

@@ -666,8 +666,10 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
     }
 
 
-
-
+    /*
+     * These histograms store the distribution of the number of read messages per poll operation, on each of the four
+     * streams. Separate histograms are used for ipc and multicast Loop back streams.
+     */
     private SimpleHistogram _hIpc_0 = null;
     private SimpleHistogram _hIpc_1 = null;
     private SimpleHistogram _hIpc_2 = null;
@@ -698,13 +700,13 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
     }
     @Override
     public void logStats() {
-        if (!_hIpc_0.isEmpty()) log.info("ipc0 {}", _hIpc_0);
-        if (!_hIpc_1.isEmpty()) log.info("ipc1 {}", _hIpc_1);
-        if (!_hIpc_2.isEmpty()) log.info("ipc2 {}", _hIpc_2);
-        if (!_hIpc_3.isEmpty()) log.info("ipc3 {}", _hIpc_3);
-        if (!_hMct_0.isEmpty()) log.info("mct0 {}", _hMct_0);
-        if (!_hMct_1.isEmpty()) log.info("mct1 {}", _hMct_1);
-        if (!_hMct_2.isEmpty()) log.info("mct2 {}", _hMct_2);
-        if (!_hMct_3.isEmpty()) log.info("mct3 {}", _hMct_3);
+        if (!_hIpc_0.isEmpty()) log.info("lb-i0 {}", _hIpc_0);
+        if (!_hIpc_1.isEmpty()) log.info("lb-i1 {}", _hIpc_1);
+        if (!_hIpc_2.isEmpty()) log.info("lb-i2 {}", _hIpc_2);
+        if (!_hIpc_3.isEmpty()) log.info("lb-i3 {}", _hIpc_3);
+        if (!_hMct_0.isEmpty()) log.info("lb-m0 {}", _hMct_0);
+        if (!_hMct_1.isEmpty()) log.info("lb-m1 {}", _hMct_1);
+        if (!_hMct_2.isEmpty()) log.info("lb-m2 {}", _hMct_2);
+        if (!_hMct_3.isEmpty()) log.info("lb-m3 {}", _hMct_3);
     }
 }
