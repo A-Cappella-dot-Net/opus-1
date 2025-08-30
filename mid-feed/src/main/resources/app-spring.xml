@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <import resource="madrigalConfig.xml"/>
+    <import resource="prestoClient.xml"/>
+
+    <bean name="midFeed" class="net.a_cappella.midfeed.MidFeedPublisher" init-method="start">
+        <constructor-arg index="0" ref="client" />
+        <constructor-arg index="1" value="${mid.feed.subject}" />
+        <constructor-arg index="2">
+			<list>
+				<value>${mid.feed.params.2y}</value>
+				<value>${mid.feed.params.3y}</value>
+				<value>${mid.feed.params.5y}</value>
+				<value>${mid.feed.params.7y}</value>
+				<value>${mid.feed.params.10y}</value>
+				<value>${mid.feed.params.30y}</value>
+			</list>
+        </constructor-arg>
+    </bean>
+
+    <!-- import resource="jmx.xml"/ -->
+</beans>
