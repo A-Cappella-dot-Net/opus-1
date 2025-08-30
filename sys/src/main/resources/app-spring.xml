@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <import resource="madrigalConfig.xml"/>
+    <import resource="prestoClient.xml"/>
+
+    <bean name="monitor" class="net.a_cappella.presto.monitor.MonitorService" init-method="init" >
+        <constructor-arg name="client" ref="client" />
+        <constructor-arg name="stalingMonitors">
+            <list>
+				<bean class="net.a_cappella.presto.monitor.StalingMonitor">
+					<constructor-arg name="trigger" value="FT.MDS.lh-0" />
+					<constructor-arg name="stalingActions">
+			            <list>
+							<bean class="net.a_cappella.presto.monitor.StalingAction">
+								<constructor-arg name="stalingPredicate">
+									<bean class="net.a_cappella.presto.monitor.ChangeToNoneOnlyStalingPredicate"/>
+								</constructor-arg>
+								<constructor-arg name="stalingSqls">
+									<list>
+										<value>select * from ecn.price where ecn='ecn0'</value>
+									</list>
+								</constructor-arg>
+							</bean>
+            			</list>
+					</constructor-arg>
+                </bean>
+                <bean class="net.a_cappella.presto.monitor.StalingMonitor">
+                    <constructor-arg name="trigger" value="FT.OMS.lh-0" />
+                    <constructor-arg name="stalingActions">
+                        <list>
+                            <bean class="net.a_cappella.presto.monitor.StalingAction">
+                                <constructor-arg name="stalingPredicate">
+                                    <bean class="net.a_cappella.presto.monitor.AnyActivesChangeExceptFromNoneStalingPredicate"/>
+                                </constructor-arg>
+                                <constructor-arg name="stalingSqls">
+                                    <list>
+                                        <value>select * from market.status where ecn='ecn0' and gwt=ORDER_MANAGER</value>
+                                    </list>
+                                </constructor-arg>
+                            </bean>
+                        </list>
+                    </constructor-arg>
+				</bean>
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <bean name="user-manager" class="net.a_cappella.madrigal.user.MadrigalUserManager" init-method="start" >
+        <constructor-arg index="0" ref="client" />
+    </bean>
+
+    <!-- import resource="jmx.xml"/ -->
+</beans>
