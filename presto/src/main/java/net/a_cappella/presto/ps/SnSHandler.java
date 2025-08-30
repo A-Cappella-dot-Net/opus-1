@@ -83,6 +83,8 @@ public class SnSHandler implements ISnSHandler {
         _snapPhase = new SnapPhase(fromInitMillis, fromLatestMillis, mergeManager);
     }
     private void completeSnap() {
+        _snapPhase = null;
+
         if (_opType == SnSOpType.SNAP) { // snap with no subscription
             _mgr.unsubscribe(_subId);
             log.debug("unsubscribed {}", _subject);
@@ -91,8 +93,6 @@ public class SnSHandler implements ISnSHandler {
             log.debug("completeSnap {}", _subject);
             _snapCompleteListener.onSnapComplete(_subId);
         }
-
-        _snapPhase = null;
     }
 
     public void onMsg(Obj obj) {
@@ -142,7 +142,7 @@ public class SnSHandler implements ISnSHandler {
     }
 
     public void shutdown() {
-        log.info("shutting down subscriber {}", _subject);
+        if (log.isDebugEnabled() && _opType != SnSOpType.SNAP) log.debug("shutting down {} {} => {}", _opType, _sql, _subId);
         if (_snapPhase!=null) {
             _snapPhase.onSnapComplete();
         }

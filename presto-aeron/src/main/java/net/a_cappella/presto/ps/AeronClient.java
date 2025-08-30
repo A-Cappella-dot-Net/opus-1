@@ -695,13 +695,13 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
     }
     @Override
     public void logStats() {
-        log.info(_hIpc_0.toString());
-        log.info(_hIpc_1.toString());
-        log.info(_hIpc_2.toString());
-        log.info(_hIpc_3.toString());
-        log.info(_hMct_0.toString());
-        log.info(_hMct_1.toString());
-        log.info(_hMct_2.toString());
-        log.info(_hMct_3.toString());
+        log.info("ipc0 {}", _hIpc_0);
+        log.info("ipc1 {}", _hIpc_1);
+        log.info("ipc2 {}", _hIpc_2);
+        log.info("ipc3 {}", _hIpc_3);
+        log.info("mct0 {}", _hMct_0);
+        log.info("mct1 {}", _hMct_1);
+        log.info("mct2 {}", _hMct_2);
+        log.info("mct3 {}", _hMct_3);
     }
 }
