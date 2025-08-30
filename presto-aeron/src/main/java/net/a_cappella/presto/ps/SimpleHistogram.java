@@ -29,6 +29,10 @@ public class SimpleHistogram {
         }
     }
 
+    public boolean isEmpty() {
+        return _max == Integer.MIN_VALUE;
+    }
+
     public String toString() {
         return "max="+_max+" "+Arrays.toString(_h);
     }

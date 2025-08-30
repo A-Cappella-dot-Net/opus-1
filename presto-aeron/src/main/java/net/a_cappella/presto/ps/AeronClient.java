@@ -532,7 +532,6 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
         }
     }
 
-
     public int publish(Obj obj) throws Exception {
         String subject = obj.getSubject();
         if (subject==null) {
@@ -566,6 +565,7 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
 
         return offer(pubIpc, pubMct, buffer, len);
     }
+
     public int serialize(Obj obj) throws Exception {
         String subject = obj.getSubject();
         if (subject==null) {
@@ -599,6 +599,7 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
 
         return offer(pubIpc, pubMct, buffer, len);
     }
+
     public int request(SnapRequestObj obj) {
         obj.getRtg().setOriginClient(_myInfo.getId());
         obj.setSerialId(0L);
@@ -610,6 +611,7 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
 
         return offer(_pubIpc_3, _pubMct_3, buffer, len);
     }
+
     public int reply(Obj obj, PubType pubType) {
         if (obj instanceof MapObj) {
             ObjMetaInfo metaInfo = ObjectManager.getInstance().getSubjectMetaInfo(obj.getSubject());
@@ -625,6 +627,7 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
 
         return offer(_pubIpc_3, _pubMct_3, buffer, len);
     }
+
     public void loopback(Obj obj) throws Exception {
         obj.setOnLoopback(true);
         obj.setSerialId(0L);
@@ -695,13 +698,13 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
     }
     @Override
     public void logStats() {
-        log.info("ipc0 {}", _hIpc_0);
-        log.info("ipc1 {}", _hIpc_1);
-        log.info("ipc2 {}", _hIpc_2);
-        log.info("ipc3 {}", _hIpc_3);
-        log.info("mct0 {}", _hMct_0);
-        log.info("mct1 {}", _hMct_1);
-        log.info("mct2 {}", _hMct_2);
-        log.info("mct3 {}", _hMct_3);
+        if (!_hIpc_0.isEmpty()) log.info("ipc0 {}", _hIpc_0);
+        if (!_hIpc_1.isEmpty()) log.info("ipc1 {}", _hIpc_1);
+        if (!_hIpc_2.isEmpty()) log.info("ipc2 {}", _hIpc_2);
+        if (!_hIpc_3.isEmpty()) log.info("ipc3 {}", _hIpc_3);
+        if (!_hMct_0.isEmpty()) log.info("mct0 {}", _hMct_0);
+        if (!_hMct_1.isEmpty()) log.info("mct1 {}", _hMct_1);
+        if (!_hMct_2.isEmpty()) log.info("mct2 {}", _hMct_2);
+        if (!_hMct_3.isEmpty()) log.info("mct3 {}", _hMct_3);
     }
 }
