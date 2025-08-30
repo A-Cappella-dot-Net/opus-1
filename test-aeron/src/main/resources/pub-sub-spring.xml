@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <bean name="embeddedMediaDriver" class="net.a_cappella.presto.EmbeddedMediaDriver" init-method="start">
+        <property name="mediaDriverType" value="${media.driver.type}"/>
+    </bean>
+
+    <import resource="prestoConfig.xml"/>
+    <import resource="prestoClient.xml"/>
+
+	<bean name="pubSub" class="net.a_cappella.test.aeron.presto.PubSub" init-method="start">
+		<constructor-arg index="0" ref="client" />
+		<constructor-arg index="1" value="${channel.type}" />
+		<constructor-arg index="2" value="${media.driver.type}" />
+        <property name="mediaDriver" ref="embeddedMediaDriver"/>
+        <property name="tightLoopThread" ref="tightLoopThread"/>
+	</bean>
+
+    <!-- import resource="jmx.xml"/ -->
+</beans>
