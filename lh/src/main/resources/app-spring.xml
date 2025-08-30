@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <import resource="lhConfig.xml"/>
+
+    <import resource="fix-dictionary.xml"/>
+    <bean name="dictionary" class="net.a_cappella.cembalo.generator.Dictionary">
+        <constructor-arg index="0" ref="tags-list" />
+        <constructor-arg index="1" ref="blocks-list" />
+        <constructor-arg index="2" ref="groups-list" />
+        <constructor-arg index="3" ref="messages-list" />
+    </bean>
+
+    <bean name="incrementalIdGenerator" class="net.a_cappella.madrigal.common.utils.IncrementalIdGenerator">
+        <constructor-arg index="0" value="../" />
+        <constructor-arg index="1" value="${idGen.prefix}" />
+        <constructor-arg index="2" value="yyMMdd" />
+        <constructor-arg index="3" value="1000" />
+    </bean>
+
+    <bean name="credentialsCache" class="net.a_cappella.madrigal.CredentialsCache" init-method="init">
+        <constructor-arg index="0" ref="client" />
+        <constructor-arg index="1" value="${ecn}" />
+    </bean>
+
+    <bean name="instrumentCache" class="net.a_cappella.madrigal.InstrumentCache" init-method="init">
+        <constructor-arg index="0" ref="client" />
+        <constructor-arg index="1" value="${ecn}" />
+    </bean>
+
+    <bean name="lineHandler" class="net.a_cappella.lh.LineHandler" init-method="init">
+        <constructor-arg name="ecn" value="${ecn}" />
+        <constructor-arg name="coder" ref="msgCoder" />
+        <constructor-arg name="connInfoStr" value="${exchange.connection.info}" />
+        <constructor-arg name="dictionary" ref="dictionary"/>
+
+        <property name="marketDataService" ref="marketDataService" />
+        <property name="ecnUserManager" ref="ecnUserManager" />
+        <property name="orderManagerService" ref="orderManagerService" />
+        <property name="connectionTimeoutMicros" value="${connection.timeout.micros}"/>
+    </bean>
+
+    <bean name="marketDataService" class="net.a_cappella.madrigal.MarketDataService" init-method="init">
+        <constructor-arg index="0" ref="client" />
+    </bean>
+
+    <bean name="ecnUserManager" class="net.a_cappella.madrigal.user.EcnUserManager" init-method="start">
+        <constructor-arg index="0" ref="client" />
+        <constructor-arg index="1" value="${ecn}" />
+        <constructor-arg index="2" ref="lineHandler" />
+    </bean>
+
+    <bean name="omsParams" class="net.a_cappella.madrigal.om.OrderManagerServiceParams">
+        <constructor-arg name="adaptor" ref="lineHandler" />
+        <constructor-arg name="delRetryType" value="${cancel.retry.type}" />
+        <constructor-arg name="delRetryConstant" value="${cancel.retry.constant}" />
+        <constructor-arg name="nativeIocSupported" value="${native.ioc.supported}" />
+        <constructor-arg name="conflateRequests" value="${shortcut.mode}" />
+        <constructor-arg name="processOnePendingRequestAtATime" value="${one.request.at.a.time}" />
+        <constructor-arg name="useDelAddForPriceChange" value="${use.del.add.for.price.change}" />
+        <constructor-arg name="strictRwt" value="${strict.rwt}" />
+        <constructor-arg name="actionOnFailover" value="${action.on.failover}" />
+    </bean>
+
+    <bean name="orderManagerService" class="net.a_cappella.madrigal.om.OrderManagerService" init-method="start">
+        <constructor-arg index="0" ref="client" />
+        <constructor-arg index="1" value="${ecn}" />
+        <constructor-arg index="2" ref="credentialsCache" />
+        <constructor-arg index="3" ref="instrumentCache" />
+        <constructor-arg index="4" ref="omsParams" />
+        <constructor-arg index="5" ref="lineHandler" />
+        <constructor-arg index="6" ref="ecnUserManager" />
+    </bean>
+
+    <!-- import resource="jmx.xml"/ -->
+</beans>

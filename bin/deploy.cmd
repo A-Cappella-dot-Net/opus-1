@@ -15,17 +15,17 @@ scp -p %APPS_HOME%\daemons-aeron\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/
 
 scp -p %APPS_HOME%\exchange\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
 
-@REM scp -p %APPS_HOME%\lh\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
+scp -p %APPS_HOME%\lh\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
 
 scp -p %APPS_HOME%\m-cache\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
 
-@REM scp -p %APPS_HOME%\market-maker\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
+scp -p %APPS_HOME%\market-maker\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
 
-@REM scp -p %APPS_HOME%\mid-feed\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
+scp -p %APPS_HOME%\mid-feed\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
 
-@REM scp -p %APPS_HOME%\sys\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
+scp -p %APPS_HOME%\sys\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
 
-@REM scp -p %APPS_HOME%\serializer\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
+scp -p %APPS_HOME%\serializer\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
 
 scp -p %APPS_HOME%\test-aeron\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
 
