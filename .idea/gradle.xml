@@ -31,6 +31,7 @@
             <option value="$PROJECT_DIR$/madrigal" />
             <option value="$PROJECT_DIR$/madrigal-aeron" />
             <option value="$PROJECT_DIR$/madrigal-common" />
+            <option value="$PROJECT_DIR$/market-maker" />
             <option value="$PROJECT_DIR$/mid-feed" />
             <option value="$PROJECT_DIR$/presto" />
             <option value="$PROJECT_DIR$/presto-aeron" />

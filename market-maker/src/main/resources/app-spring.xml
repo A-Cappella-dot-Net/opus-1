@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <import resource="madrigalConfig.xml"/>
+    <import resource="prestoClient.xml"/>
+
+    <bean name="incrementalIdGenerator" class="net.a_cappella.madrigal.common.utils.IncrementalIdGenerator">
+        <constructor-arg index="0" value="../" />
+        <constructor-arg index="1" value="${idGen.prefix}" />
+        <constructor-arg index="2" value="yyMMdd" />
+        <constructor-arg index="3" value="1000" />
+    </bean>
+
+    <bean name="manager" class="net.a_cappella.marketmaker.MarketMakerManager" init-method="start">
+        <constructor-arg index="0" ref="client" />
+        <constructor-arg index="1" ref="incrementalIdGenerator" />
+        <constructor-arg index="2" value="${ecn}" />
+        <constructor-arg index="3" value="${user.id}" />
+        <constructor-arg index="4" value="${user.pwd}" />
+        <constructor-arg index="5">
+			<list>
+				<value>${mmm.2y}</value>
+<!--
+				<value>${mmm.3y}</value>
+				<value>${mmm.5y}</value>
+				<value>${mmm.7y}</value>
+				<value>${mmm.10y}</value>
+				<value>${mmm.30y}</value>
+-->
+			</list>
+        </constructor-arg>
+        <constructor-arg index="6" value="${midFeed.fixed.delay}" />
+        <constructor-arg index="7" value="${midFeed.random.range.delay}" />
+    </bean>
+
+    <!-- import resource="jmx.xml"/ -->
+</beans>
