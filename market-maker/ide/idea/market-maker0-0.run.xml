@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="market-maker0-0" type="Application" factoryName="Application">
+    <option name="ALTERNATIVE_JRE_PATH" value="temurin-21" />
+    <option name="MAIN_CLASS_NAME" value="net.a_cappella.continuo.Main" />
+    <module name="opus-1.market-maker.main" />
+    <option name="VM_PARAMETERS" value="-Dinstance=0-0 -Xbootclasspath/a:config;app -Xms100M -Xmx100M -XX:SoftMaxHeapSize=50M -XX:+UseZGC -XX:+ZGenerational -XX:+AlwaysPreTouch -Xlog:gc*:file=C:\temp\market-maker0-0-gc.log " />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/market-maker" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

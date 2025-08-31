@@ -1,0 +1,14 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="simple-client-0" type="Application" factoryName="Application" folderName="test-presto">
+    <option name="ALTERNATIVE_JRE_PATH" value="temurin-21" />
+    <output_file path="C:\temp\simpleClient-0.log " is_save="true" />
+    <option name="MAIN_CLASS_NAME" value="net.a_cappella.continuo.Main" />
+    <module name="opus-1.test-presto.main" />
+    <option name="PROGRAM_PARAMETERS" value="simple-client-spring.xml" />
+    <option name="VM_PARAMETERS" value="-Dinstance=-simpleClient-0 -Xbootclasspath/a:config;app -Xms100M -Xmx100M -XX:SoftMaxHeapSize=50M -XX:+UseZGC -XX:+ZGenerational -XX:+AlwaysPreTouch -Xlog:gc*:file=C:\temp\simpleClient-0-gc.log " />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/test-presto" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
