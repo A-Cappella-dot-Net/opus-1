@@ -1,0 +1,13 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="ftEng-11" type="Application" factoryName="Application" folderName="test-presto">
+    <option name="ALTERNATIVE_JRE_PATH" value="temurin-21" />
+    <option name="MAIN_CLASS_NAME" value="net.a_cappella.continuo.Main" />
+    <module name="opus-1.test-presto.main" />
+    <option name="PROGRAM_PARAMETERS" value="ft-engine-spring.xml" />
+    <option name="VM_PARAMETERS" value="-Dinstance=-ftEng-11" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/test-presto" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
