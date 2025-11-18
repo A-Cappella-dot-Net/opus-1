@@ -331,6 +331,7 @@ public class TabContents extends JPanel implements ActionListener, ItemListener,
 					}
 					_keyField.setText(keys);
 					model.setGroupByKey(true);
+					_resultField.setText("Grouping '"+subject+"' records by: " + keys);
 				}
 			} catch (Exception x) {
 				log.error("", x);
@@ -339,6 +340,7 @@ public class TabContents extends JPanel implements ActionListener, ItemListener,
 		} else {
 //			_keyField.setText("");
 			model.setGroupByKey(false);
+			_resultField.setText("No grouping");
 		}
 	}
 
@@ -475,7 +477,7 @@ public class TabContents extends JPanel implements ActionListener, ItemListener,
 		}
 
 		public void add(Obj obj) {
-			if (obj.getPubType()== PubType.SNP) return;
+			if (obj.getPubType() == PubType.SNP) return;
 
 			obj.startUsing();
 			boolean columnAdded = false;
