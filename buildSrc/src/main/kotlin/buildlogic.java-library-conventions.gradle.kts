@@ -5,3 +5,7 @@ plugins {
     // Apply the java-library plugin for API and implementation separation.
     `java-library`
 }
+
+version = "1.0.0-SNAPSHOT"
+group = "net.a-cappella"
+
