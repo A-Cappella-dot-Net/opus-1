@@ -26,6 +26,7 @@
             <option value="$PROJECT_DIR$/daemons-aeron" />
             <option value="$PROJECT_DIR$/data-publisher" />
             <option value="$PROJECT_DIR$/data-subscriber" />
+            <option value="$PROJECT_DIR$/dev-tools" />
             <option value="$PROJECT_DIR$/exchange" />
             <option value="$PROJECT_DIR$/lh" />
             <option value="$PROJECT_DIR$/m-cache" />

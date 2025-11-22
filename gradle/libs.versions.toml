@@ -1,6 +1,7 @@
 [versions]
 apache-text = "1.14.0"
 guava = "33.4.5-jre" # 23.0
+gson = "2.10.1"
 spring-framework = "6.2.10"
 hdrhistogram = "2.2.2"
 affinity = "3.20.0"
@@ -14,10 +15,14 @@ mockito = "5.18.0"
 hamcrest = "3.0"
 junit-bom = "5.13.3"
 cucumber-bom = "7.24.0"
+java-websocket = "1.5.3"
+jetty-server = "11.0.26"
+jetty-server-websocket = "11.0.26"
 
 [libraries]
 apache-text = { module = "org.apache.commons:commons-text", version.ref = "apache-text" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 spring-framework = { module = "org.springframework:spring-context-support", version.ref = "spring-framework" }
 hdrhistogram = { module = "org.hdrhistogram:HdrHistogram", version.ref = "hdrhistogram" }
 affinity = { module = "net.openhft:affinity", version.ref = "affinity" }
@@ -31,3 +36,6 @@ mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-bom" }
 cucumber-bom = { module = "io.cucumber:cucumber-bom", version.ref = "cucumber-bom" }
+java-websocket = { module = "org.java-websocket:Java-WebSocket", version.ref = "java-websocket" }
+jetty-server = { module = "org.eclipse.jetty:jetty-server", version.ref = "jetty-server" }
+jetty-server-websocket = { module = "org.eclipse.jetty.websocket:websocket-jetty-server", version.ref = "jetty-server-websocket" }

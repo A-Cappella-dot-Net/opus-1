@@ -1,0 +1,12 @@
+.tab-content {
+  flex: 1;
+  overflow: hidden;
+  display: none;
+}
+
+.tab-content.active {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 16px;
+}

@@ -1,0 +1,107 @@
+.controls-panel {
+  background-color: white;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.control-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.control-row:last-child {
+  margin-bottom: 0;
+}
+
+.text-input {
+  flex: 1;
+  border: 1px solid #d1d5db;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.text-input:disabled {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.checkbox-label, .radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox-label.disabled, .radio-label.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+input[type="checkbox"], input[type="radio"] {
+  cursor: pointer;
+}
+
+input[type="checkbox"]:disabled, input[type="radio"]:disabled {
+  cursor: not-allowed;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: opacity 0.2s;
+  min-width: 100px;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+.btn-green {
+  background-color: #10b981;
+}
+
+.btn-purple {
+  background-color: #8b5cf6;
+}
+
+.btn-red {
+  background-color: #ef4444;
+}
+
+.btn-gray {
+  background-color: #6b7280;
+}
+
+.btn-orange {
+  background-color: #f97316;
+}
+
+.btn-blue {
+  background-color: #3b82f6;
+}
+
+/* Button group containers for positioning */
+.button-group {
+  display: inline-block;
+  min-width: 100px;
+}
+
+.button-group .btn {
+  display: block;
+  width: 100%;
+}

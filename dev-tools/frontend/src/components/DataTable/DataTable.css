@@ -1,0 +1,236 @@
+.table-container {
+  flex: 1;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+.table-wrapper {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.table-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.table-header {
+  flex-shrink: 0;
+  overflow: hidden;
+  background-color: #f3f4f6;
+  border-bottom: 1px solid #d1d5db;
+}
+
+.table-header table {
+  border-collapse: collapse;
+  width: auto;
+  table-layout: fixed;
+}
+
+.table-body {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.table-body-inner {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+table {
+  border-collapse: collapse;
+  width: auto;
+  table-layout: fixed;
+}
+
+th, td {
+  border: 1px solid #d1d5db;
+  padding: 8px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  height: 33px;
+  line-height: 17px;
+}
+
+th {
+  background-color: #f3f4f6;
+  font-weight: 600;
+  position: relative;
+  user-select: none;
+  cursor: move;
+}
+
+th.dragging {
+  opacity: 0.5;
+  background-color: #dbeafe;
+}
+
+th.drag-over {
+  border-left: 3px solid #3b82f6;
+}
+
+.resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  user-select: none;
+  background: transparent;
+  z-index: 10;
+}
+
+.resize-handle:hover {
+  background: rgba(59, 130, 246, 0.3);
+}
+
+.resize-handle.resizing {
+  background: rgba(59, 130, 246, 0.5);
+}
+
+tr:hover td {
+  background-color: #f9fafb;
+}
+
+tr.selected td {
+  background-color: #dbeafe !important;
+  border-color: #3b82f6;
+}
+
+tr.selected:hover td {
+  background-color: #bfdbfe !important;
+}
+
+.custom-scrollbar {
+  width: 16px;
+  background-color: #f3f4f6;
+  position: relative;
+  cursor: pointer;
+  flex: 1;
+  user-select: none;
+}
+
+.custom-scrollbar.horizontal {
+  width: auto;
+  height: 16px;
+}
+
+.custom-scrollbar-thumb {
+  background-color: #9ca3af;
+  border-radius: 8px;
+  border: 3px solid #f3f4f6;
+  position: absolute;
+  cursor: grab;
+}
+
+.custom-scrollbar-thumb:hover {
+  background-color: #6b7280;
+}
+
+.custom-scrollbar-thumb:active {
+  cursor: grabbing;
+}
+
+.custom-scrollbar-thumb.vertical {
+  width: 100%;
+  left: 0;
+}
+
+.custom-scrollbar-thumb.horizontal {
+  height: 100%;
+  top: 0;
+}
+
+.scroll-container {
+  display: flex;
+  align-items: stretch;
+}
+
+.scroll-container.vertical {
+  flex-direction: column;
+  width: 16px;
+}
+
+.scroll-container.horizontal {
+  flex-direction: row;
+  height: 16px;
+  width: 100%;
+}
+
+.scroll-arrow {
+  background-color: #e5e7eb;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+  font-size: 12px;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.scroll-arrow:hover {
+  background-color: #d1d5db;
+}
+
+.scroll-arrow:active {
+  background-color: #9ca3af;
+}
+
+.scroll-arrow.vertical {
+  width: 16px;
+  height: 16px;
+}
+
+.scroll-arrow.horizontal {
+  width: 16px;
+  height: 16px;
+}
+
+/* Type-specific cell styling */
+.cell-type-integer,
+.cell-type-decimal {
+  font-variant-numeric: tabular-nums; /* Align numbers nicely */
+}
+
+.cell-type-boolean {
+  font-weight: 500;
+}
+
+.cell-bool-true {
+  color: #10b981; /* Green for true */
+}
+
+.cell-bool-false {
+  color: #6b7280; /* Gray for false */
+}
+
+.cell-negative {
+  color: #ef4444; /* Red for negative numbers */
+}
+
+.cell-type-datetime {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+}
+
+/* Optional: Make entire table monospace for better data alignment */
+/*
+table {
+  font-family: 'Courier New', Consolas, Monaco, monospace;
+}
+*/

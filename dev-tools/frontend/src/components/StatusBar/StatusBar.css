@@ -1,0 +1,10 @@
+.status-bar {
+  font-size: 12px;
+  color: #6b7280;
+  padding: 8px 0;
+}
+
+.selection-info {
+  margin-left: 16px;
+  color: #3b82f6;
+}

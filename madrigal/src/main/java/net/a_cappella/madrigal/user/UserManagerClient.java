@@ -28,7 +28,7 @@ import static net.a_cappella.madrigal.common.constants.MadrigalLogOp.login;
 import static net.a_cappella.madrigal.common.constants.MadrigalLogOp.logout;
 import static net.a_cappella.presto.ft.constants.FtMsgOp.DISCONNECT;
 
-public class UserManagerClient {
+public class UserManagerClient implements IUserManagerClient {
     private static final Logger log = LoggerFactory.getLogger(UserManagerClient.class);
 
     private static final String _loopbackTimerSql = "select * from ping where onLoopback=true";
@@ -54,6 +54,10 @@ public class UserManagerClient {
 
 	private final ScheduledThreadPoolExecutor _scheduler = new ScheduledThreadPoolExecutor(1, _threadFactory);
     private ScheduledFuture<?> _scheduledFuture = null;
+	private boolean _retryIfNotLoggedIn = false;
+	public void setRetryIfNotLoggedIn(boolean retryIfNotLoggedIn) {
+		_retryIfNotLoggedIn = retryIfNotLoggedIn;
+	}
 
     private final PingObj _ping = new PingObj();
 
@@ -61,7 +65,7 @@ public class UserManagerClient {
     private final int _instance;
     private final String _ecn;
 
-    private final String _clId;
+    private String _clId;
 
     private final Map<String, UserStatusObj> _userStatusByUid = new HashMap<>(); // (uid, userStatus)
     private final Map<String, Map<String, EcnUserStatusObj>> _ecnUserStatusMap = new HashMap<>(); // (ecn, (uid, ecnUserStatus))
@@ -77,6 +81,11 @@ public class UserManagerClient {
         _clId = Utils.nextId();
     }
 
+	public void adjustClId(String clId) {
+		_clId += clId;
+	}
+
+	@Override
 	public void start() {
         ShutdownHook.registerShutdownAction(() -> stop());
 
@@ -137,6 +146,7 @@ public class UserManagerClient {
     	return ecnUserStatus.getStatus() == MadrigalUserStatus.On;
     }
 
+	@Override
     public void login(String uid, String pwd, boolean rejectIfLoggedIn) {
     	if (_client.onTLT()) {
     		handleLoginRequest(uid, pwd, rejectIfLoggedIn);
@@ -145,6 +155,7 @@ public class UserManagerClient {
     	}
     }
 
+	@Override
     public void logout(String uid, String pwd, boolean forceLogout) {
     	if (_client.onTLT()) {
     		handleLogoutRequest(uid, pwd, forceLogout);
@@ -160,7 +171,8 @@ public class UserManagerClient {
     private void onTimeoutMsg(PingObj ping) {
 		_activeRequests._userStatusRequests.forEach(reqAndSubsId -> {
 			String uid = reqAndSubsId._req.getUid();
-			if (!isLoggedIn(uid)) {
+			UserStatusObj userStatus = _userStatusByUid.get(uid);
+			if (userStatus == null || (_retryIfNotLoggedIn && userStatus.getReqStatus() == MadrigalUserStatus.Off && !"Invalid credentials".equals(userStatus.getText()))) {
 				publish(login, uid, reqAndSubsId._req.getPwd(), reqAndSubsId._req.isRejectIfLoggedIn(), false);
 			}
 		});
@@ -206,7 +218,7 @@ public class UserManagerClient {
             	onFtMemberMessage((FtMemberObj) obj);
             });
 		} catch (Exception e) {
-			log.error("", e);
+			log.error("{}", _clId, e);
 		}
     }
 
@@ -221,53 +233,53 @@ public class UserManagerClient {
     }
 
     private void publish(MadrigalLogOp op, String uid, String pwd, boolean rejectIfLoggedIn, boolean forceLogout) {
-    	if (log.isDebugEnabled()) log.info("publish {} {} {}", op, uid, pwd);
+    	if (log.isDebugEnabled()) log.info("{} publish {} {} {}", _clId, op, uid, pwd);
 		try {
 	        UserStatusObj req = _userStatusObjThreadLocal.get();
 			req.setRequest(uid, _clId, op, pwd, rejectIfLoggedIn, forceLogout, System.currentTimeMillis());
 			_client.publish(req);
 		} catch (Exception e) {
-			log.error("", e);
+			log.error("{}", _clId, e);
 		}
     }
 
     private void loopback(MadrigalLogOp op, String uid, String pwd, boolean rejectIfLoggedIn, boolean forceLogout) {
-    	if (log.isDebugEnabled()) log.info("loopback {} {} {}", op, uid, pwd);
+    	if (log.isDebugEnabled()) log.info("{} loopback {} {} {}", _clId, op, uid, pwd);
 		try {
 	        UserStatusObj obj = _userStatusObjThreadLocal.get();
 			obj.setRequest(uid, _clId, op, pwd, rejectIfLoggedIn, forceLogout, System.currentTimeMillis());
 			_client.loopback(obj);
 		} catch (Exception e) {
-			log.error("", e);
+			log.error("{}", _clId, e);
 		}
     }
 
 	private void onFtMemberMessage(FtMemberObj ftMem) {
-        log.info("onFtMemberMessage("+ftMem.getGroupName()+"_"+ftMem.getInstance()+" '"+ftMem.getAction()+"' "+ftMem.getSliceNo()+"/"+ftMem.getOfSlices()+")");
+        log.info("{} onFtMemberMessage({}_{} '{}' {}/{})", _clId, ftMem.getGroupName(), ftMem.getInstance(), ftMem.getAction(), ftMem.getSliceNo(), ftMem.getOfSlices());
         if (ftMem.getAction() == DISCONNECT) {
         	_userStatusByUid.forEach((uid, userStatus) -> {
         		userStatus.setStatus(MadrigalUserStatus.Off);
         		userStatus.setReqStatus(MadrigalUserStatus.Off);
     			userStatus.setText("Disconnected");
-    			log.info("onDisconnect {}", userStatus);
+    			log.info("{} onDisconnect {}", _clId, userStatus);
         	});
         	_ecnUserStatusMap.forEach((ecn, ecnUserStatusByUid) -> {
         		ecnUserStatusByUid.forEach((uid, ecnUserStatus) -> {
         			ecnUserStatus.setStatus(MadrigalUserStatus.Off);
         			ecnUserStatus.setText("Disconnected");
-        			log.info("onDisconnect {}", ecnUserStatus);
+        			log.info("{} onDisconnect {}", _clId, ecnUserStatus);
         		});
         	});
         }
 	}
 
 
-    private static class RequestAndSubId {
+    private class RequestAndSubId {
     	UserStatusObj _req;
     	long _subId;
     }
 
-    private static class ActiveRequests {
+    private class ActiveRequests {
         List<RequestAndSubId> _userStatusRequests = new ArrayList<>();
 
         RequestAndSubId activateRequest(String uid, String pwd, boolean rejectIfLoggedIn) {
@@ -276,6 +288,7 @@ public class UserManagerClient {
         			// update password
         			elem._req.setPwd(pwd);
         			elem._req.setRejectIfLoggedIn(rejectIfLoggedIn);
+					_userStatusByUid.remove(uid);
         			return null;
         		}
         	}

@@ -110,7 +110,7 @@ public class MadrigalUserManager {
 
 	@VisibleForTesting
 	public void onUserRequestMessage(UserStatusObj request, boolean checkCredentials) {
-        log.info("{} onUserRequestMessage {} {}", _appInfo, checkCredentials, request);
+        log.info("{} onUserRequestMessage {} {} onLoopback={}", _appInfo, checkCredentials, request, request.isOnLoopback());
         String uid = request.getUid();
         String clId = request.getClId();
         boolean rejectIfAlreadyLoggedIn = request.isRejectIfLoggedIn();
