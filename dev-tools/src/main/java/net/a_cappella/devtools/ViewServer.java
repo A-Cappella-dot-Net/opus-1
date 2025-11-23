@@ -6,24 +6,28 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class ViewServer {
     private static final Logger log = LoggerFactory.getLogger(ViewServer.class);
 
-    private final PrestoClient _client;
+    public final PrestoClient _client;
+    public final ScheduledExecutorService _scheduler = Executors.newScheduledThreadPool(1);
+
     private final Server _server;
-    private final SessionHandler _sessionHandler;
+    public final ConcurrentMap<Session, SessionHandler> _sessionHandlersBySession = new ConcurrentHashMap<>();
 
     public ViewServer(PrestoClient client) {
         _client = client;
         _server = new Server(8080);
-        _sessionHandler = new SessionHandler(_client);
-        _sessionHandler.start();
 
         ShutdownHook.registerShutdownAction(() -> stop());
     }
@@ -33,6 +37,8 @@ public class ViewServer {
     }
 
     public void init() throws Exception {
+        _client.waitUntilInitialized();
+
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
 
@@ -44,7 +50,7 @@ public class ViewServer {
 
         JettyWebSocketServletContainerInitializer.configure(context, (servletContext, wsContainer) -> {
             wsContainer.addMapping("/ws",
-                    (servletUpgradeRequest, servletUpgradeResponse) -> _sessionHandler);
+                    (servletUpgradeRequest, servletUpgradeResponse) -> new SessionHandler(this));
         });
 
         _server.setHandler(context);
@@ -54,9 +60,10 @@ public class ViewServer {
 
     public void stop() {
         log.info("Shutting down server...");
+        _scheduler.shutdown();
         try {
-            _sessionHandler.stop();
-            log.info("SessionHandler stopped");
+            _sessionHandlersBySession.forEach((session, sessionHandler) -> sessionHandler.stop());
+            log.info("SessionHandlers stopped");
         } catch (Exception e) {
             log.error("", e);
         }

@@ -15,10 +15,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class SessionHandler implements WebSocketListener {
     private static final Logger log = LoggerFactory.getLogger(SessionHandler.class);
@@ -36,7 +33,8 @@ public class SessionHandler implements WebSocketListener {
     private final Gson _gsonOut = new Gson();
     private final Gson _gsonIn = new Gson();
 
-    private ScheduledExecutorService _scheduler;
+    private final ScheduledExecutorService _scheduler;
+    private final ConcurrentMap<Session, SessionHandler> _sessionHandlersBySession;
     private ScheduledFuture<?> _pingTask;
 
     private SubscriberHandler _subscriberHandler;
@@ -50,53 +48,37 @@ public class SessionHandler implements WebSocketListener {
         }
     };
 
-    public SessionHandler(PrestoClient client) {
-        _client = client;
+    public SessionHandler(ViewServer viewServer) {
+        _client = viewServer._client;
+        _scheduler = viewServer._scheduler;
+        _sessionHandlersBySession = viewServer._sessionHandlersBySession;
     }
 
     public void start() {
-        _scheduler = Executors.newScheduledThreadPool(1);
-
-        _client.waitUntilInitialized();
-
         if (_client instanceof AeronClient) {
             _userMgr = new MyUserManagerClient(_client, _notifyGui);
         } else {
             _userMgr = new DummyUserManagerClient(_notifyGui);
         }
-    }
-
-    public void stop() {
-        _scheduler.shutdown();
-    }
-
-    @Override
-    public void onWebSocketConnect(Session session) {
-        _session = session;
-        _remote = session.getRemoteAddress().toString();
-        _userMgr.adjustClId(":" + ((InetSocketAddress) session.getRemoteAddress()).getPort());
+        _userMgr.adjustClId(":" + ((InetSocketAddress) _session.getRemoteAddress()).getPort());
         _userMgr.start();
 
-        long period = session.getIdleTimeout().getSeconds() - 1;
+        long period = _session.getIdleTimeout().getSeconds() - 1;
         ByteBuffer keepalive = ByteBuffer.wrap("keepalive".getBytes());
         _pingTask = _scheduler.scheduleAtFixedRate(() -> {
             try {
-                if (session.isOpen()) {
+                if (_session.isOpen()) {
                     log.debug("{} Sending ping", _remote);
-                    session.getRemote().sendPing(keepalive);
+                    _session.getRemote().sendPing(keepalive);
                 }
             } catch (Exception e) {
                 log.error("{} Failed to send ping: {}", _remote, e.getMessage());
             }
         }, period, period, TimeUnit.SECONDS);
-
-        log.info("{} New connection", _remote);
     }
 
-    @Override
-    public void onWebSocketClose(int statusCode, String reason) {
-        log.info("{} Connection closed. User: {}, Status Code: {}, Reason: {}", _remote, _username, statusCode, reason);
-
+    public void stop() {
+        _sessionHandlersBySession.remove(_session);
         // Cancel the ping task
         if (_pingTask != null) {
             _pingTask.cancel(false);
@@ -110,9 +92,25 @@ public class SessionHandler implements WebSocketListener {
         if (_publisherHandler != null) {
             _publisherHandler.onWebSocketClose();
         }
-
     }
 
+    @Override
+    public void onWebSocketConnect(Session session) {
+        _session = session;
+        _sessionHandlersBySession.put(session, this);
+        _remote = session.getRemoteAddress().toString();
+
+        log.info("{} New connection", _remote);
+        start();
+    }
+
+    @Override
+    public void onWebSocketClose(int statusCode, String reason) {
+        log.info("{} Connection closed. User: {}, Status Code: {}, Reason: {}", _remote, _username, statusCode, reason);
+        stop();
+    }
+
+    @Override
     public void onWebSocketError(Throwable error) {
         log.error("{} WebSocket error {}", _remote, error.getMessage());
     }

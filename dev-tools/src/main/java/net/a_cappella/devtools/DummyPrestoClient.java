@@ -190,7 +190,7 @@ public class DummyPrestoClient implements PrestoClient {
         String subject = obj.getSubject();
         _generatorsBySubId.forEach((subId, gen) -> {
             if (subject.equals(gen.getSubject())) {
-                if (gen._whereClause.satisfiesWhereClause(obj)) {
+                if (gen._whereClause == null || gen._whereClause.satisfiesWhereClause(obj)) {
                     gen._subListener.onSubscriptionMessage(obj, subId);
                 }
             }
