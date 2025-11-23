@@ -82,10 +82,10 @@ public class SubscriberTab implements ISnSListener {
         sendViewportData();
     }
 
-    public void handleScrollUpdate(int viewportPositionFromTop, int startCol, int viewportPositionFromLeft) {
-        if (viewportPositionFromTop >= 0) _viewportPositionFromTop = viewportPositionFromTop;
-        if (startCol >= 0) _startCol = startCol;
-        if (viewportPositionFromLeft >= 0) _viewportPositionFromLeft = viewportPositionFromLeft;
+    public void handleScrollUpdate(JsonObject msg) {
+        _viewportPositionFromTop = msg.has("viewportPositionFromTop") ? msg.get("viewportPositionFromTop").getAsInt() : _viewportPositionFromTop;
+        _startCol = msg.has("startCol") ? msg.get("startCol").getAsInt() : _startCol;
+        _viewportPositionFromLeft = msg.has("scrollLeftPixels") ? msg.get("scrollLeftPixels").getAsInt() : _viewportPositionFromLeft;
 
         sendViewportData();
     }

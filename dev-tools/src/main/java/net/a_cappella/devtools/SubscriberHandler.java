@@ -133,11 +133,7 @@ public class SubscriberHandler {
         String tabId = msg.get("tabId").getAsString();
 
         SubscriberTab tab = _tabs.get(tabId);
-        tab.handleScrollUpdate(
-                msg.has("viewportPositionFromTop") ? msg.get("viewportPositionFromTop").getAsInt() : -1,
-                msg.has("startCol") ? msg.get("startCol").getAsInt() : -1,
-                msg.has("scrollLeftPixels") ? msg.get("scrollLeftPixels").getAsInt() : -1
-        );
+        tab.handleScrollUpdate(msg);
     }
 
     private void handleResizeColumn(JsonObject msg) {
