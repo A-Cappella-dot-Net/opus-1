@@ -78,7 +78,7 @@ public class DummyPrestoClient implements PrestoClient {
         private final String _subject;
 
         public ObjGenerator(long subId, ISubscriptionListener subListener, SqlParserResult sqlComps, int snapCnt, int subsCnt) {
-            _subListener= subListener;
+            _subListener = subListener;
             _subject = sqlComps.getFromTable();
             _whereClause = sqlComps.getEvalTree();
             _thread = new Thread(() -> {

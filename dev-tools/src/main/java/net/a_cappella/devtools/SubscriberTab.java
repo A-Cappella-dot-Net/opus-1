@@ -253,12 +253,11 @@ public class SubscriberTab implements ISnSListener {
         if (metaInfo == null) {
             sendStatus("Unknown subject '"+subject+"'");
         } else {
-            List<ColumnDef> allColumns = new ArrayList<>();
+            List<ColumnDef> headerColumns = new ArrayList<>();
             for (FieldMetaInfo fmi : ObjMetaInfo._headerFieldsMap.values()) {
-                if (!"subject".equals(fmi.getName())) {
-                    allColumns.add(getColumnDef(fmi));
-                }
+                headerColumns.add(getColumnDef(fmi));
             }
+            List<ColumnDef> allColumns = new ArrayList<>();
             for (FieldMetaInfo fmi : metaInfo.getKeys()) {
                 allColumns.add(getColumnDef(fmi));
             }
@@ -272,7 +271,13 @@ public class SubscriberTab implements ISnSListener {
                 } else {
                     ColumnDef columnDef = remove(allColumns, colName);
                     if (columnDef == null) {
-                        _columns.add(new ColumnDef(colName, "tbd", 250));
+                        // header columns need to be explicitly added to the select statement
+                        columnDef = remove(headerColumns, colName);
+                        if (columnDef == null) {
+                            _columns.add(new ColumnDef(colName, "tbd", 250));
+                        } else {
+                            _columns.add(columnDef);
+                        }
                     } else {
                         _columns.add(columnDef);
                     }
