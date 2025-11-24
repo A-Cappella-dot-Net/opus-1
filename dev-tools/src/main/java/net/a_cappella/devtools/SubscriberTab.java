@@ -3,6 +3,7 @@ package net.a_cappella.devtools;
 import com.google.gson.JsonObject;
 import net.a_cappella.continuo.managed.ObjectManager;
 import net.a_cappella.continuo.obj.Obj;
+import net.a_cappella.continuo.obj.ObjKey;
 import net.a_cappella.continuo.obj.meta.FieldMetaInfo;
 import net.a_cappella.continuo.obj.meta.FieldType;
 import net.a_cappella.continuo.obj.meta.ObjMetaInfo;
@@ -46,6 +47,9 @@ public class SubscriberTab implements ISnSListener {
     private int _startCol = 0; // TODO not used
     private int _viewportPositionFromLeft = 0; // Pixel-based horizontal scroll
 
+    private String _snsSql;
+    private boolean _pinByKey;
+    private String _opType;
     private long _subId = -1;
 
     private boolean _hasAllColumns = false;
@@ -114,6 +118,10 @@ public class SubscriberTab implements ISnSListener {
 
 
     public void handleStartAction(String snsSql, boolean pinByKey, String opType) {
+        _snsSql = snsSql;
+        _pinByKey = pinByKey;
+        _opType = opType;
+
         _table._paused = false;
 
         log.info("{} Executing SnS action: sql='{}' pinByKey={} opType={}", _remote, snsSql, pinByKey, opType);
@@ -294,7 +302,7 @@ public class SubscriberTab implements ISnSListener {
 
     @Override
     public void onSnapComplete(long subId) {
-        if (_subId == -1) { // Snap request
+        if ("snap".equals(_opType) || _subId == -1) { // Snap request
             _hasAllColumns = false;
             _columns = new ArrayList<>();
             sendUpdateState("stopped");
@@ -339,8 +347,7 @@ public class SubscriberTab implements ISnSListener {
             }
         }
 
-        addRowTop(row);
-//        addRowBottom(row);
+        addRow(row, (_pinByKey) ? obj.getObjKey() : null);
     }
 
     private void setColumns(List<ColumnDef> columns) {
@@ -354,24 +361,11 @@ public class SubscriberTab implements ISnSListener {
         }
     }
 
-    private void addRowTop(Map<String, Object> rowData) {
+    private void addRow(Map<String, Object> rowData, ObjKey objKey) {
         if (!_table._paused) {
             int columnsBefore = _table.getTotalCols();
-            _table.addRowTop(rowData);
+            _table.addRow(rowData, objKey);
             // If columns were added, send the update
-            if (_table.getTotalCols() > columnsBefore) {
-                sendColumnUpdate();
-            }
-            sendUpdate();
-        }
-    }
-
-    private void addRowBottom(Map<String, Object> rowData) {
-        log.info("{} addRowBottom {} {}", _remote, _tabId, rowData);
-        if (!_table._paused) {
-            int columnsBefore = _table.getTotalCols();
-            _table.addRowBottom(rowData);
-            // If columns were added send the update
             if (_table.getTotalCols() > columnsBefore) {
                 sendColumnUpdate();
             }

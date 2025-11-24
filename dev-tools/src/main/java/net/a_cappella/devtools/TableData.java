@@ -1,5 +1,7 @@
 package net.a_cappella.devtools;
 
+import net.a_cappella.continuo.obj.Obj;
+import net.a_cappella.continuo.obj.ObjKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,14 +19,14 @@ public class TableData {
     private List<ColumnDef> _orderedColumns;
     private List<Integer> _columnOrder;
 
-    private List<Map<String, Object>> _rows; // Sparse row data
+    private final List<Map<String, Object>> _rows = new ArrayList<>(); // Sparse row data
+    private final List<ObjKey> _index = new ArrayList<>();
     public boolean _paused;
 
     public TableData(String tabId, String remote) {
         _tabId = tabId;
         _remote = remote;
-        _columns = new ArrayList<>();
-        _rows = new ArrayList<>();
+//        _columns = new ArrayList<>();
         _paused = false;
     }
 
@@ -55,24 +57,29 @@ public class TableData {
         return false;
     }
 
-    public void addRowTop(Map<String, Object> rowData) {
+    public void addRow(Map<String, Object> rowData, ObjKey objKey) {
         // Automatically add any new columns found in the row
-        for (String key : rowData.keySet()) {
-            if (!columnExists(key)) {
-                addColumn(ColumnDef.newAdHocCol(key, rowData.get(key)));
+        for (String colName : rowData.keySet()) {
+            if (!columnExists(colName)) {
+                addColumn(ColumnDef.newAdHocCol(colName, rowData.get(colName)));
             }
         }
-        _rows.add(0, new HashMap<>(rowData));
-    }
 
-    public void addRowBottom(Map<String, Object> rowData) {
-        // Automatically add any new columns found in the row
-        for (String key : rowData.keySet()) {
-            if (!columnExists(key)) {
-                addColumn(ColumnDef.newAdHocCol(key, rowData.get(key)));
+        if (objKey != null) {
+            int newRowPos = _index.indexOf(objKey);
+            if (newRowPos < 0) {
+                objKey.getObj().startUsing();
+                _index.add(0, objKey);
+                _rows.add(0, rowData);
+            } else {
+                objKey.getObj().startUsing();
+                _index.get(newRowPos).getObj().stopUsing();
+                _index.set(newRowPos, objKey);
+                _rows.set(newRowPos, rowData);
             }
+        } else {
+            _rows.add(0, rowData);
         }
-        _rows.add(new HashMap<>(rowData));
     }
 
     public void updateCell(int row, String columnName, Object value) {
@@ -117,7 +124,9 @@ public class TableData {
 
     public void clear() {
         _rows.clear();
-        _columns.clear();
+        _index.forEach((objKey) -> objKey.getObj().stopUsing());
+        _index.clear();
+        if (_columns != null) _columns.clear();
         if (_orderedColumns != null) _orderedColumns.clear();
         _paused = false;
     }
