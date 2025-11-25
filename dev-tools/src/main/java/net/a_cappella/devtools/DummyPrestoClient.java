@@ -72,7 +72,7 @@ public class DummyPrestoClient implements PrestoClient {
 
     private static class ObjGenerator {
         private volatile boolean _stop = false;
-        private final Thread _thread;
+        private Thread _thread;
         private final ISubscriptionListener _subListener;
         private final WhereNode _whereClause;
         private final String _subject;
@@ -81,29 +81,34 @@ public class DummyPrestoClient implements PrestoClient {
             _subListener = subListener;
             _subject = sqlComps.getFromTable();
             _whereClause = sqlComps.getEvalTree();
-            _thread = new Thread(() -> {
-                for (int i = 0; i < snapCnt; i++) {
-                    Obj obj = generateMsg(i);
-                    subListener.onSubscriptionMessage(obj, 0);
-                    if (_stop) return;
-                }
-                if (subListener instanceof ISnSListener) {
-                    ((ISnSListener) subListener).onSnapComplete(subId);
-                }
+            if ("ping".equals(sqlComps.getFromTable())) { // test data
+                _thread = new Thread(() -> {
+                    for (int i = 0; i < snapCnt; i++) {
+                        Obj obj = generateMsg(i);
+                        subListener.onSubscriptionMessage(obj, subId);
+                        if (_stop) return;
+                    }
+                    if (subListener instanceof ISnSListener) {
+                        ((ISnSListener) subListener).onSnapComplete(subId);
+                    }
 
-                for (int i = 0; i < subsCnt; i++) {
-                    Obj obj = generateMsg(i);
-                    subListener.onSubscriptionMessage(obj, 0);
-                    try { Thread.sleep(1_000); } catch (InterruptedException e) {}
-                    if (_stop) return;
-                }
-            });
+                    for (int i = 0; i < subsCnt; i++) {
+                        Obj obj = generateMsg(i);
+                        subListener.onSubscriptionMessage(obj, subId);
+                        try {
+                            Thread.sleep(1_000);
+                        } catch (InterruptedException e) {
+                        }
+                        if (_stop) return;
+                    }
+                });
+            }
         }
         public String getSubject() {
             return _subject;
         }
         public void start() {
-            _thread.start();
+            if (_thread != null) _thread.start();
         }
         public void stop() {
             _stop = true;
