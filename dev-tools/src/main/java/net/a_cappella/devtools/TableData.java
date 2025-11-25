@@ -1,6 +1,5 @@
 package net.a_cappella.devtools;
 
-import net.a_cappella.continuo.obj.Obj;
 import net.a_cappella.continuo.obj.ObjKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +25,6 @@ public class TableData {
     public TableData(String tabId, String remote) {
         _tabId = tabId;
         _remote = remote;
-//        _columns = new ArrayList<>();
         _paused = false;
     }
 
