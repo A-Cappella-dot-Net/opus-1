@@ -52,46 +52,112 @@ const formatDecimal = (value, decimals = 2) => {
   });
 };
 
+
+
+// (a) PTimestamp - milliseconds since Unix epoch
+const decodeTimestamp = (millis) => {
+  return new Date(millis);
+};
+
+// (b) PNanos - nanoseconds since Unix epoch
+const decodeNanos = (nanosObj) => {
+  // Create Date from milliseconds
+  const date = new Date(nanosObj.value);
+
+  // Store the sub-millisecond nanos for later display
+  date._subMilliNanos = nanosObj.nanos;
+
+  return date;
+};
+
+// (c) PDate - date in yyyymmdd format (e.g., 20241125)
+const decodeDate = (yyyymmdd) => {
+  const year = Math.floor(yyyymmdd / 10000);
+  const month = Math.floor((yyyymmdd % 10000) / 100) - 1; // JS months are 0-indexed (0-11)
+  const day = yyyymmdd % 100;
+  return new Date(year, month, day);
+};
+
+// (d) PTime - time in hhmmssSSS format (e.g., 143045123 = 14:30:45.123)
+const decodeTime = (hhmmssSSS) => {
+  const hours = Math.floor(hhmmssSSS / 10000000);
+  const minutes = Math.floor((hhmmssSSS % 10000000) / 100000);
+  const seconds = Math.floor((hhmmssSSS % 100000) / 1000);
+  const millis = hhmmssSSS % 1000;
+
+  // Create a Date object with today's date and the specified time
+  const date = new Date();
+  date.setHours(hours, minutes, seconds, millis);
+  return date;
+};
+
+
+
 /**
  * Format datetime
  * Supports: ISO string, Unix timestamp (ms or seconds), Date object
  */
-const formatDateTime = (value, format = 'ISO') => {
-  let date;
+const formatDateTime = (obj, format = 'ISO') => {
+  if (!obj || !obj.type || obj.value === undefined) {
+    return String(obj);
+  }
 
-  // Try parsing as various formats
-  if (value instanceof Date) {
-    date = value;
-  } else if (typeof value === 'string') {
-    date = new Date(value);
-  } else if (typeof value === 'number') {
-    // Assume milliseconds if > year 2000 in seconds
-    date = value > 946684800000 ? new Date(value) : new Date(value * 1000);
-  } else {
-    return String(value);
+  let date;
+  switch (obj.type) {
+    case 'timestamp':
+      date = decodeTimestamp(obj.value);
+      break;
+    case 'nanos':
+      date = decodeNanos(obj);
+      break;
+    case 'date':
+      date = decodeDate(obj.value);
+      break;
+    case 'time':
+      date = decodeTime(obj.value);
+      break;
+    default:
+      return String(obj);
   }
 
   if (isNaN(date.getTime())) {
-    return String(value);
+    return String(obj);
   }
 
-  // Format based on specified format
+  let formatted;
   switch (format) {
     case 'ISO':
-      return date.toISOString();
-
+      // Custom ISO-like format: YYYY-MM-DD HH:MM:SS.mmm (no T, no Z)
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      const hours = String(date.getUTCHours()).padStart(2, '0');
+      const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+      const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+      const millis = String(date.getUTCMilliseconds()).padStart(3, '0');
+      formatted = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${millis}`;
+      break;
     case 'locale':
-      return date.toLocaleString('en-US');
-
+      formatted = date.toLocaleString('en-US');
+      break;
     case 'date':
-      return date.toLocaleDateString('en-US');
-
+      // Just date: YYYY-MM-DD
+      const y = date.getUTCFullYear();
+      const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const d = String(date.getUTCDate()).padStart(2, '0');
+      formatted = `${y}-${m}-${d}`;
+      break;
     case 'time':
-      return date.toLocaleTimeString('en-US');
-
+      // Just time: HH:MM:SS.mmm
+      const h = String(date.getUTCHours()).padStart(2, '0');
+      const min = String(date.getUTCMinutes()).padStart(2, '0');
+      const s = String(date.getUTCSeconds()).padStart(2, '0');
+      const ms = String(date.getUTCMilliseconds()).padStart(3, '0');
+      formatted = `${h}:${min}:${s}.${ms}`;
+      break;
     case 'short':
       // Format: MM/DD/YYYY HH:MM:SS
-      return date.toLocaleString('en-US', {
+      formatted = date.toLocaleString('en-US', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
@@ -99,10 +165,19 @@ const formatDateTime = (value, format = 'ISO') => {
         minute: '2-digit',
         second: '2-digit'
       });
-
+      break;
     default:
-      return date.toISOString();
+      formatted = date.toISOString();
   }
+
+  // Add sub-millisecond precision if available
+  if (date._subMilliNanos !== undefined) {
+    const micros = Math.floor(date._subMilliNanos / 1000);
+    const nanos = date._subMilliNanos % 1000;
+    formatted += `${micros.toString().padStart(3, '0')}${nanos.toString().padStart(3, '0')}`;
+  }
+
+  return formatted;
 };
 
 /**

@@ -1,8 +1,13 @@
 package net.a_cappella.devtools;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import net.a_cappella.continuo.datatypes.PDate;
+import net.a_cappella.continuo.datatypes.PNanos;
+import net.a_cappella.continuo.datatypes.PTime;
+import net.a_cappella.continuo.datatypes.PTimestamp;
 import net.a_cappella.madrigal.user.IUserManagerClient;
 import net.a_cappella.presto.ps.AeronClient;
 import net.a_cappella.presto.ps.PrestoClient;
@@ -30,8 +35,18 @@ public class SessionHandler implements WebSocketListener {
     private String _password;
     private boolean _isAuthenticated = false;
 
-    private final Gson _gsonOut = new Gson();
-    private final Gson _gsonIn = new Gson();
+    Gson _gsonOut = new GsonBuilder()
+            .registerTypeAdapter(PTimestamp.class, new PTimestampSerializer())
+            .registerTypeAdapter(PTime.class, new PTimeSerializer())
+            .registerTypeAdapter(PDate.class, new PDateSerializer())
+            .registerTypeAdapter(PNanos.class, new PNanosSerializer())
+            .create();
+    Gson _gsonIn = new GsonBuilder()
+            .registerTypeAdapter(PTimestamp.class, new PTimestampSerializer())
+            .registerTypeAdapter(PTime.class, new PTimeSerializer())
+            .registerTypeAdapter(PDate.class, new PDateSerializer())
+            .registerTypeAdapter(PNanos.class, new PNanosSerializer())
+            .create();
 
     private final ScheduledExecutorService _scheduler;
     private final ConcurrentMap<Session, SessionHandler> _sessionHandlersBySession;
