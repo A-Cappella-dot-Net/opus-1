@@ -502,7 +502,7 @@ public class SubscriberTab implements ISnSListener {
             endCol = totalCols;
             leftOffset = 0;
         } else {
-            log.info("=== A. viewportWidth={} viewportPositionFromLeft={} totalCols={} columnOrder={}", _viewportWidth, _viewportPositionFromLeft, totalCols, _table.getColumnOrder());
+            log.debug("=== A. viewportWidth={} viewportPositionFromLeft={} totalCols={} columnOrder={}", _viewportWidth, _viewportPositionFromLeft, totalCols, _table.getColumnOrder());
 
             // calculate startCol
             startCol = 0;
@@ -511,16 +511,16 @@ public class SubscriberTab implements ISnSListener {
                 startCol++;
                 cumWidth += _table.colWidth(startCol);
             }
-            log.info("=== B. startCol={}", startCol);
+            log.debug("=== B. startCol={}", startCol);
 
             // calculate endCol
-            endCol = startCol;
-            cumWidth = 0;
+            endCol = startCol + 1;
+            cumWidth -= _viewportPositionFromLeft;
             while (endCol < totalCols && cumWidth <= _viewportWidth) {
                 cumWidth += _table.colWidth(endCol);
                 endCol++;
             }
-            log.info("=== C. endCol={} visibleColumnsWidth={}", endCol, cumWidth);
+            log.debug("=== C. endCol={} visibleColumnsWidth={}", endCol, cumWidth);
 
             // adjust startCol if there is space at the end
             while (cumWidth < _viewportWidth) {
@@ -534,7 +534,7 @@ public class SubscriberTab implements ISnSListener {
                 cumWidth += _table.colWidth(i);
             }
             leftOffset = _viewportPositionFromLeft - cumWidth;
-            log.info("=== D. startCol={} additionalVisibleColumnsWidth={} leftOffset={}", startCol, cumWidth, leftOffset);
+            log.debug("=== D. startCol={} additionalVisibleColumnsWidth={} leftOffset={}", startCol, cumWidth, leftOffset);
         }
 
         // Extract visible data with column ordering
