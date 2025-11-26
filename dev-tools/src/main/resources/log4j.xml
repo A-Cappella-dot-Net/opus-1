@@ -47,6 +47,9 @@
     <logger name="net.a_cappella.devtools.TableData">
         <level value="INFO" />
     </logger>
+    <logger name="net.a_cappella.devtools.SubscriberTab">
+        <level value="INFO" />
+    </logger>
 
     <!-- ============================== -->
     <!-- Root logger                    -->
