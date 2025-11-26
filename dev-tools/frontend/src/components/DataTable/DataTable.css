@@ -225,7 +225,8 @@ tr.selected:hover td {
 
 .cell-type-datetime {
   font-family: 'Courier New', monospace;
-  font-size: 13px;
+  font-size: inherit;
+  font-weight: 500;
 }
 
 /* Optional: Make entire table monospace for better data alignment */

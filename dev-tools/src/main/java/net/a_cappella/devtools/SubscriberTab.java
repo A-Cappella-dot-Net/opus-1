@@ -235,7 +235,7 @@ public class SubscriberTab implements ISnSListener {
             case TIMESTAMP:
                 return  new ColumnDef(name, "datetime", DEFAULT_WIDTH_DATETIME_ISO, "ISO");
             case NANOS:
-                return  new ColumnDef(name, "datetime", DEFAULT_WIDTH_DATETIME_ISO, "ISO");
+                return  new ColumnDef(name, "datetime", DEFAULT_WIDTH_DATETIME_ISO_NANOS, "ISO");
             case TIME:
                 return  new ColumnDef(name, "datetime", DEFAULT_WIDTH_DATETIME_TIME, "time");
             case DATE:

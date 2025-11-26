@@ -9,16 +9,17 @@ public class ColumnDef {
 
     public static final int DEFAULT_WIDTH_DECIMAL = 120;
 
-    public static final int DEFAULT_WIDTH_DATETIME_SHORT = 80;
-    public static final int DEFAULT_WIDTH_DATETIME_ISO = 180;
-    public static final int DEFAULT_WIDTH_DATETIME_DATE = 80;
-    public static final int DEFAULT_WIDTH_DATETIME_TIME = 80;
+    public static final int DEFAULT_WIDTH_DATETIME_SHORT = 180;
+    public static final int DEFAULT_WIDTH_DATETIME_ISO = 250;
+    public static final int DEFAULT_WIDTH_DATETIME_ISO_NANOS = 310;
+    public static final int DEFAULT_WIDTH_DATETIME_DATE = 120;
+    public static final int DEFAULT_WIDTH_DATETIME_TIME = 150;
 
     public static final int DEFAULT_WIDTH_BOOLEAN = 50;
 
     public static final int DEFAULT_WIDTH_STRING = 150;
     public static final int DEFAULT_WIDTH_CHAR = 20;
-    public static final int DEFAULT_WIDTH_ENUM = 50;
+    public static final int DEFAULT_WIDTH_ENUM = 100;
 
     public String name;
     public String type; // "string", "number", "boolean", etc.
