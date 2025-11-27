@@ -218,7 +218,7 @@ public class SubscriberTab implements ISnSListener {
 
         switch(fieldType) {
             case CHAR:
-                return  new ColumnDef(name, "string", DEFAULT_WIDTH_CHAR);
+                return  new ColumnDef(name, "string", "center", DEFAULT_WIDTH_CHAR);
             case STRING:
                 return  new ColumnDef(name, "string", DEFAULT_WIDTH_STRING);
             case ENUM:

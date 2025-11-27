@@ -18,7 +18,7 @@ public class ColumnDef {
     public static final int DEFAULT_WIDTH_BOOLEAN = 50;
 
     public static final int DEFAULT_WIDTH_STRING = 150;
-    public static final int DEFAULT_WIDTH_CHAR = 20;
+    public static final int DEFAULT_WIDTH_CHAR = 28;
     public static final int DEFAULT_WIDTH_ENUM = 100;
 
     public String name;
