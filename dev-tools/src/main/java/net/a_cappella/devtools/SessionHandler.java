@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.*;
 
 public class SessionHandler implements WebSocketListener {
@@ -138,18 +139,28 @@ public class SessionHandler implements WebSocketListener {
 
             switch (type) {
                 case "login":
+                    log.info("{} onMessage {}", _remote, msg);
                     handleLogin(msg);
                     break;
                 case "reauth":
+                    log.info("{} onMessage {}", _remote, msg);
                     handleReauth(msg);
                     break;
                 case "logout":
+                    log.info("{} onMessage {}", _remote, msg);
                     handleLogout();
                     break;
+                case "request_token":
+                    log.info("{} onMessage {}", _remote, msg);
+                    handleRequestToken();
+                    break;
+                case "auth_with_token":
+                    log.info("{} onMessage {}", _remote, msg);
+                    handleAuthWithToken(msg);
+                    break;
                 default:
+                    log.info("{} onMessage {}", _remote, msg);
                     if (_isAuthenticated) {
-                        log.info("{} onMessage {}", _remote, msg);
-
                         String mode = msg.has("mode") ? msg.get("mode").getAsString() : "null";
                         if ("subscriber".equals(mode)) {
                             if (_subscriberHandler == null) {
@@ -169,13 +180,13 @@ public class SessionHandler implements WebSocketListener {
                             log.error("Unknown mode: " + mode);
                         }
                     } else {
-                        sendError("Not authenticated");
+                        sendError("Not authenticated", null);
                     }
                     break;
             }
         } catch (Exception e) {
             log.error("{}", _remote, e);
-            sendError(e.getMessage());
+            sendError(e.getMessage(), null);
         }
     }
 
@@ -212,18 +223,17 @@ public class SessionHandler implements WebSocketListener {
         _userMgr.login(username, password, false);
     }
 
-    private void handleReauth(JsonObject msg) {
-        // Simple re-authentication (you might want to use session tokens instead)
+    private void handleReauth(JsonObject msg) { // This can be simplified or removed if you always use tokens
         String username = msg.get("username").getAsString();
 
         if (username.equals(_username)) {
             _isAuthenticated = true;
-            log.info("User re-authenticated: " + username);
+            log.info("{} User re-authenticated: {}", _remote, username);
         }
     }
 
     private void handleLogout() {
-        log.info("User logged out: " + _username);
+        log.info("{} User logged out: {}", _remote, _username);
 
         _userMgr.logout(_username, _password, false);
 
@@ -232,10 +242,54 @@ public class SessionHandler implements WebSocketListener {
         _isAuthenticated = false;
     }
 
-    private void sendError(String errorMessage) {
+    private static Map<String, TokenInfo> _tokenStore = new ConcurrentHashMap<>();
+
+    private void handleRequestToken() {
+        if (!_isAuthenticated) {
+            sendError("Not authenticated", "token_request");
+            return;
+        }
+
+        String token = UUID.randomUUID().toString();
+        long expiryTime = System.currentTimeMillis() + 30000;
+
+        _tokenStore.put(token, new TokenInfo(_username, expiryTime));
+
+        // Send token back to client
+        JsonObject response = new JsonObject();
+        response.addProperty("type", "token_response");
+        response.addProperty("token", token);
+
+        sendMessage(response);
+    }
+
+    private void handleAuthWithToken(JsonObject msg) {
+        String token = msg.get("token").getAsString();
+        TokenInfo tokenInfo = _tokenStore.get(token);
+
+        if (tokenInfo == null || tokenInfo.isExpired()) {
+            sendError("Invalid or expired token", "token_auth");
+            return;
+        }
+
+        _tokenStore.remove(token);
+
+        // Authenticate this session
+        _username = tokenInfo.getUsername();
+        _isAuthenticated = true;
+
+        JsonObject response = new JsonObject();
+        response.addProperty("type", "auth_success");
+        response.addProperty("username", _username);
+
+        sendMessage(response);
+    }
+
+    private void sendError(String errorMessage, String context) {
         JsonObject error = new JsonObject();
         error.addProperty("type", "error");
         error.addProperty("message", errorMessage);
+        if (context != null) error.addProperty("context", context);
         sendMessage(error);
     }
 

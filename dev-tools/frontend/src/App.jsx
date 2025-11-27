@@ -11,6 +11,7 @@ const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState(null);
   const [mode, setMode] = useState(null); // null, 'subscriber', or 'publisher'
+  const [pendingTokenAuth, setPendingTokenAuth] = useState(false);
 
   const [tabs, setTabs] = useState([{ id: 'tab-1', label: 'Tab 1' }]);
   const [activeTab, setActiveTab] = useState('tab-1');
@@ -18,57 +19,129 @@ const App = () => {
 
   const { ws, wsReady } = useWebSocket();
 
+  // Initial setup: check URL params and sessionStorage
   useEffect(() => {
-    // Check URL parameters first
     const urlParams = new URLSearchParams(window.location.search);
     const urlMode = urlParams.get('mode');
-    const urlUsername = urlParams.get('username');
-    const autoAuth = urlParams.get('autoAuth');
+    const token = urlParams.get('token');
 
-    // Then check sessionStorage
-    const isAuth = sessionStorage.getItem('isAuthenticated');
-    const user = sessionStorage.getItem('username');
-    const savedMode = sessionStorage.getItem('mode');
+    console.log('Initial setup - URL params:', { urlMode, token: token ? 'present' : 'none' });
 
-    // If URL has auto-auth params, set them up
-    if (autoAuth === 'true' && urlUsername && urlMode) {
-      sessionStorage.setItem('isAuthenticated', 'true');
-      sessionStorage.setItem('username', urlUsername);
+    // If URL has a token, we're in a new window that needs to authenticate
+    if (token && urlMode) {
+      console.log('Found token in URL, setting up for token auth');
+      sessionStorage.setItem('pending_token', token);
       sessionStorage.setItem('mode', urlMode);
-
-      setUsername(urlUsername);
-      setIsAuthenticated(true);
       setMode(urlMode);
+      setPendingTokenAuth(true);
 
       // Clean up URL
       window.history.replaceState({}, '', window.location.pathname);
+    } else {
+      // Check if already authenticated via sessionStorage
+      const isAuth = sessionStorage.getItem('isAuthenticated');
+      const user = sessionStorage.getItem('username');
+      const savedMode = sessionStorage.getItem('mode');
 
-      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-        ws.current.send(JSON.stringify({
-          type: 'reauth',
-          username: urlUsername
-        }));
-      }
-    } else if (isAuth === 'true' && user) {
-      setUsername(user);
-      setIsAuthenticated(true);
+      if (isAuth === 'true' && user) {
+        setUsername(user);
+        setIsAuthenticated(true);
 
-      if (savedMode) {
-        setMode(savedMode);
-      }
-
-      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-        ws.current.send(JSON.stringify({
-          type: 'reauth',
-          username: user
-        }));
+        if (savedMode) {
+          setMode(savedMode);
+        }
       }
     }
-  }, [ws, wsReady]);
+  }, []);
+
+  // Handle token-based authentication when WebSocket is ready
+  useEffect(() => {
+    if (!wsReady || !ws.current || !pendingTokenAuth) return;
+
+    const pendingToken = sessionStorage.getItem('pending_token');
+    console.log('Pending token from storage:', pendingToken);
+
+    if (pendingToken) {
+      console.log('Sending auth_with_token message');
+
+      // Send auth request with token
+      ws.current.send(JSON.stringify({
+        type: 'auth_with_token',
+        token: pendingToken
+      }));
+
+      // Clear the pending token immediately
+      sessionStorage.removeItem('pending_token');
+
+      // Listen for auth response
+      const authHandler = (event) => {
+        console.log('Received WebSocket message during auth:', event.data);
+
+        try {
+          const data = JSON.parse(event.data);
+
+          if (data.type === 'auth_success') {
+            console.log('Auth success! Username:', data.username);
+            setUsername(data.username);
+            setIsAuthenticated(true);
+            sessionStorage.setItem('isAuthenticated', 'true');
+            sessionStorage.setItem('username', data.username);
+            setPendingTokenAuth(false);
+            ws.current.removeEventListener('message', authHandler);
+          } else if (data.type === 'error' && data.context === 'token_auth') {
+            console.error('Token authentication failed:', data.message);
+            alert('Authentication failed. Please log in again.');
+            // Clear everything and redirect to login
+            sessionStorage.clear();
+            setMode(null);
+            setIsAuthenticated(false);
+            setPendingTokenAuth(false);
+            ws.current.removeEventListener('message', authHandler);
+          }
+        } catch (error) {
+          console.error('Error parsing auth response:', error);
+        }
+      };
+
+      ws.current.addEventListener('message', authHandler);
+
+      // Timeout after 10 seconds
+      const timeoutId = setTimeout(() => {
+        console.log('Auth timeout - pendingTokenAuth:', pendingTokenAuth);
+        if (pendingTokenAuth) {
+          ws.current.removeEventListener('message', authHandler);
+          alert('Authentication timeout. Please try again.');
+          sessionStorage.clear();
+          setMode(null);
+          setIsAuthenticated(false);
+          setPendingTokenAuth(false);
+        }
+      }, 10000);
+
+      // Cleanup function
+      return () => {
+        clearTimeout(timeoutId);
+        ws.current?.removeEventListener('message', authHandler);
+      };
+    }
+  }, [wsReady, pendingTokenAuth, ws]);
+
+  // Re-authenticate existing sessions
+  useEffect(() => {
+    if (!wsReady || !ws.current || !isAuthenticated || !username || pendingTokenAuth) return;
+
+    // Send reauth for existing authenticated sessions (page refresh)
+    ws.current.send(JSON.stringify({
+      type: 'reauth',
+      username: username
+    }));
+  }, [wsReady, isAuthenticated, username, pendingTokenAuth, ws]);
 
   const handleLoginSuccess = (user) => {
     setUsername(user);
     setIsAuthenticated(true);
+    sessionStorage.setItem('isAuthenticated', 'true');
+    sessionStorage.setItem('username', user);
   };
 
   const handleModeSelect = (selectedMode) => {
@@ -173,6 +246,23 @@ const App = () => {
     }, 100);
   };
 
+  // Show loading screen while authenticating with token
+  if (pendingTokenAuth) {
+    return (
+      <div className="app-container" style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        flexDirection: 'column',
+        gap: '20px'
+      }}>
+        <div style={{ fontSize: '48px' }}>⏳</div>
+        <div style={{ fontSize: '20px' }}>Authenticating...</div>
+      </div>
+    );
+  }
+
   // Show login screen if not authenticated
   if (!isAuthenticated) {
     return <Login ws={ws} onLoginSuccess={handleLoginSuccess} />;
@@ -180,7 +270,7 @@ const App = () => {
 
   // Show mode selector if authenticated but no mode selected
   if (!mode) {
-    return <ModeSelector onModeSelect={handleModeSelect} username={username} />;
+    return <ModeSelector onModeSelect={handleModeSelect} username={username} ws={ws} />;
   }
 
   // Show subscriber or publisher based on mode
