@@ -158,6 +158,13 @@ public class SessionHandler implements WebSocketListener {
                     log.info("{} onMessage {}", _remote, msg);
                     handleAuthWithToken(msg);
                     break;
+                case "heartbeat":
+                    log.info("{} onMessage {}", _remote, msg);
+                    JsonObject response = new JsonObject();
+                    response.addProperty("type", "pong");
+
+                    sendMessage(response);
+                    break;
                 default:
                     log.info("{} onMessage {}", _remote, msg);
                     if (_isAuthenticated) {

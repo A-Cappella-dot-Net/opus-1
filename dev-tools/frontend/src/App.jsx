@@ -17,7 +17,19 @@ const App = () => {
   const [activeTab, setActiveTab] = useState('tab-1');
   const [tabCounter, setTabCounter] = useState(1);
 
-  const { ws, wsReady } = useWebSocket();
+  const { ws, wsReady, isConnected } = useWebSocket();
+
+  // Listen for connection failures
+  useEffect(() => {
+    const handleConnectionFailed = () => {
+      alert('Connection to server lost. Please refresh the page.');
+    };
+
+    window.addEventListener('websocket-connection-failed', handleConnectionFailed);
+    return () => {
+      window.removeEventListener('websocket-connection-failed', handleConnectionFailed);
+    };
+  }, []);
 
   // Initial setup: check URL params and sessionStorage
   useEffect(() => {
@@ -307,6 +319,13 @@ const App = () => {
       <div className="app-header">
         <div className="mode-indicator">
           Mode: <strong>{mode === 'subscriber' ? 'Subscriber' : 'Publisher'}</strong>
+          <span style={{
+            marginLeft: '10px',
+            fontSize: '12px',
+            color: isConnected ? '#4CAF50' : '#ff9800'
+          }}>
+            {isConnected ? '● Connected' : '○ Reconnecting...'}
+          </span>
         </div>
         <div className="user-info">
           Welcome, {username}
