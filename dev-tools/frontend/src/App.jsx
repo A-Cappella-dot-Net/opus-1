@@ -135,6 +135,34 @@ const App = () => {
       type: 'reauth',
       username: username
     }));
+
+    // Listen for reauth response
+    const reauthHandler = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.type === 'error' && data.message === 'Not authenticated') {
+          console.log('Reauth failed - server lost session, redirecting to login');
+          // Server doesn't recognize this session anymore (e.g., server restart)
+          alert('Your session has expired. Please log in again.');
+          // Clear local state and show login
+          sessionStorage.clear();
+          setUsername(null);
+          setIsAuthenticated(false);
+          setMode(null);
+          ws.current.removeEventListener('message', reauthHandler);
+        }
+      } catch (error) {
+        console.error('Error parsing reauth response:', error);
+      }
+    };
+
+    ws.current.addEventListener('message', reauthHandler);
+
+    // Cleanup
+    return () => {
+      ws.current?.removeEventListener('message', reauthHandler);
+    };
   }, [wsReady, isAuthenticated, username, pendingTokenAuth, ws]);
 
   const handleLoginSuccess = (user) => {
