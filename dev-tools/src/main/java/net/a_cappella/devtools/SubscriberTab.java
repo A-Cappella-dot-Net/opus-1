@@ -67,15 +67,12 @@ public class SubscriberTab implements ISnSListener {
         sendStatus(NO_ACTION);
     }
 
-    public void onWebSocketClose() {
-
-    }
-
-    public void closeTab() {
+    public void resetTab() {
         if (_subId >= 0) {
             _sessionHandler._client.unsubscribe(_subId);
             _subId = -1;
         }
+        _table.clear();
     }
 
 
@@ -103,7 +100,7 @@ public class SubscriberTab implements ISnSListener {
         if (oldWidth > newWidth) { // shrinking column
             if (_viewportWidth + _viewportPositionFromLeft > _table.getTotalWidth()) { // leaves space at the end
                 _viewportPositionFromLeft -= oldWidth - newWidth;
-                log.info("=== shrinking column would leave space to the right; adjusting viewportPositionFromLeft to {} ", _viewportPositionFromLeft);
+                log.info("{} shrinking column would leave space to the right; adjusting viewportPositionFromLeft to {} ", _remote, _viewportPositionFromLeft);
             }
         }
 

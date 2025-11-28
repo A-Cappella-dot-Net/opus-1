@@ -39,7 +39,7 @@ public class PublisherHandler {
         this._client = client;
     }
 
-    public void onWebSocketClose() {
+    public void resetTabs() {
 
     }
 

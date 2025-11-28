@@ -23,8 +23,8 @@ public class SubscriberHandler {
         _remote = sessionHandler._remote;
     }
 
-    public void onWebSocketClose() {
-        _tabs.forEach((tabId, subscriberTab) -> subscriberTab.onWebSocketClose());
+    public void resetTabs() {
+        _tabs.forEach((tabId, subscriberTab) -> subscriberTab.resetTab());
     }
 
     public void handleAuthenticatedMessage(JsonObject msg) {
@@ -82,7 +82,7 @@ public class SubscriberHandler {
     private void handleCloseTab(JsonObject msg) {
         String tabId = msg.get("tabId").getAsString();
 
-        _tabs.remove(tabId).closeTab();
+        _tabs.remove(tabId).resetTab();
     }
 
     private void handleStartAction(JsonObject msg) {

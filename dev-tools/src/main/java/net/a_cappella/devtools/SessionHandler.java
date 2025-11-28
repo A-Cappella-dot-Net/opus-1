@@ -103,10 +103,10 @@ public class SessionHandler implements WebSocketListener {
         _isAuthenticated = false;
 
         if (_subscriberHandler != null) {
-            _subscriberHandler.onWebSocketClose();
+            _subscriberHandler.resetTabs();
         }
         if (_publisherHandler != null) {
-            _publisherHandler.onWebSocketClose();
+            _publisherHandler.resetTabs();
         }
     }
 
@@ -247,6 +247,13 @@ public class SessionHandler implements WebSocketListener {
         _username = null;
         _password = null;
         _isAuthenticated = false;
+
+        if (_subscriberHandler != null) {
+            _subscriberHandler.resetTabs();
+        }
+        if (_publisherHandler != null) {
+            _publisherHandler.resetTabs();
+        }
     }
 
     private static Map<String, TokenInfo> _tokenStore = new ConcurrentHashMap<>();
