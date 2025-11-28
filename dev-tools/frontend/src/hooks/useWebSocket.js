@@ -21,7 +21,6 @@ export const useWebSocket = () => {
     heartbeatInterval.current = setInterval(() => {
       if (ws.current && ws.current.readyState === WebSocket.OPEN) {
         ws.current.send(JSON.stringify({ type: 'heartbeat' }));
-        console.log('Sent heartbeat');
       }
     }, 25000);
   };

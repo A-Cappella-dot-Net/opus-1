@@ -318,8 +318,6 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
         const viewportWidth = tableBodyRef.current?.clientWidth || 0;
         const maxScrollWidth = Math.max(0, totalWidth - viewportWidth);
 
-        console.log('maxScrollWidth=', maxScrollWidth, ' hThumbDragRef.current.startScroll=', hThumbDragRef.current.startScroll, ' deltaScroll=', deltaScroll);
-
         const viewportPositionFromLeft = Math.max(0, Math.min(maxScrollWidth,
           hThumbDragRef.current.startScroll + deltaScroll * maxScrollWidth));
 

@@ -159,11 +159,10 @@ public class SessionHandler implements WebSocketListener {
                     handleAuthWithToken(msg);
                     break;
                 case "heartbeat":
-                    log.info("{} onMessage {}", _remote, msg);
                     JsonObject response = new JsonObject();
                     response.addProperty("type", "pong");
 
-                    sendMessage(response);
+                    sendMessage(response, false);
                     break;
                 default:
                     log.info("{} onMessage {}", _remote, msg);
@@ -236,6 +235,8 @@ public class SessionHandler implements WebSocketListener {
         if (username.equals(_username)) {
             _isAuthenticated = true;
             log.info("{} User re-authenticated: {}", _remote, username);
+        } else {
+            sendError("Not authenticated", "reauth");
         }
     }
 
@@ -319,8 +320,11 @@ public class SessionHandler implements WebSocketListener {
     }
 
     public void sendMessage(JsonObject jsonObject) {
+        sendMessage(jsonObject, true);
+    }
+    public void sendMessage(JsonObject jsonObject, boolean logOp) {
         String message = jsonObject.toString();
-        log.info("{} sending {}", _remote, message);
+        if (logOp) log.info("{} sending {}", _remote, message);
         try {
             if (_session != null && _session.isOpen()) {
                 _session.getRemote().sendString(message);
