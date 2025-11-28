@@ -183,7 +183,7 @@ public class SessionHandler implements WebSocketListener {
                         } else if (_publisherHandler != null) {
                             _publisherHandler.handleAuthenticatedMessage(msg);
                         } else {
-                            log.error("Unknown mode: " + mode);
+                            log.error("{} Unknown mode: {}", _remote, mode);
                         }
                     } else {
                         sendError("Not authenticated", null);

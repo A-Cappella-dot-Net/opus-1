@@ -192,10 +192,12 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
 
   // Viewport calculation
   const calculateViewportSize = useCallback(() => {
-    if (!tableBodyRef.current) return;
+    if (!tableBodyRef.current || !isActive) return;
 
     const viewportHeight = tableBodyRef.current.clientHeight;
     const viewportWidth = tableBodyRef.current.clientWidth;
+
+    if (viewportHeight === 0 || viewportWidth === 0) return;
 
     const rows = Math.max(1, Math.ceil(viewportHeight / ROW_HEIGHT));
     let cols = 0;
@@ -220,14 +222,13 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
 
         ws.current.send(JSON.stringify({
           type: 'viewport_update',
-          mode: 'subscriber',
           tabId: tabId,
           viewportWidth: viewportWidth,
           viewportHeight: viewportHeight
         }));
       }
     }
-  }, [tabId, columns, ws]);
+  }, [tabId, columns, ws, isActive]);
 
   // Resize and wheel event handlers
   useEffect(() => {
