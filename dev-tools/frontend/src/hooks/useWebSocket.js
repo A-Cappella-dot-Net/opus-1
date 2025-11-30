@@ -49,18 +49,6 @@ export const useWebSocket = () => {
 
       // Start heartbeat to keep connection alive
       startHeartbeat();
-
-      // Re-authenticate if we have credentials
-      const username = sessionStorage.getItem('username');
-      const isAuth = sessionStorage.getItem('isAuthenticated');
-
-      if (isAuth === 'true' && username) {
-        console.log('Re-authenticating after reconnect...');
-        ws.current.send(JSON.stringify({
-          type: 'reauth',
-          username: username
-        }));
-      }
     };
 
     ws.current.onclose = (event) => {

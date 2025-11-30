@@ -10,8 +10,9 @@ import './App.css';
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState(null);
-  const [mode, setMode] = useState(null); // null, 'subscriber', or 'publisher'
+  const [mode, setMode] = useState(null);
   const [pendingTokenAuth, setPendingTokenAuth] = useState(false);
+  const [reauthPending, setReauthPending] = useState(false);
 
   const [tabs, setTabs] = useState([{ id: 'tab-1', label: 'Tab 1' }]);
   const [activeTab, setActiveTab] = useState('tab-1');
@@ -19,10 +20,18 @@ const App = () => {
 
   const { ws, wsReady, isConnected } = useWebSocket();
 
-  // Listen for connection failures
+  // Listen for permanent connection failures
   useEffect(() => {
     const handleConnectionFailed = () => {
-      alert('Connection to server lost. Please refresh the page.');
+      console.log('Max reconnection attempts reached - clearing session and showing login');
+      // Clear session and redirect to login instead of asking user to refresh
+      sessionStorage.clear();
+      setUsername(null);
+      setIsAuthenticated(false);
+      setMode(null);
+      setReauthPending(false);
+      setPendingTokenAuth(false);
+      alert('Unable to connect to server. Please log in again.');
     };
 
     window.addEventListener('websocket-connection-failed', handleConnectionFailed);
@@ -31,7 +40,7 @@ const App = () => {
     };
   }, []);
 
-  // Initial setup: check URL params and sessionStorage
+  // Initial setup: check URL params for token auth OR sessionStorage for existing session
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const urlMode = urlParams.get('mode');
@@ -39,7 +48,7 @@ const App = () => {
 
     console.log('Initial setup - URL params:', { urlMode, token: token ? 'present' : 'none' });
 
-    // If URL has a token, we're in a new window that needs to authenticate
+    // Token-based auth (new window from "Open Both")
     if (token && urlMode) {
       console.log('Found token in URL, setting up for token auth');
       sessionStorage.setItem('pending_token', token);
@@ -50,14 +59,18 @@ const App = () => {
       // Clean up URL
       window.history.replaceState({}, '', window.location.pathname);
     } else {
-      // Check if already authenticated via sessionStorage
+      // Check for existing session (page refresh)
       const isAuth = sessionStorage.getItem('isAuthenticated');
       const user = sessionStorage.getItem('username');
       const savedMode = sessionStorage.getItem('mode');
 
+      console.log('Checking sessionStorage:', { isAuth, user, savedMode });
+
       if (isAuth === 'true' && user) {
+        console.log('Found existing session, setting reauthPending=true');
         setUsername(user);
         setIsAuthenticated(true);
+        setReauthPending(true);
 
         if (savedMode) {
           setMode(savedMode);
@@ -68,6 +81,8 @@ const App = () => {
 
   // Handle token-based authentication when WebSocket is ready
   useEffect(() => {
+    console.log('Token auth effect:', { wsReady, hasCurrent: !!ws.current, pendingTokenAuth });
+
     if (!wsReady || !ws.current || !pendingTokenAuth) return;
 
     const pendingToken = sessionStorage.getItem('pending_token');
@@ -76,23 +91,21 @@ const App = () => {
     if (pendingToken) {
       console.log('Sending auth_with_token message');
 
-      // Send auth request with token
       ws.current.send(JSON.stringify({
         type: 'auth_with_token',
         token: pendingToken
       }));
 
-      // Clear the pending token immediately
       sessionStorage.removeItem('pending_token');
 
-      // Listen for auth response
       const authHandler = (event) => {
         console.log('Received WebSocket message during auth:', event.data);
 
         try {
           const data = JSON.parse(event.data);
+          const messageType = data.type?.trim();
 
-          if (data.type === 'auth_success') {
+          if (messageType === 'auth_success') {
             console.log('Auth success! Username:', data.username);
             setUsername(data.username);
             setIsAuthenticated(true);
@@ -100,10 +113,9 @@ const App = () => {
             sessionStorage.setItem('username', data.username);
             setPendingTokenAuth(false);
             ws.current.removeEventListener('message', authHandler);
-          } else if (data.type === 'error' && data.context === 'token_auth') {
+          } else if (messageType === 'error' && data.context === 'token_auth') {
             console.error('Token authentication failed:', data.message);
             alert('Authentication failed. Please log in again.');
-            // Clear everything and redirect to login
             sessionStorage.clear();
             setMode(null);
             setIsAuthenticated(false);
@@ -117,7 +129,6 @@ const App = () => {
 
       ws.current.addEventListener('message', authHandler);
 
-      // Timeout after 10 seconds
       const timeoutId = setTimeout(() => {
         console.log('Auth timeout - pendingTokenAuth:', pendingTokenAuth);
         if (pendingTokenAuth) {
@@ -130,7 +141,6 @@ const App = () => {
         }
       }, 10000);
 
-      // Cleanup function
       return () => {
         clearTimeout(timeoutId);
         ws.current?.removeEventListener('message', authHandler);
@@ -138,44 +148,67 @@ const App = () => {
     }
   }, [wsReady, pendingTokenAuth, ws]);
 
-  // Re-authenticate existing sessions
+  // Handle reauth when WebSocket connects (for page refresh)
   useEffect(() => {
-    if (!wsReady || !ws.current || !isAuthenticated || !username || pendingTokenAuth) return;
+    console.log('Reauth effect check:', { wsReady, hasCurrent: !!ws.current, reauthPending });
 
-    // Send reauth for existing authenticated sessions (page refresh)
-    ws.current.send(JSON.stringify({
-      type: 'reauth',
-      username: username
-    }));
+    if (!wsReady || !ws.current || !reauthPending) return;
 
-    // Listen for reauth response
-    const reauthHandler = (event) => {
-      try {
-        const data = JSON.parse(event.data);
+    const username = sessionStorage.getItem('username');
+    const isAuth = sessionStorage.getItem('isAuthenticated');
 
-        if (data.type === 'error' && data.message === 'Not authenticated') {
-          console.log('Reauth failed - server lost session, redirecting to login');
-          // Server doesn't recognize this session anymore (e.g., server restart)
-          alert('Your session has expired. Please log in again.');
-          // Clear local state and show login
-          sessionStorage.clear();
-          setUsername(null);
-          setIsAuthenticated(false);
-          setMode(null);
-          ws.current.removeEventListener('message', reauthHandler);
+    console.log('Reauth effect - checking credentials:', { isAuth, username });
+
+    if (isAuth === 'true' && username) {
+      console.log('Sending reauth for:', username);
+      ws.current.send(JSON.stringify({
+        type: 'reauth',
+        username: username
+      }));
+
+      const reauthHandler = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          const messageType = data.type?.trim();
+
+          console.log('Received message during reauth:', messageType, data);
+
+          if (messageType === 'error' && (data.message === 'Not authenticated' || data.context === 'token_auth')) {
+            console.log('Reauth failed - server lost session, redirecting to login');
+            alert('Your session has expired. Please log in again.');
+            sessionStorage.clear();
+            setUsername(null);
+            setIsAuthenticated(false);
+            setMode(null);
+            setReauthPending(false);
+            ws.current.removeEventListener('message', reauthHandler);
+          } else if (messageType === 'auth_success') {
+            console.log('Reauth successful');
+            setReauthPending(false);
+            ws.current.removeEventListener('message', reauthHandler);
+          }
+        } catch (error) {
+          console.error('Error parsing reauth response:', error);
         }
-      } catch (error) {
-        console.error('Error parsing reauth response:', error);
-      }
-    };
+      };
 
-    ws.current.addEventListener('message', reauthHandler);
+      ws.current.addEventListener('message', reauthHandler);
 
-    // Cleanup
-    return () => {
-      ws.current?.removeEventListener('message', reauthHandler);
-    };
-  }, [wsReady, isAuthenticated, username, pendingTokenAuth, ws]);
+      const timeoutId = setTimeout(() => {
+        console.log('Reauth timeout - assuming success');
+        setReauthPending(false);
+        ws.current?.removeEventListener('message', reauthHandler);
+      }, 5000);
+
+      return () => {
+        clearTimeout(timeoutId);
+        ws.current?.removeEventListener('message', reauthHandler);
+      };
+    } else {
+      console.log('No credentials to reauth with');
+      setReauthPending(false);
+    }
+  }, [wsReady, ws, reauthPending]);
 
   const handleLoginSuccess = (user) => {
     setUsername(user);
@@ -250,25 +283,19 @@ const App = () => {
       return;
     }
 
-    // Create a custom event that tabs will respond to
     const publishAllEvent = new CustomEvent('collect-publish-data');
     const collectedData = [];
 
-    // Set up a one-time listener for responses
     const handleDataCollection = (event) => {
       collectedData.push(event.detail);
     };
 
     window.addEventListener('publish-data-response', handleDataCollection);
-
-    // Dispatch the collection request
     window.dispatchEvent(publishAllEvent);
 
-    // Wait a bit for all tabs to respond
     setTimeout(() => {
       window.removeEventListener('publish-data-response', handleDataCollection);
 
-      // Filter out empty data
       const validData = collectedData.filter(data =>
         data.subject.trim() && data.message.trim()
       );
@@ -286,8 +313,8 @@ const App = () => {
     }, 100);
   };
 
-  // Show loading screen while authenticating with token
-  if (pendingTokenAuth) {
+  // Show loading screen while authenticating
+  if (pendingTokenAuth || reauthPending) {
     return (
       <div className="app-container" style={{
         display: 'flex',
