@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-export const useWebSocket = () => {
+export const useWebSocket = (onAuthError) => {
   const [wsReady, setWsReady] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const ws = useRef(null);
@@ -70,6 +70,24 @@ export const useWebSocket = () => {
         console.error('Max reconnection attempts reached. Please refresh the page.');
         // Dispatch a custom event that App.jsx can listen to
         window.dispatchEvent(new CustomEvent('websocket-connection-failed'));
+      }
+    };
+
+    ws.current.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        // Handle authentication errors
+        if (data.type === 'error' &&
+            (data.message?.toLowerCase().includes('not authenticated') ||
+             data.message?.toLowerCase().includes('authentication'))) {
+          console.log('Authentication error received from server');
+          if (onAuthError) {
+            onAuthError();
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
       }
     };
 

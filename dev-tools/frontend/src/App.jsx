@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { TabBar } from './components/TabBar/TabBar';
 import { TabContent } from './components/TabContent/TabContent';
 import { PublisherTabContent } from './components/Publisher/PublisherTabContent';
@@ -18,7 +18,28 @@ const App = () => {
   const [activeTab, setActiveTab] = useState('tab-1');
   const [tabCounter, setTabCounter] = useState(1);
 
-  const { ws, wsReady, isConnected } = useWebSocket();
+  console.log('=== App render ===', { isAuthenticated, username, mode });
+
+  // Handle authentication errors from the server
+  const handleAuthError = useCallback(() => {
+//     console.log('Clearing authentication due to server error');
+    console.log('=== handleAuthError called ===');
+    console.log('Current state:', { isAuthenticated, username, mode });
+
+    sessionStorage.removeItem('isAuthenticated');
+    sessionStorage.removeItem('username');
+    sessionStorage.removeItem('mode');
+
+    console.log('SessionStorage cleared');
+
+    setUsername(null);
+    setIsAuthenticated(false);
+    setMode(null);
+
+    console.log('State setters called');
+  }, [isAuthenticated, username, mode]);
+
+  const { ws, wsReady, isConnected } = useWebSocket(handleAuthError);
 
   // Listen for permanent connection failures
   useEffect(() => {
@@ -146,7 +167,7 @@ const App = () => {
         ws.current?.removeEventListener('message', authHandler);
       };
     }
-  }, [wsReady, pendingTokenAuth, ws]);
+  }, [wsReady, pendingTokenAuth]);
 
   // Handle reauth when WebSocket connects (for page refresh)
   useEffect(() => {
@@ -208,7 +229,7 @@ const App = () => {
       console.log('No credentials to reauth with');
       setReauthPending(false);
     }
-  }, [wsReady, ws, reauthPending]);
+  }, [wsReady, reauthPending]);
 
   const handleLoginSuccess = (user) => {
     setUsername(user);
