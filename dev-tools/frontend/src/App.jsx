@@ -353,7 +353,7 @@ const App = () => {
 
   // Show login screen if not authenticated
   if (!isAuthenticated) {
-    return <Login ws={ws} onLoginSuccess={handleLoginSuccess} />;
+    return <Login ws={ws} wsReady={wsReady} onLoginSuccess={handleLoginSuccess} />;
   }
 
   // Show mode selector if authenticated but no mode selected

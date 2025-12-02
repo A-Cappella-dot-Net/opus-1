@@ -4,6 +4,8 @@ export const useWebSocket = (onAuthError) => {
   const [wsReady, setWsReady] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const ws = useRef(null);
+  const messageHandlers = useRef([]);
+  const onAuthErrorRef = useRef(onAuthError);
   const reconnectAttempts = useRef(0);
   const reconnectTimeout = useRef(null);
   const heartbeatInterval = useRef(null);
@@ -59,7 +61,7 @@ export const useWebSocket = (onAuthError) => {
 
       // Attempt to reconnect unless it's a normal closure (code 1000)
       if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
-        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000); // Exponential backoff, max 30s
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 10000); // Exponential backoff, max 30s
         console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttempts.current + 1}/${maxReconnectAttempts})...`);
 
         reconnectTimeout.current = setTimeout(() => {
@@ -82,10 +84,13 @@ export const useWebSocket = (onAuthError) => {
             (data.message?.toLowerCase().includes('not authenticated') ||
              data.message?.toLowerCase().includes('authentication'))) {
           console.log('Authentication error received from server');
-          if (onAuthError) {
-            onAuthError();
+          if (onAuthErrorRef.current) {
+            onAuthErrorRef.current();
           }
         }
+
+        // Allow other handlers to process messages too
+        messageHandlers.current.forEach(handler => handler(event));
       } catch (error) {
         console.error('Error parsing WebSocket message:', error);
       }
@@ -96,6 +101,11 @@ export const useWebSocket = (onAuthError) => {
       setIsConnected(false);
     };
   };
+
+  // Update the ref when callback changes, without triggering effect
+  useEffect(() => {
+    onAuthErrorRef.current = onAuthError;
+  }, [onAuthError]);
 
   useEffect(() => {
     connect();
@@ -120,5 +130,13 @@ export const useWebSocket = (onAuthError) => {
     }
   };
 
-  return { ws, wsReady, sendMessage, isConnected };
+  const addMessageHandler = (handler) => {
+    messageHandlers.current.push(handler);
+  };
+
+  const removeMessageHandler = (handler) => {
+    messageHandlers.current = messageHandlers.current.filter(h => h !== handler);
+  };
+
+  return { ws, wsReady, sendMessage, isConnected, addMessageHandler, removeMessageHandler };
 };

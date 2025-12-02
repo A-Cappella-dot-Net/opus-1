@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Login.css';
 
-export const Login = ({ ws, onLoginSuccess }) => {
+export const Login = ({ ws, wsReady, onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -15,11 +15,8 @@ export const Login = ({ ws, onLoginSuccess }) => {
 
       if (msg.type === 'login_response') {
         if (msg.success) {
-          // Store credentials (or session info)
           sessionStorage.setItem('username', username);
           sessionStorage.setItem('isAuthenticated', 'true');
-
-          // Call parent callback
           onLoginSuccess(username);
         } else {
           setError(msg.message || 'Invalid credentials');
@@ -58,6 +55,20 @@ export const Login = ({ ws, onLoginSuccess }) => {
     <div className="login-container">
       <div className="login-box">
         <h1>View Client</h1>
+
+        {!wsReady && (
+          <div className="connection-status" style={{
+            padding: '10px',
+            marginBottom: '15px',
+            backgroundColor: '#fff3cd',
+            border: '1px solid #ffc107',
+            borderRadius: '4px',
+            color: '#856404'
+          }}>
+            Connecting to server...
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="username">Username</label>
@@ -68,7 +79,7 @@ export const Login = ({ ws, onLoginSuccess }) => {
               onChange={(e) => setUsername(e.target.value)}
               required
               autoFocus
-              disabled={isLoading}
+              disabled={isLoading || !wsReady}
             />
           </div>
 
@@ -80,14 +91,14 @@ export const Login = ({ ws, onLoginSuccess }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={isLoading}
+              disabled={isLoading || !wsReady}
             />
           </div>
 
           {error && <div className="error-message">{error}</div>}
 
-          <button type="submit" disabled={isLoading}>
-            {isLoading ? 'Logging in...' : 'Login'}
+          <button type="submit" disabled={isLoading || !wsReady}>
+            {!wsReady ? 'Connecting...' : isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
       </div>
