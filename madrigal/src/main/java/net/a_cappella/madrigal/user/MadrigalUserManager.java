@@ -113,13 +113,14 @@ public class MadrigalUserManager {
         log.info("{} onUserRequestMessage {} {} onLoopback={}", _appInfo, checkCredentials, request, request.isOnLoopback());
         String uid = request.getUid();
         String clId = request.getClId();
+		int reqId = request.getReqId();
         boolean rejectIfAlreadyLoggedIn = request.isRejectIfLoggedIn();
         boolean forceLogout = request.isForceLogout();
         MadrigalLogOp op = request.getOp();
 
         CredentialsObj credentials = _credentialsCache.get(uid);
         if (credentials==null) {
-            publishResponse(clId, uid, op, Off, Off, "Unknown user "+uid);
+            publishResponse(clId, reqId, uid, op, Off, Off, "Unknown user "+uid);
             return;
         }
 
@@ -127,7 +128,7 @@ public class MadrigalUserManager {
 		MadrigalUserStatus status = statusAndClIds._userStatus.getStatus();
 
 		if (checkCredentials && !credentials.getPwd().equals(request.getPwd())) {
-			statusAndClIds._userStatus = publishResponse(clId, uid, op, status, Off, "Invalid credentials "+uid);
+			statusAndClIds._userStatus = publishResponse(clId, reqId, uid, op, status, Off, "Invalid credentials "+uid);
             return;
         }
 
@@ -135,35 +136,35 @@ public class MadrigalUserManager {
         if (login == op) { // I want to login
             if (On == status) { // I am already logged in
                 if (clIdSet.contains(clId)) {
-                	statusAndClIds._userStatus = publishResponse(clId, uid, op, On, On, uid+"/"+clId+" already logged in");
+                	statusAndClIds._userStatus = publishResponse(clId, reqId, uid, op, On, On, uid+"/"+clId+" already logged in");
                 } else if (rejectIfAlreadyLoggedIn) {
-                	statusAndClIds._userStatus = publishResponse(clId, uid, op, On, Off, uid+" already logged in");
+                	statusAndClIds._userStatus = publishResponse(clId, reqId, uid, op, On, Off, uid+" already logged in");
                 } else {
-                	statusAndClIds._userStatus = publishResponse(clId, uid, op, On, On, uid+" already logged in");
+                	statusAndClIds._userStatus = publishResponse(clId, reqId, uid, op, On, On, uid+" already logged in");
                     clIdSet.add(clId);
                 }
             } else { // I am logged out => login
-            	statusAndClIds._userStatus = publishResponse(clId, uid, op, On, On, "");
+            	statusAndClIds._userStatus = publishResponse(clId, reqId, uid, op, On, On, "");
                 clIdSet.add(clId);
             }
         } else if (logout == op) { // I want to logout
             if (On == status) { // I am logged in
             	if (forceLogout) {
                     clIdSet.clear();
-                    statusAndClIds._userStatus = publishResponse(clId, uid, op, Off, Off, "");
+                    statusAndClIds._userStatus = publishResponse(clId, reqId, uid, op, Off, Off, "");
                 } else if (clIdSet.contains(clId)) {
                 	String text = (checkCredentials) ? "" : request.getText();
                     clIdSet.remove(clId);
                     if (clIdSet.isEmpty()) {
-                    	statusAndClIds._userStatus = publishResponse(clId, uid, op, Off, Off, text);
+                    	statusAndClIds._userStatus = publishResponse(clId, reqId, uid, op, Off, Off, text);
                     } else {
-                    	statusAndClIds._userStatus = publishResponse(clId, uid, op, On, Off, text);
+                    	statusAndClIds._userStatus = publishResponse(clId, reqId, uid, op, On, Off, text);
                     }
                 } else { // logout request from a clientId that never logged in
-                	statusAndClIds._userStatus = publishResponse(clId, uid, op, On, Off, uid+"/"+clId+" never logged in");
+                	statusAndClIds._userStatus = publishResponse(clId, reqId, uid, op, On, Off, uid+"/"+clId+" never logged in");
                 }
             } else { // I am already logged out
-            	statusAndClIds._userStatus = publishResponse(clId, uid, op, Off, Off, uid+" already logged out");
+            	statusAndClIds._userStatus = publishResponse(clId, reqId, uid, op, Off, Off, uid+" already logged out");
             }
         } else {
             log.error("{} Unknown command '{}'", _appInfo, op);
@@ -171,9 +172,9 @@ public class MadrigalUserManager {
     }
 
 	@VisibleForTesting
-    public UserStatusObj publishResponse(String clId, String uid, MadrigalLogOp op, MadrigalUserStatus userStatus, MadrigalUserStatus reqStatus, String text) {
+    public UserStatusObj publishResponse(String clId, int reqId, String uid, MadrigalLogOp op, MadrigalUserStatus userStatus, MadrigalUserStatus reqStatus, String text) {
 		UserStatusObj response = new UserStatusObj();
-		response.setResponse(uid, clId, op, userStatus, reqStatus, text, System.currentTimeMillis());
+		response.setResponse(uid, clId, reqId, op, userStatus, reqStatus, text, System.currentTimeMillis());
 
         if (_active) {
             log.info("{} publishResponse {} '{}'", _appInfo, _active, response);
@@ -254,7 +255,7 @@ public class MadrigalUserManager {
                 	// process a logoutRequest due to 'client disconnect'
             		try {
                         UserStatusObj logoutRequest = _userStatusObjThreadLocal.get();
-            			logoutRequest.setRequest(uid, clId, logout, null, false, false, System.currentTimeMillis());
+            			logoutRequest.setRequest(uid, clId, 0, logout, null, false, false, System.currentTimeMillis());
             			logoutRequest.setText("client disconnect");
         				onUserRequestMessage(logoutRequest, false);
             		} catch (Exception e) {

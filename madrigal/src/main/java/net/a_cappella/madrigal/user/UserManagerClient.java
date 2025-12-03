@@ -21,6 +21,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static net.a_cappella.continuo.PrestoConstants.SUBJ_FT_MEMBER;
 import static net.a_cappella.madrigal.common.constants.MadrigalConstants.FT_USER_PREFIX;
@@ -66,6 +67,7 @@ public class UserManagerClient implements IUserManagerClient {
     private final String _ecn;
 
     private String _clId;
+	private AtomicInteger _reqId = new AtomicInteger();
 
     private final Map<String, UserStatusObj> _userStatusByUid = new HashMap<>(); // (uid, userStatus)
     private final Map<String, Map<String, EcnUserStatusObj>> _ecnUserStatusMap = new HashMap<>(); // (ecn, (uid, ecnUserStatus))
@@ -147,21 +149,25 @@ public class UserManagerClient implements IUserManagerClient {
     }
 
 	@Override
-    public void login(String uid, String pwd, boolean rejectIfLoggedIn) {
+    public int login(String uid, String pwd, boolean rejectIfLoggedIn) {
+		int reqId = _reqId.getAndIncrement();
     	if (_client.onTLT()) {
-    		handleLoginRequest(uid, pwd, rejectIfLoggedIn);
+    		handleLoginRequest(reqId, uid, pwd, rejectIfLoggedIn);
     	} else {
-    		loopback(login, uid, pwd, rejectIfLoggedIn, false);
+    		loopback(reqId, login, uid, pwd, rejectIfLoggedIn, false);
     	}
+		return reqId;
     }
 
 	@Override
-    public void logout(String uid, String pwd, boolean forceLogout) {
+    public int logout(String uid, String pwd, boolean forceLogout) {
+		int reqId = _reqId.getAndIncrement();
     	if (_client.onTLT()) {
-    		handleLogoutRequest(uid, pwd, forceLogout);
+    		handleLogoutRequest(reqId, uid, pwd, forceLogout);
     	} else {
-    		loopback(logout, uid, pwd, false, forceLogout);
+    		loopback(reqId, logout, uid, pwd, false, forceLogout);
     	}
+		return reqId;
     }
 
 
@@ -171,9 +177,10 @@ public class UserManagerClient implements IUserManagerClient {
     private void onTimeoutMsg(PingObj ping) {
 		_activeRequests._userStatusRequests.forEach(reqAndSubsId -> {
 			String uid = reqAndSubsId._req.getUid();
+			int reqId = reqAndSubsId._req.getReqId();
 			UserStatusObj userStatus = _userStatusByUid.get(uid);
 			if (userStatus == null || (_retryIfNotLoggedIn && userStatus.getReqStatus() == MadrigalUserStatus.Off && !"Invalid credentials".equals(userStatus.getText()))) {
-				publish(login, uid, reqAndSubsId._req.getPwd(), reqAndSubsId._req.isRejectIfLoggedIn(), false);
+				publish(reqId, login, uid, reqAndSubsId._req.getPwd(), reqAndSubsId._req.isRejectIfLoggedIn(), false);
 			}
 		});
 	}
@@ -183,12 +190,13 @@ public class UserManagerClient implements IUserManagerClient {
 
 		String uid = userStatus.getUid();
         String pwd = userStatus.getPwd();
+		int reqId = userStatus.getReqId();
 
         MadrigalLogOp op = userStatus.getOp();
         if (op == MadrigalLogOp.login) {
-        	handleLoginRequest(uid, pwd, userStatus.isRejectIfLoggedIn());
+        	handleLoginRequest(reqId, uid, pwd, userStatus.isRejectIfLoggedIn());
         } else if (op == MadrigalLogOp.logout) {
-        	handleLogoutRequest(uid, pwd, userStatus.isForceLogout());
+        	handleLogoutRequest(reqId, uid, pwd, userStatus.isForceLogout());
         }
     }
 
@@ -205,10 +213,10 @@ public class UserManagerClient implements IUserManagerClient {
     	onEcnUserStatusResult(ecnUserStatus);
     }
 
-    private void handleLoginRequest(String uid, String pwd, boolean rejectIfLoggedIn) {
+    private void handleLoginRequest(int reqId, String uid, String pwd, boolean rejectIfLoggedIn) {
     	if (isLoggedIn(uid)) return;
 
-    	RequestAndSubId requestAndSubId = _activeRequests.activateRequest(uid, pwd, rejectIfLoggedIn);
+    	RequestAndSubId requestAndSubId = _activeRequests.activateRequest(reqId, uid, pwd, rejectIfLoggedIn);
     	if (requestAndSubId == null) return; // already active and subscription already exists
 
     	String group = FT_USER_PREFIX+uid+"."+_clId;
@@ -222,32 +230,32 @@ public class UserManagerClient implements IUserManagerClient {
 		}
     }
 
-    private void handleLogoutRequest(String uid, String pwd, boolean forceLogout) {
+    private void handleLogoutRequest(int reqId, String uid, String pwd, boolean forceLogout) {
     	RequestAndSubId requestAndSubId = _activeRequests.deactivateRequest(uid);
     	if (requestAndSubId == null) return; // was not active to start with
 
     	String group = FT_USER_PREFIX+uid+"."+_clId;
         _client.unregisterFtMember(group, _instance);
 		_client.unsubscribe(requestAndSubId._subId);
-   		publish(logout, uid, pwd, false, forceLogout); // may be pending login
+   		publish(reqId, logout, uid, pwd, false, forceLogout); // may be pending login
     }
 
-    private void publish(MadrigalLogOp op, String uid, String pwd, boolean rejectIfLoggedIn, boolean forceLogout) {
+    private void publish(int reqId, MadrigalLogOp op, String uid, String pwd, boolean rejectIfLoggedIn, boolean forceLogout) {
     	if (log.isDebugEnabled()) log.info("{} publish {} {} {}", _clId, op, uid, pwd);
 		try {
 	        UserStatusObj req = _userStatusObjThreadLocal.get();
-			req.setRequest(uid, _clId, op, pwd, rejectIfLoggedIn, forceLogout, System.currentTimeMillis());
+			req.setRequest(uid, _clId, reqId, op, pwd, rejectIfLoggedIn, forceLogout, System.currentTimeMillis());
 			_client.publish(req);
 		} catch (Exception e) {
 			log.error("{}", _clId, e);
 		}
     }
 
-    private void loopback(MadrigalLogOp op, String uid, String pwd, boolean rejectIfLoggedIn, boolean forceLogout) {
+    private void loopback(int reqId, MadrigalLogOp op, String uid, String pwd, boolean rejectIfLoggedIn, boolean forceLogout) {
     	if (log.isDebugEnabled()) log.info("{} loopback {} {} {}", _clId, op, uid, pwd);
 		try {
 	        UserStatusObj obj = _userStatusObjThreadLocal.get();
-			obj.setRequest(uid, _clId, op, pwd, rejectIfLoggedIn, forceLogout, System.currentTimeMillis());
+			obj.setRequest(uid, _clId, reqId, op, pwd, rejectIfLoggedIn, forceLogout, System.currentTimeMillis());
 			_client.loopback(obj);
 		} catch (Exception e) {
 			log.error("{}", _clId, e);
@@ -282,9 +290,10 @@ public class UserManagerClient implements IUserManagerClient {
     private class ActiveRequests {
         List<RequestAndSubId> _userStatusRequests = new ArrayList<>();
 
-        RequestAndSubId activateRequest(String uid, String pwd, boolean rejectIfLoggedIn) {
+        RequestAndSubId activateRequest(int reqId, String uid, String pwd, boolean rejectIfLoggedIn) {
         	for (RequestAndSubId elem : _userStatusRequests) {
         		if (elem._req.getUid().equals(uid)) {
+					elem._req.setReqId(reqId); // TODO is this correct? one request will not receive a response...
         			// update password
         			elem._req.setPwd(pwd);
         			elem._req.setRejectIfLoggedIn(rejectIfLoggedIn);
@@ -295,6 +304,7 @@ public class UserManagerClient implements IUserManagerClient {
         	
         	RequestAndSubId elem = new RequestAndSubId();
         	elem._req = new UserStatusObj();
+			elem._req.setReqId(reqId);
         	elem._req.setUid(uid);
         	elem._req.setPwd(pwd);
 			elem._req.setRejectIfLoggedIn(rejectIfLoggedIn);

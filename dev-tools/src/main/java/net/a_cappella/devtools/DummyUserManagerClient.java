@@ -1,5 +1,7 @@
 package net.a_cappella.devtools;
 
+import net.a_cappella.madrigal.common.obj.EcnUserStatusObj;
+import net.a_cappella.madrigal.common.obj.UserStatusObj;
 import net.a_cappella.madrigal.user.IUserManagerClient;
 
 import java.util.HashMap;
@@ -12,10 +14,11 @@ public class DummyUserManagerClient implements IUserManagerClient {
         USERS.put("admin", "admin");
         USERS.put("user", "password");
     }
-    private TriConsumer<Boolean, String, String> msgBack;
+    private TriConsumer<Boolean, String, String> _consumer;
+    private int _reqId = 0;
 
-    public DummyUserManagerClient(TriConsumer<Boolean, String, String> msgBack) {
-        this.msgBack = msgBack;
+    public DummyUserManagerClient(TriConsumer<Boolean, String, String> consumer) {
+        _consumer = consumer;
     }
 
     @Override
@@ -25,12 +28,22 @@ public class DummyUserManagerClient implements IUserManagerClient {
     public void adjustClId(String clId) {}
 
     @Override
-    public void login(String username, String password, boolean rejectIfLoggedIn) {
+    public int login(String username, String password, boolean rejectIfLoggedIn) {
         String storedPassword = USERS.get(username);
-        msgBack.accept(storedPassword != null && storedPassword.equals(password), username, password);
+        _consumer.accept(storedPassword != null && storedPassword.equals(password), username, password);
+        return _reqId++;
     }
 
     @Override
-    public void logout(String uid, String pwd, boolean forceLogout) {
+    public int logout(String uid, String pwd, boolean forceLogout) {
+        return _reqId++;
+    }
+
+    @Override
+    public void onUserStatusResult(UserStatusObj userStatus) {
+    }
+
+    @Override
+    public void onEcnUserStatusResult(EcnUserStatusObj ecnUserStatus) {
     }
 }

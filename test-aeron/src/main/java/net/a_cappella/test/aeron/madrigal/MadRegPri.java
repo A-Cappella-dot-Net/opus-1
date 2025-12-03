@@ -57,7 +57,7 @@ public class MadRegPri extends MadMixBase {
     }
 
     private void updateObj(UserStatusObj obj, int tstCnt, long seqNo, int oneInN) {
-        obj.setRequest("uid", "clId", MadrigalLogOp.login, "pwd", false, false, System.currentTimeMillis());
+        obj.setRequest("uid", "clId", 0, MadrigalLogOp.login, "pwd", false, false, System.currentTimeMillis());
         super.updateObj(obj, seqNo, oneInN);
     }
 }

@@ -50,7 +50,8 @@ public class UserStatusObj extends ObjImpl {
     		Arrays.asList(
                     new FieldMetaInfo("mode"),
                     new FieldMetaInfo("uid"),
-                    new FieldMetaInfo("clId")
+                    new FieldMetaInfo("clId"),
+					new FieldMetaInfo("reqId")
             ),
             Arrays.asList(
                     new FieldMetaInfo("op"),               // mode = REQUEST
@@ -72,6 +73,7 @@ public class UserStatusObj extends ObjImpl {
     private String _uid;
 
     private String _clId;
+	private int _reqId;
     private MadrigalLogOp _op;
     private String _pwd;
     private boolean _rejectIfLoggedIn;
@@ -87,6 +89,7 @@ public class UserStatusObj extends ObjImpl {
 		_mode = obj._mode;
 		_uid = obj._uid;
 		_clId = obj._clId;
+		_reqId = obj._reqId;
 		_op = obj._op;
 		_pwd = obj._pwd;
 		_rejectIfLoggedIn = obj._rejectIfLoggedIn;
@@ -104,6 +107,7 @@ public class UserStatusObj extends ObjImpl {
 		_mode = NULL_VAL;
 		_uid = null;
 		_clId = null;
+		_reqId = -1;
 		_op = null;
 		_pwd = null;
 		_rejectIfLoggedIn = false;
@@ -114,10 +118,11 @@ public class UserStatusObj extends ObjImpl {
 		_ts = 0;
 	}
 
-	public void setRequest(String uid, String clId, MadrigalLogOp op, String pwd, boolean rejectIfLoggedIn, boolean forceLogout, long ts) {
+	public void setRequest(String uid, String clId, int reqId, MadrigalLogOp op, String pwd, boolean rejectIfLoggedIn, boolean forceLogout, long ts) {
 		_mode = REQUEST;
         _uid = uid;
         _clId = clId;
+		_reqId = reqId;
         _op = op;
         _pwd = pwd;
         _rejectIfLoggedIn = rejectIfLoggedIn;
@@ -125,10 +130,11 @@ public class UserStatusObj extends ObjImpl {
         _ts = ts;
 	}
 
-	public void setResponse(String uid, String clId, MadrigalLogOp op, MadrigalUserStatus status, MadrigalUserStatus reqStatus, String text, long ts) {
+	public void setResponse(String uid, String clId, int reqId, MadrigalLogOp op, MadrigalUserStatus status, MadrigalUserStatus reqStatus, String text, long ts) {
 		_mode = RESPONSE;
         _uid = uid;
         _clId = clId;
+		_reqId = reqId;
         _op = op;
         _status = status;
         _reqStatus = reqStatus;
@@ -153,6 +159,12 @@ public class UserStatusObj extends ObjImpl {
     }
 	public void setClId(String clId) {
 		_clId = clId;
+	}
+	public int getReqId() {
+		return _reqId;
+	}
+	public void setReqId(int reqId) {
+		_reqId = reqId;
 	}
     public MadrigalLogOp getOp() {
         return _op;
@@ -203,6 +215,17 @@ public class UserStatusObj extends ObjImpl {
     	_ts = ts;
     }
 
+
+	@Override
+	public int getInt(String fieldName) throws Exception {
+		if ("reqId".equalsIgnoreCase(fieldName)) return _reqId;
+		return super.getInt(fieldName); // throws exception
+	}
+	@Override
+	public void setInt(String fieldName, int value) throws Exception {
+		if ("reqId".equalsIgnoreCase(fieldName)) _reqId = value;
+		else super.setInt(fieldName, value); // throws exception
+	}
 
 	@Override
 	public String getString(String fieldName) throws Exception {
@@ -265,7 +288,7 @@ public class UserStatusObj extends ObjImpl {
 
 	public String toString() {
 		return ((log.isDebugEnabled())?(super.toString()+" "):"")+"{"+
-				_uid+" "+_clId+" "+_op+" "+
+				_uid+" "+_clId+":"+_reqId+" "+_op+" "+
 				((REQUEST==_mode)?(_rejectIfLoggedIn+" "+_forceLogout):(_status+" "+_reqStatus+" "+_text))+" "+Utils.formatMillis(_ts)+"}";
 	}
 }

@@ -50,7 +50,7 @@ public class CukeUserStatus {
 
 	public UserStatusObj of() {
 		UserStatusObj obj = new UserStatusObj();
-		obj.setResponse(uid, clId, MadrigalLogOp.valueOf(op), MadrigalUserStatus.valueOf(status), MadrigalUserStatus.valueOf(reqStatus), text, System.currentTimeMillis());
+		obj.setResponse(uid, clId, 0, MadrigalLogOp.valueOf(op), MadrigalUserStatus.valueOf(status), MadrigalUserStatus.valueOf(reqStatus), text, System.currentTimeMillis());
 		return obj;
 	}
 }

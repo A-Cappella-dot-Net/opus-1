@@ -15,29 +15,29 @@ import java.util.Date;
 public class MyUserManagerClient extends UserManagerClient {
     private static final Logger log = LoggerFactory.getLogger(MyUserManagerClient.class);
 
-    private String userStatusResult = "";
-    private String ecnUserStatusResult = "";
-    private TriConsumer<Boolean, String, String> msgBack;
+    private String _userStatusResult = "";
+    private String _ecnUserStatusResult = "";
+    private TriConsumer<Boolean, String, String> _consumer;
 
-    public MyUserManagerClient(PrestoClient client, TriConsumer<Boolean, String, String> msgBack) {
+    public MyUserManagerClient(PrestoClient client, TriConsumer<Boolean, String, String> consumer) {
         super(client, null);
-        this.msgBack = msgBack;
+        _consumer = consumer;
     }
 
     @Override
     public void onUserStatusResult(UserStatusObj userStatus) {
         String now = new SimpleDateFormat("[hh:mm:ss.SSS]").format(new Date());
-        userStatusResult = now+" onUserStatusResult="+userStatus;
-        log.info("{} {}", userStatusResult, ecnUserStatusResult);
+        _userStatusResult = now+" onUserStatusResult="+userStatus;
+        log.info("{} {}", _userStatusResult, _ecnUserStatusResult);
         if (userStatus.getOp() == MadrigalLogOp.login) { // I was trying to login
-            msgBack.accept(userStatus.getReqStatus() == MadrigalUserStatus.On, userStatus.getUid(), userStatus.getPwd());
+            _consumer.accept(userStatus.getReqStatus() == MadrigalUserStatus.On, userStatus.getUid(), userStatus.getPwd());
         }
     }
 
     @Override
     public void onEcnUserStatusResult(EcnUserStatusObj ecnUserStatus) {
         String now = new SimpleDateFormat("[hh:mm:ss.SSS]").format(new Date());
-        ecnUserStatusResult = now+" onEcnUserStatusResult="+ecnUserStatus;
-        log.info("{} {}", userStatusResult, ecnUserStatusResult);
+        _ecnUserStatusResult = now+" onEcnUserStatusResult="+ecnUserStatus;
+        log.info("{} {}", _userStatusResult, _ecnUserStatusResult);
     }
 }

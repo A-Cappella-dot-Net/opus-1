@@ -182,14 +182,15 @@
         <field name="mode" id="1" type="SbeModeEnum"/>
         <field name="uid" id="2" type="UidType"/>
         <field name="clId" id="3" type="ClientIdType"/>
-        <field name="op" id="4" type="SbeLogOpEnum"/>
-        <field name="pwd" id="5" type="PwdType"/>
-        <field name="forceLogout" id="6" type="SbeBoolean"/>
-        <field name="rejectIfLoggedIn" id="7" type="SbeBoolean"/>
-        <field name="status" id="8" type="SbeUserStatusEnum"/>
-        <field name="reqStatus" id="9" type="SbeUserStatusEnum"/>
-        <field name="ts" id="10" type="int64"/>
-        <data name="text" id="11" type="varStringEncoding"/>
+        <field name="reqId" id="4" type="int32"/>
+        <field name="op" id="5" type="SbeLogOpEnum"/>
+        <field name="pwd" id="6" type="PwdType"/>
+        <field name="forceLogout" id="7" type="SbeBoolean"/>
+        <field name="rejectIfLoggedIn" id="8" type="SbeBoolean"/>
+        <field name="status" id="9" type="SbeUserStatusEnum"/>
+        <field name="reqStatus" id="10" type="SbeUserStatusEnum"/>
+        <field name="ts" id="11" type="int64"/>
+        <data name="text" id="12" type="varStringEncoding"/>
     </sbe:message>
 
     <sbe:message name="EcnUserStatusObj" id="1009" description="Ecn User Status Request and Response">

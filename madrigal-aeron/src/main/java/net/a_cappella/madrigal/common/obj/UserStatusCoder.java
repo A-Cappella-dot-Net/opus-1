@@ -25,13 +25,15 @@ public class UserStatusCoder extends AeronCoderImpl<UserStatusObj> {
         _obj.setMadrigalMode(EnumConverters.convert(DECODER.mode()));
         _obj.setUid(DECODER.uid());
         _obj.setClId(DECODER.clId());
+        _obj.setReqId(DECODER.reqId());
     }
     @Override
     public void encodeKeys() {
         ENCODER
             .mode(EnumConverters.convert(_obj.getMadrigalMode()))
             .uid(_obj.getUid())
-	        .clId(_obj.getClId())
+            .clId(_obj.getClId())
+            .reqId(_obj.getReqId())
         ;
     }
 

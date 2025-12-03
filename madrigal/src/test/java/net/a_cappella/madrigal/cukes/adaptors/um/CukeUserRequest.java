@@ -47,7 +47,7 @@ public class CukeUserRequest {
 
 	public UserStatusObj of() {
 		UserStatusObj obj = new UserStatusObj();
-		obj.setRequest(uid, clId, MadrigalLogOp.valueOf(op), pwd, rejectIfLoggedIn, forceLogout, System.currentTimeMillis());
+		obj.setRequest(uid, clId, 0, MadrigalLogOp.valueOf(op), pwd, rejectIfLoggedIn, forceLogout, System.currentTimeMillis());
 		return obj;
 	}
 }
