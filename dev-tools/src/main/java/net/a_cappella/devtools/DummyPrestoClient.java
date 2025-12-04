@@ -92,7 +92,7 @@ public class DummyPrestoClient implements PrestoClient {
                         ((ISnSListener) subListener).onSnapComplete(subId);
                     }
 
-                    for (int i = 0; i < subsCnt; i++) {
+                    for (int i = snapCnt; i < subsCnt; i++) {
                         Obj obj = generateMsg(i);
                         subListener.onSubscriptionMessage(obj, subId);
                         try {

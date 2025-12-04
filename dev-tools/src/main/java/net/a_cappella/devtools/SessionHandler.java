@@ -1,9 +1,6 @@
 package net.a_cappella.devtools;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import net.a_cappella.continuo.datatypes.PDate;
 import net.a_cappella.continuo.datatypes.PNanos;
 import net.a_cappella.continuo.datatypes.PTime;
@@ -37,6 +34,11 @@ public class SessionHandler implements WebSocketListener {
     public boolean _isAuthenticated = false;
 
     Gson _gsonOut = new GsonBuilder()
+            .registerTypeAdapter(Double.class, (JsonSerializer<Double>) (src, typeOfSrc, context) -> {
+                if (src.isNaN()) return new JsonPrimitive("NaN");
+                if (src.isInfinite()) return new JsonPrimitive(src > 0 ? "Infinity" : "-Infinity");
+                return new JsonPrimitive(src);
+            })
             .registerTypeAdapter(PTimestamp.class, new PTimestampSerializer())
             .registerTypeAdapter(PTime.class, new PTimeSerializer())
             .registerTypeAdapter(PDate.class, new PDateSerializer())
