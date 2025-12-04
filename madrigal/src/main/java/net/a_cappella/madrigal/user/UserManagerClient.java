@@ -66,7 +66,7 @@ public class UserManagerClient implements IUserManagerClient {
     private final int _instance;
     private final String _ecn;
 
-    private String _clId;
+    private final String _clId;
 	private AtomicInteger _reqId = new AtomicInteger();
 
     private final Map<String, UserStatusObj> _userStatusByUid = new HashMap<>(); // (uid, userStatus)
@@ -82,10 +82,6 @@ public class UserManagerClient implements IUserManagerClient {
 
         _clId = Utils.nextId();
     }
-
-	public void adjustClId(String clId) {
-		_clId += clId;
-	}
 
 	@Override
 	public void start() {

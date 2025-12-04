@@ -5,7 +5,6 @@ import net.a_cappella.madrigal.common.obj.UserStatusObj;
 
 public interface IUserManagerClient {
     void start();
-    void adjustClId(String clId);
     int login(String uid, String pwd, boolean rejectIfLoggedIn);
     int logout(String uid, String pwd, boolean forceLogout);
 

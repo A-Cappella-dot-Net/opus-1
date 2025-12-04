@@ -8,8 +8,6 @@ import net.a_cappella.continuo.datatypes.PDate;
 import net.a_cappella.continuo.datatypes.PNanos;
 import net.a_cappella.continuo.datatypes.PTime;
 import net.a_cappella.continuo.datatypes.PTimestamp;
-import net.a_cappella.madrigal.user.IUserManagerClient;
-import net.a_cappella.presto.ps.AeronClient;
 import net.a_cappella.presto.ps.PrestoClient;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.WebSocketListener;
@@ -17,24 +15,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 public class SessionHandler implements WebSocketListener {
     private static final Logger log = LoggerFactory.getLogger(SessionHandler.class);
 
     public final PrestoClient _client;
-    private IUserManagerClient _userMgr;
+    private VsUserManager _userManager;
 
-    private Session _session;
+    public Session _session;
     public String _remote = "unknown";
 
-    private String _username;
-    private String _password;
-    private boolean _isAuthenticated = false;
+    public String _username;
+    public String _password;
+    public boolean _isAuthenticated = false;
 
     Gson _gsonOut = new GsonBuilder()
             .registerTypeAdapter(PTimestamp.class, new PTimestampSerializer())
@@ -50,35 +50,20 @@ public class SessionHandler implements WebSocketListener {
             .create();
 
     private final ScheduledExecutorService _scheduler;
-    private final ConcurrentMap<Session, SessionHandler> _sessionHandlersBySession;
+    private final HandlersBySession _handlersBySession;
     private ScheduledFuture<?> _pingTask;
 
     private SubscriberHandler _subscriberHandler;
     private PublisherHandler _publisherHandler;
 
-    public TriConsumer<Boolean, String, String> _notifyGui = (success, uid, pwd) -> {
-        if (success) {
-            loginSucceeded(uid, pwd);
-        } else {
-            loginFailed(uid, pwd);
-        }
-    };
-
     public SessionHandler(ViewServer viewServer) {
         _client = viewServer._client;
         _scheduler = viewServer._scheduler;
-        _sessionHandlersBySession = viewServer._sessionHandlersBySession;
+        _handlersBySession = viewServer._handlersBySession;
+        _userManager = viewServer._userManager;
     }
 
     public void start() {
-        if (_client instanceof AeronClient) {
-            _userMgr = new MyUserManagerClient(_client, _notifyGui);
-        } else {
-            _userMgr = new DummyUserManagerClient(_notifyGui);
-        }
-        _userMgr.adjustClId(":" + ((InetSocketAddress) _session.getRemoteAddress()).getPort());
-        _userMgr.start();
-
         long period = _session.getIdleTimeout().getSeconds() - 1;
         ByteBuffer keepalive = ByteBuffer.wrap("keepalive".getBytes());
         _pingTask = _scheduler.scheduleAtFixedRate(() -> {
@@ -94,7 +79,7 @@ public class SessionHandler implements WebSocketListener {
     }
 
     public void stop() {
-        _sessionHandlersBySession.remove(_session);
+        _handlersBySession.remove(_session);
         // Cancel the ping task
         if (_pingTask != null) {
             _pingTask.cancel(false);
@@ -113,7 +98,7 @@ public class SessionHandler implements WebSocketListener {
     @Override
     public void onWebSocketConnect(Session session) {
         _session = session;
-        _sessionHandlersBySession.put(session, this);
+        _handlersBySession.put(session, this);
         _remote = session.getRemoteAddress().toString();
 
         log.info("{} New connection", _remote);
@@ -196,43 +181,17 @@ public class SessionHandler implements WebSocketListener {
         }
     }
 
-    private void loginSucceeded(String username, String password) {
-        _username = username;
-        _password = password;
-        _isAuthenticated = true;
-
-        log.info("{} User authenticated: {}", _remote, username);
-
-        JsonObject response = new JsonObject();
-        response.addProperty("type", "login_response");
-        response.addProperty("success", true);
-        response.addProperty("username", username);
-
-        sendMessage(response);
-    }
-
-    private void loginFailed(String username, String password) {
-        log.info("{} Failed login attempt for: {}", _remote, username);
-
-        JsonObject response = new JsonObject();
-        response.addProperty("type", "login_response");
-        response.addProperty("success", false);
-        response.addProperty("message", "Invalid username or password");
-
-        sendMessage(response);
-    }
-
     private void handleLogin(JsonObject msg) {
         String username = msg.get("username").getAsString();
         String password = msg.get("password").getAsString();
 
-        _userMgr.login(username, password, false);
+        _userManager.login(this, username, password);
     }
 
-    private void handleReauth(JsonObject msg) { // This can be simplified or removed if you always use tokens
+    private void handleReauth(JsonObject msg) {
         String username = msg.get("username").getAsString();
 
-        if (username.equals(_username)) {
+        if (_userManager.reauth(this, username)) {
             _isAuthenticated = true;
             log.info("{} User re-authenticated: {}", _remote, username);
         } else {
@@ -243,7 +202,7 @@ public class SessionHandler implements WebSocketListener {
     private void handleLogout() {
         log.info("{} User logged out: {}", _remote, _username);
 
-        _userMgr.logout(_username, _password, false);
+        _userManager.logout(this, _username, _password);
 
         _username = null;
         _password = null;

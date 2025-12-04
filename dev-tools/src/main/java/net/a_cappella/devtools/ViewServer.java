@@ -23,11 +23,14 @@ public class ViewServer {
     public final ScheduledExecutorService _scheduler = Executors.newScheduledThreadPool(1);
 
     private final Server _server;
-    public final ConcurrentMap<Session, SessionHandler> _sessionHandlersBySession = new ConcurrentHashMap<>();
+    public final HandlersBySession _handlersBySession = new HandlersBySession();
+
+    public final VsUserManager _userManager;
 
     public ViewServer(PrestoClient client) {
         _client = client;
         _server = new Server(8080);
+        _userManager = new VsUserManager(client);
 
         ShutdownHook.registerShutdownAction(() -> stop());
     }
@@ -38,6 +41,8 @@ public class ViewServer {
 
     public void init() throws Exception {
         _client.waitUntilInitialized();
+
+        _userManager.start();
 
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
@@ -61,12 +66,7 @@ public class ViewServer {
     public void stop() {
         log.info("Shutting down server...");
         _scheduler.shutdown();
-        try {
-            _sessionHandlersBySession.forEach((session, sessionHandler) -> sessionHandler.stop());
-            log.info("SessionHandlers stopped");
-        } catch (Exception e) {
-            log.error("", e);
-        }
+        _handlersBySession.stop();
         try {
             _server.stop();
             log.info("Server stopped");
