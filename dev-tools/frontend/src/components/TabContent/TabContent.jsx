@@ -159,7 +159,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
       hasInitialized.current = true;
 
       setTimeout(() => {
-        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+        if (ws.current && ws.current.readyState === WebSocket.OPEN && tableBodyRef.current) {
           const viewportHeight = tableBodyRef.current.clientHeight;
           const viewportWidth = tableBodyRef.current.clientWidth;
 
@@ -222,6 +222,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
 
         ws.current.send(JSON.stringify({
           type: 'viewport_update',
+          mode: 'subscriber',
           tabId: tabId,
           viewportWidth: viewportWidth,
           viewportHeight: viewportHeight

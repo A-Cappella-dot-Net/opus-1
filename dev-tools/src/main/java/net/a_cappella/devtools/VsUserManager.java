@@ -117,7 +117,7 @@ public class VsUserManager {
 
     public boolean reauth(SessionHandler handler, String uid) {
         AuthDetails ad = _authDetailsByUid.get(uid);
-        if (ad != null || ad._expiry < System.currentTimeMillis() || ad._pwd == null) {
+        if (ad == null || ad._expiry < System.currentTimeMillis() || ad._pwd == null) {
             return false;
         } else {
             return true;

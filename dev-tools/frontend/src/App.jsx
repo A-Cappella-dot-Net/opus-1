@@ -18,25 +18,17 @@ const App = () => {
   const [activeTab, setActiveTab] = useState('tab-1');
   const [tabCounter, setTabCounter] = useState(1);
 
-  console.log('=== App render ===', { isAuthenticated, username, mode });
-
   // Handle authentication errors from the server
   const handleAuthError = useCallback(() => {
-//     console.log('Clearing authentication due to server error');
-    console.log('=== handleAuthError called ===');
-    console.log('Current state:', { isAuthenticated, username, mode });
+//     console.log('handleAuthError Current state:', { isAuthenticated, username, mode });
 
     sessionStorage.removeItem('isAuthenticated');
     sessionStorage.removeItem('username');
     sessionStorage.removeItem('mode');
 
-    console.log('SessionStorage cleared');
-
     setUsername(null);
     setIsAuthenticated(false);
     setMode(null);
-
-    console.log('State setters called');
   }, [isAuthenticated, username, mode]);
 
   const { ws, wsReady, isConnected } = useWebSocket(handleAuthError);

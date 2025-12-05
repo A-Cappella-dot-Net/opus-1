@@ -36,7 +36,12 @@ public class SessionHandler implements WebSocketListener {
     Gson _gsonOut = new GsonBuilder()
             .registerTypeAdapter(Double.class, (JsonSerializer<Double>) (src, typeOfSrc, context) -> {
                 if (src.isNaN()) return new JsonPrimitive("NaN");
-                if (src.isInfinite()) return new JsonPrimitive(src > 0 ? "Infinity" : "-Infinity");
+                if (src.isInfinite()) return new JsonPrimitive(src > 0 ? "Inf" : "-Inf");
+                return new JsonPrimitive(src);
+            })
+            .registerTypeAdapter(Float.class, (JsonSerializer<Float>) (src, typeOfSrc, context) -> {
+                if (src.isNaN()) return new JsonPrimitive("NaN");
+                if (src.isInfinite()) return new JsonPrimitive(src > 0 ? "Inf" : "-Inf");
                 return new JsonPrimitive(src);
             })
             .registerTypeAdapter(PTimestamp.class, new PTimestampSerializer())

@@ -184,8 +184,8 @@ public class PublisherHandler {
                 case SHORT: return Short.parseShort(str);
                 case INT: return Integer.parseInt(str);
                 case LONG: return Long.parseLong(str);
-                case FLOAT: return Float.parseFloat(str);
-                case DOUBLE: return Double.parseDouble(str);
+                case FLOAT: return parseFloat(str);
+                case DOUBLE: return parseDouble(str);
                 case BOOLEAN: return Boolean.parseBoolean(str);
                 case TIMESTAMP: return PTimestamp.parsePTimestamp(str);
                 case NANOS: return PNanos.parsePNanos(str);
@@ -227,6 +227,28 @@ public class PublisherHandler {
             return Boolean.FALSE;
         }
         return str;
+    }
+
+    private double parseDouble(String str) {
+        if (str == null) return Double.NaN;
+        try {
+            return Double.parseDouble(str);
+        } catch (NumberFormatException x) {
+            if ("Inf".equalsIgnoreCase(str)) return Double.POSITIVE_INFINITY;
+            if ("-Inf".equalsIgnoreCase(str)) return Double.NEGATIVE_INFINITY;
+            return Double.NaN;
+        }
+    }
+
+    private float parseFloat(String str) {
+        if (str == null) return Float.NaN;
+        try {
+            return Float.parseFloat(str);
+        } catch (NumberFormatException x) {
+            if ("Inf".equalsIgnoreCase(str)) return Float.POSITIVE_INFINITY;
+            if ("-Inf".equalsIgnoreCase(str)) return Float.NEGATIVE_INFINITY;
+            return Float.NaN;
+        }
     }
 
     private <T extends Enum<T>> T parseEnum(String str) throws Exception {
