@@ -118,20 +118,6 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
           setColumnOrder((msg.columns || []).map((_, idx) => idx));
           break;
 
-        case 'cell_update':
-          setTableData(prev => {
-            const rowIdx = msg.row - startRow;
-            const colIdx = msg.col - startCol;
-            if (rowIdx >= 0 && rowIdx < prev.length && colIdx >= 0 && colIdx < prev[0]?.length) {
-              const newData = [...prev];
-              newData[rowIdx] = [...newData[rowIdx]];
-              newData[rowIdx][colIdx] = msg.value;
-              return newData;
-            }
-            return prev;
-          });
-          break;
-
         case 'clear_table':
           setTableData([]);
           setColumns([]);

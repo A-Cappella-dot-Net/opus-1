@@ -372,15 +372,6 @@ public class SubscriberTab implements ISnSListener {
         }
     }
 
-    private void updateCell(int row, String columnName, Object value) {
-        if (!_table._paused) {
-            _table.updateCell(row, columnName, value);
-            int colIndex = _table.getColumnIndex(columnName);
-            if (colIndex >= 0) {
-                sendCellUpdate(row, colIndex, value);
-            }
-        }
-    }
 
 
 
@@ -406,16 +397,6 @@ public class SubscriberTab implements ISnSListener {
         _sessionHandler.send(response);
 
         sendViewportData(false);
-    }
-
-    private void sendCellUpdate(int row, int col, Object value) {
-        Map<String, Object> update = new HashMap<>();
-        update.put("type", "cell_update");
-        update.put("tabId", _tabId);
-        update.put("row", row);
-        update.put("col", col);
-        update.put("value", value);
-        _sessionHandler.send(update);
     }
 
     private void sendClearTable() {
