@@ -75,7 +75,8 @@ public class TableData {
                 _rows.set(newRowPos, rowData);
             }
         } else {
-            _rows.add(0, rowData);
+            _rows.add(0, rowData); // add the row to the top of the table
+//            _rows.add(rowData); // add the row to the bottom of the table
         }
     }
 

@@ -466,21 +466,23 @@ public class SubscriberTab implements ISnSListener {
 
         // Calculate scroll thumb metrics
         int totalHeight = totalRows * ROW_HEIGHT;
+
         double verticalThumbRatio = totalHeight > 0 ? (double) _viewportHeight / totalHeight : 1.0;
+        verticalThumbRatio = Math.max(0.05, Math.min(1.0, verticalThumbRatio));
+
         int scrollableHeight = Math.max(0, totalHeight - _viewportHeight);
         double verticalThumbPosition = scrollableHeight > 0 ? (double) _viewportPositionFromTop / scrollableHeight : 0.0;
-
-        verticalThumbRatio = Math.max(0.05, Math.min(1.0, verticalThumbRatio));
         verticalThumbPosition = Math.max(0.0, Math.min(1.0, verticalThumbPosition));
 
         // Calculate visible rows based on pixel offset
-        int maxTopOffset = (_viewportHeight % ROW_HEIGHT == 0) ? 0 : ROW_HEIGHT - _viewportHeight % ROW_HEIGHT;
+        int partialRowHeight = _viewportHeight % ROW_HEIGHT;
+        int maxTopOffset = (partialRowHeight == 0) ? 0 : ROW_HEIGHT - partialRowHeight;
         int topOffset = (int) Math.rint(verticalThumbPosition * maxTopOffset); // How many pixels of first row are hidden
         int visibleRowCount = Math.min((int) Math.ceil((double) _viewportHeight /ROW_HEIGHT), totalRows); // Round up to show partial rows
         int startRow = _viewportPositionFromTop / ROW_HEIGHT;
 
         if (startRow + visibleRowCount > totalRows) {
-//            visibleRowCount = totalRows - startRow;
+            // viewport size has increased and I want to show no blank lines at the end
             startRow = totalRows - visibleRowCount;
         }
 

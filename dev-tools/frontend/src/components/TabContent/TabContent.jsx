@@ -247,9 +247,9 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
       const viewportHeight = tableBodyRef.current?.clientHeight || 0;
       const totalHeight = totalRows * ROW_HEIGHT;
       const deltaScroll =
-         e.deltaMode === 1 ? e.deltaY * ROW_HEIGHT :
-         e.deltaMode === 2 ? e.deltaY * ROW_HEIGHT * Math.floor(viewportHeight / ROW_HEIGHT) :
-         e.deltaY;
+         e.deltaMode === WheelEvent.DOM_DELTA_LINE ? e.deltaY * ROW_HEIGHT :
+         e.deltaMode === WheelEvent.DOM_DELTA_PAGE ? e.deltaY * ROW_HEIGHT * Math.floor(viewportHeight / ROW_HEIGHT) :
+         e.deltaY; // WheelEvent.DOM_DELTA_PIXEL
       const currentScroll = startRow * ROW_HEIGHT + topOffset;
       const scrollableHeight = Math.max(0, totalHeight - viewportHeight);
       const viewportPositionFromTop = Math.max(0, Math.min(scrollableHeight, currentScroll + deltaScroll));
