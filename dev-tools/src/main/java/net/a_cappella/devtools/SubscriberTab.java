@@ -47,6 +47,8 @@ public class SubscriberTab implements ISnSListener {
     private int _startCol = 0; // TODO not used
     private int _viewportPositionFromLeft = 0; // Pixel-based horizontal scroll
 
+    private boolean _tailMode;
+
     private String _snsSql;
     private boolean _pinByKey;
     private String _opType;
@@ -80,7 +82,7 @@ public class SubscriberTab implements ISnSListener {
         _viewportWidth = viewportWidth;
         _viewportHeight = viewportHeight;
 
-        sendViewportData();
+        sendViewportData(false);
     }
 
     public void handleScrollUpdate(JsonObject msg) {
@@ -88,7 +90,7 @@ public class SubscriberTab implements ISnSListener {
         _startCol = msg.has("startCol") ? msg.get("startCol").getAsInt() : _startCol;
         _viewportPositionFromLeft = msg.has("scrollLeftPixels") ? msg.get("scrollLeftPixels").getAsInt() : _viewportPositionFromLeft;
 
-        sendViewportData();
+        sendViewportData(true);
     }
 
     public void handleResizeColumn(int colIndex, int newWidth) {
@@ -104,12 +106,12 @@ public class SubscriberTab implements ISnSListener {
             }
         }
 
-        sendViewportData();
+        sendViewportData(false);
     }
 
     public void handleReorderColumns(ArrayList<Integer> columnOrder) {
         _table.handleReorderColumns(columnOrder);
-        sendViewportData();
+        sendViewportData(false);
     }
 
 
@@ -366,7 +368,7 @@ public class SubscriberTab implements ISnSListener {
             if (_table.getTotalCols() > columnsBefore) {
                 sendColumnUpdate();
             }
-            sendViewportData();
+            sendViewportData(false);
         }
     }
 
@@ -403,7 +405,7 @@ public class SubscriberTab implements ISnSListener {
         response.put("totalCols", _table.getTotalCols());
         _sessionHandler.send(response);
 
-        sendViewportData();
+        sendViewportData(false);
     }
 
     private void sendCellUpdate(int row, int col, Object value) {
@@ -456,19 +458,23 @@ public class SubscriberTab implements ISnSListener {
         _sessionHandler.sendMessage(update);
     }
 
-    private void sendViewportData() {
+    private void sendViewportData(boolean updateTailMode) {
         int totalRows = _table.getTotalRows();
-        int totalCols = _table.getTotalCols();
-
-        // Calculate scroll thumb metrics
         int totalHeight = totalRows * ROW_HEIGHT;
-
-        double verticalThumbRatio = totalHeight > 0 ? (double) _viewportHeight / totalHeight : 1.0;
-        verticalThumbRatio = Math.max(0.05, Math.min(1.0, verticalThumbRatio));
-
         int scrollableHeight = Math.max(0, totalHeight - _viewportHeight);
         double verticalThumbPosition = scrollableHeight > 0 ? (double) _viewportPositionFromTop / scrollableHeight : 0.0;
         verticalThumbPosition = Math.max(0.0, Math.min(1.0, verticalThumbPosition));
+
+        if (updateTailMode) { // tailMode is only updated by scroll_update messages
+            _tailMode = verticalThumbPosition == 1.0;
+        }
+
+        if (_tailMode) {
+            verticalThumbPosition = 1.0;
+        }
+
+        double verticalThumbRatio = totalHeight > 0 ? (double) _viewportHeight / totalHeight : 1.0;
+        verticalThumbRatio = Math.max(0.05, Math.min(1.0, verticalThumbRatio));
 
         // Calculate visible rows based on pixel offset
         int partialRowHeight = _viewportHeight % ROW_HEIGHT;
@@ -482,6 +488,10 @@ public class SubscriberTab implements ISnSListener {
             startRow = totalRows - visibleRowCount;
         }
 
+        if (_tailMode) {
+            startRow = totalRows - visibleRowCount;
+        }
+
 //        log.info("{} Vertical scroll: viewportHeight={}, _viewportPositionFromTop={}, startRow={}, maxTopOffset={}, topOffset={}, visibleRowCount={}, verticalThumbPosition={}, verticalThumbRatio={}",
 //                remote, viewportHeight, _viewportPositionFromTop, startRow, maxTopOffset, topOffset, visibleRowCount, verticalThumbPosition, verticalThumbRatio);
 
@@ -490,6 +500,7 @@ public class SubscriberTab implements ISnSListener {
         int endCol;
         int leftOffset; // How many pixels of the first column are hidden
 
+        int totalCols = _table.getTotalCols();
         int totalWidth = _table.getTotalWidth();
 
         if (totalWidth <= _viewportWidth) {
