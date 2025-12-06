@@ -366,7 +366,7 @@ public class SubscriberTab implements ISnSListener {
             if (_table.getTotalCols() > columnsBefore) {
                 sendColumnUpdate();
             }
-            sendUpdate();
+            sendViewportData();
         }
     }
 
@@ -403,10 +403,6 @@ public class SubscriberTab implements ISnSListener {
         response.put("totalCols", _table.getTotalCols());
         _sessionHandler.send(response);
 
-        sendViewportData();
-    }
-
-    private void sendUpdate() {
         sendViewportData();
     }
 

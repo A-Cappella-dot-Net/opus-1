@@ -12,12 +12,3 @@ export const sendTabAction = (ws, tabId, type, additionalData = {}) => {
     ...additionalData
   });
 };
-
-export const sendScrollUpdate = (ws, tabId, startCol, scrollData) => {
-  sendWebSocketMessage(ws, {
-    type: 'scroll_update',
-    tabId: tabId,
-    startCol: startCol,
-    ...scrollData
-  });
-};
