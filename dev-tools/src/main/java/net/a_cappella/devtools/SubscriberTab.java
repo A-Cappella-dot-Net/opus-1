@@ -82,15 +82,20 @@ public class SubscriberTab implements ISnSListener {
         _viewportWidth = viewportWidth;
         _viewportHeight = viewportHeight;
 
-        sendViewportData(false);
+        sendViewportData(false, true);
     }
 
     public void handleScrollUpdate(JsonObject msg) {
-        _viewportPositionFromTop = msg.has("viewportPositionFromTop") ? msg.get("viewportPositionFromTop").getAsInt() : _viewportPositionFromTop;
-        _startCol = msg.has("startCol") ? msg.get("startCol").getAsInt() : _startCol;
-        _viewportPositionFromLeft = msg.has("scrollLeftPixels") ? msg.get("scrollLeftPixels").getAsInt() : _viewportPositionFromLeft;
+        boolean horizontalScroll = false;
+        if (msg.has("viewportPositionFromTop")) {
+            _viewportPositionFromTop = msg.get("viewportPositionFromTop").getAsInt();
+        } else if (msg.has("startCol") && msg.has("scrollLeftPixels")) {
+            _startCol = msg.get("startCol").getAsInt();
+            _viewportPositionFromLeft = msg.get("scrollLeftPixels").getAsInt();
+            horizontalScroll = true;
+        }
 
-        sendViewportData(true);
+        sendViewportData(true, horizontalScroll);
     }
 
     public void handleResizeColumn(int colIndex, int newWidth) {
@@ -106,12 +111,12 @@ public class SubscriberTab implements ISnSListener {
             }
         }
 
-        sendViewportData(false);
+        sendViewportData(false, true);
     }
 
     public void handleReorderColumns(ArrayList<Integer> columnOrder) {
         _table.handleReorderColumns(columnOrder);
-        sendViewportData(false);
+        sendViewportData(false, true);
     }
 
 
@@ -365,7 +370,7 @@ public class SubscriberTab implements ISnSListener {
             if (_table.getTotalCols() > columnsBefore) {
                 sendColumnUpdate();
             }
-            sendViewportData(false);
+            sendViewportData(false, false);
         }
     }
 
@@ -461,7 +466,7 @@ public class SubscriberTab implements ISnSListener {
         _sessionHandler.send(response);
     }
 
-    private void sendViewportData(boolean updateTailMode) {
+    private void sendViewportData(boolean updateTailMode, boolean sendHorizontalScrollMetrics) {
         int totalRows = _table.getTotalRows();
         int totalHeight = totalRows * ROW_HEIGHT;
         int scrollableHeight = Math.max(0, totalHeight - _viewportHeight);
@@ -573,7 +578,7 @@ public class SubscriberTab implements ISnSListener {
         }
 
         sendScrollMetricsVertical(totalRows, verticalThumbRatio, verticalThumbPosition);
-        sendScrollMetricsHorizontal(horizontalThumbRatio, horizontalThumbPosition);
+        if (sendHorizontalScrollMetrics) sendScrollMetricsHorizontal(horizontalThumbRatio, horizontalThumbPosition);
         sendViewportData(visibleData, startRow, startCol, topOffset, leftOffset);
     }
 

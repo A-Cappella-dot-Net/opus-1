@@ -250,7 +250,6 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
         ws.current.send(JSON.stringify({
           type: 'scroll_update',
           tabId: tabId,
-          startCol: startCol,
           viewportPositionFromTop: viewportPositionFromTop
         }));
       }
@@ -292,7 +291,6 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
           ws.current.send(JSON.stringify({
             type: 'scroll_update',
             tabId: tabId,
-            startCol: startCol,
             viewportPositionFromTop: viewportPositionFromTop
           }));
         }
@@ -376,7 +374,6 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
         ws.current.send(JSON.stringify({
           type: 'scroll_update',
           tabId: tabId,
-          startCol: startCol,
           viewportPositionFromTop: viewportPositionFromTop
         }));
       }

@@ -26,7 +26,6 @@ export const useTableScroll = (tabId, ws, startRow, startCol, topOffset, totalRo
       ws.current.send(JSON.stringify({
         type: 'scroll_update',
         tabId: tabId,
-        startCol: startCol,
         viewportPositionFromTop: viewportPositionFromTop
       }));
     }
