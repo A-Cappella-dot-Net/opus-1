@@ -44,6 +44,13 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
   const dragRef = useRef({ dragging: false, draggedIndex: -1, targetIndex: -1 });
   const hasInitialized = useRef(false);
 
+  // Throttle refs for scroll events
+  const scrollThrottleRef = useRef({
+    lastExecuted: 0,
+    timeoutId: null,
+    pendingArgs: null
+  });
+
   // Use custom hooks
   const { selectedRows, handleRowClick, clearSelection, setSelectedRows, setLastSelectedRow } =
     useRowSelection(startRow);
@@ -53,6 +60,45 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
 
   const { handleResizeStart, handleResizeMove, handleResizeEnd } =
     useColumnResize(tabId, ws, startCol, columns, setColumns);
+
+  // Throttle function for scroll events
+  const throttle = useCallback((fn, delay = 50) => {
+    return (...args) => {
+      const now = Date.now();
+      const timeSinceLastExecution = now - scrollThrottleRef.current.lastExecuted;
+
+      // Clear any pending timeout
+      if (scrollThrottleRef.current.timeoutId) {
+        clearTimeout(scrollThrottleRef.current.timeoutId);
+        scrollThrottleRef.current.timeoutId = null;
+      }
+
+      if (timeSinceLastExecution >= delay) {
+        // Execute immediately if enough time has passed
+        scrollThrottleRef.current.lastExecuted = now;
+        scrollThrottleRef.current.pendingArgs = null;
+        fn(...args);
+      } else {
+        // Schedule execution for later and save args
+        scrollThrottleRef.current.pendingArgs = args;
+        scrollThrottleRef.current.timeoutId = setTimeout(() => {
+          scrollThrottleRef.current.lastExecuted = Date.now();
+          if (scrollThrottleRef.current.pendingArgs) {
+            fn(...scrollThrottleRef.current.pendingArgs);
+            scrollThrottleRef.current.pendingArgs = null;
+          }
+          scrollThrottleRef.current.timeoutId = null;
+        }, delay - timeSinceLastExecution);
+      }
+    };
+  }, []);
+
+  // Throttled scroll update function
+  const sendScrollUpdate = useCallback(throttle((message) => {
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      ws.current.send(JSON.stringify(message));
+    }
+  }, 50), [throttle, ws]);
 
   // WebSocket message handler
   useEffect(() => {
@@ -246,12 +292,12 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
       const scrollableHeight = Math.max(0, totalHeight - viewportHeight);
       const viewportPositionFromTop = Math.max(0, Math.min(scrollableHeight, currentScroll + deltaScroll));
 
-      if (viewportPositionFromTop !== currentScroll && ws.current && ws.current.readyState === WebSocket.OPEN) {
-        ws.current.send(JSON.stringify({
+      if (viewportPositionFromTop !== currentScroll) {
+        sendScrollUpdate({
           type: 'scroll_update',
           tabId: tabId,
           viewportPositionFromTop: viewportPositionFromTop
-        }));
+        });
       }
     };
 
@@ -264,7 +310,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
       if (tableBody) tableBody.removeEventListener('wheel', handleWheel);
       if (resizeTimeoutRef.current) clearTimeout(resizeTimeoutRef.current);
     };
-  }, [isActive, calculateViewportSize, startRow, topOffset, totalRows, tabId, startCol, ws]);
+  }, [isActive, calculateViewportSize, startRow, topOffset, totalRows, tabId, startCol, sendScrollUpdate]);
 
   // Mouse drag handlers
   useEffect(() => {
@@ -287,13 +333,11 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
         const viewportPositionFromTop =
           Math.max(0, Math.min(scrollableHeight, vThumbDragRef.current.startScroll + deltaScroll * scrollableHeight));
 
-        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-          ws.current.send(JSON.stringify({
-            type: 'scroll_update',
-            tabId: tabId,
-            viewportPositionFromTop: viewportPositionFromTop
-          }));
-        }
+        sendScrollUpdate({
+          type: 'scroll_update',
+          tabId: tabId,
+          viewportPositionFromTop: viewportPositionFromTop
+        });
       }
 
       if (hThumbDragRef.current.dragging) {
@@ -313,14 +357,12 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
         const viewportPositionFromLeft = Math.max(0, Math.min(maxScrollWidth,
           hThumbDragRef.current.startScroll + deltaScroll * maxScrollWidth));
 
-        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-          ws.current.send(JSON.stringify({
-            type: 'scroll_update',
-            tabId: tabId,
-            startCol: startCol,
-            scrollLeftPixels: viewportPositionFromLeft
-          }));
-        }
+        sendScrollUpdate({
+          type: 'scroll_update',
+          tabId: tabId,
+          startCol: startCol,
+          scrollLeftPixels: viewportPositionFromLeft
+        });
       }
     };
 
@@ -338,7 +380,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
       document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isActive, tabId, columns, startCol, startRow, topOffset, totalRows, scrollMetrics,
-      handleResizeMove, handleResizeEnd, vThumbDragRef, hThumbDragRef, ws]);
+      handleResizeMove, handleResizeEnd, vThumbDragRef, hThumbDragRef, sendScrollUpdate]);
 
   // Sync header scroll with body
   useEffect(() => {
