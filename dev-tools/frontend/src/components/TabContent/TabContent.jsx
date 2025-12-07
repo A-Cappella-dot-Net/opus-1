@@ -87,35 +87,41 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
           }
           break;
 
-        case 'meta_data':
-          setTotalRows(msg.totalRows || 0);
-          setTotalCols(msg.totalCols || 0);
-          setColumns(msg.columns || []);
-          if (msg.columns && msg.columns.length > 0) {
-            setColumnOrder(msg.columns.map((_, idx) => idx));
+        case 'viewport_data':
+          if (msg.data !== undefined) setTableData(msg.data);
+          if (msg.startRow !== undefined) setStartRow(msg.startRow);
+          if (msg.startCol !== undefined) setStartCol(msg.startCol);
+          if (msg.topOffset !== undefined) setTopOffset(msg.topOffset);
+          if (msg.leftOffset !== undefined) setLeftOffset(msg.leftOffset);
+          break;
+
+        case 'scroll_metrics_vertical':
+          if (msg.totalRows !== undefined) setTotalRows(msg.totalRows);
+          if (msg.verticalThumbRatio !== undefined || msg.verticalThumbPosition !== undefined) {
+            setScrollMetrics(prev => ({
+              ...prev,
+              verticalThumbRatio: msg.verticalThumbRatio !== undefined ? msg.verticalThumbRatio : prev.verticalThumbRatio,
+              verticalThumbPosition: msg.verticalThumbPosition !== undefined ? msg.verticalThumbPosition : prev.verticalThumbPosition
+            }));
           }
           break;
 
-        case 'viewport_data':
-          setTableData(msg.data || []);
-          setStartRow(msg.startRow || 0);
-          setStartCol(msg.startCol || 0);
-          setTopOffset(msg.topOffset || 0);
-          setLeftOffset(msg.leftOffset || 0);
-          setTotalRows(msg.totalRows || 0);
-          setTotalCols(msg.totalCols || 0);
-          setScrollMetrics({
-            verticalThumbRatio: msg.verticalThumbRatio || 1,
-            verticalThumbPosition: msg.verticalThumbPosition || 0,
-            horizontalThumbRatio: msg.horizontalThumbRatio || 1,
-            horizontalThumbPosition: msg.horizontalThumbPosition || 0
-          });
+        case 'scroll_metrics_horizontal':
+          if (msg.horizontalThumbRatio !== undefined || msg.horizontalThumbPosition !== undefined) {
+            setScrollMetrics(prev => ({
+              ...prev,
+              horizontalThumbRatio: msg.horizontalThumbRatio !== undefined ? msg.horizontalThumbRatio : prev.horizontalThumbRatio,
+              horizontalThumbPosition: msg.horizontalThumbPosition !== undefined ? msg.horizontalThumbPosition : prev.horizontalThumbPosition
+            }));
+          }
           break;
 
         case 'column_update':
-          setTotalCols((msg.columns || []).length);
-          setColumns(msg.columns || []);
-          setColumnOrder((msg.columns || []).map((_, idx) => idx));
+          if (msg.totalCols !== undefined) setTotalCols(msg.totalCols);
+          if (msg.columns !== undefined) {
+            setColumns(msg.columns);
+            setColumnOrder(msg.columns.map((_, idx) => idx));
+          }
           break;
 
         case 'clear_table':

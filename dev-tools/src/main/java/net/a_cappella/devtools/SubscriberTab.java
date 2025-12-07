@@ -132,9 +132,7 @@ public class SubscriberTab implements ISnSListener {
             sendTabLabel(subject);
 
             setColumns(subject, selectFields);
-            // TODO handle pinByKey
-//            List<String> keyFields = SqlParser.parseListOfKeys(keys);
-//            model.setKeyFields(keyFields);
+
             if ("snapSubscribe".equals(opType)) {
                 _subId = _sessionHandler._client.snapSubscribe(sqlComps, this);
                 sendStatus("Snap & Subscribe executing...");
@@ -151,7 +149,6 @@ public class SubscriberTab implements ISnSListener {
             }
             sendUpdateState("running");
 
-            sendMetaData();
         } catch (Exception x) {
             log.error("", x);
             sendUpdateState("new");
@@ -387,18 +384,6 @@ public class SubscriberTab implements ISnSListener {
 
 
 
-    private void sendMetaData() {
-        Map<String, Object> response = new HashMap<>();
-        response.put("type", "meta_data");
-        response.put("tabId", _tabId);
-        response.put("columns", _table.getColumns());
-        response.put("totalRows", _table.getTotalRows());
-        response.put("totalCols", _table.getTotalCols());
-        _sessionHandler.send(response);
-
-        sendViewportData(false);
-    }
-
     private void sendClearTable() {
         JsonObject update = new JsonObject();
         update.addProperty("type", "clear_table");
@@ -437,6 +422,43 @@ public class SubscriberTab implements ISnSListener {
         update.addProperty("tabId", _tabId);
         update.addProperty("label", label);
         _sessionHandler.sendMessage(update);
+    }
+
+    private void sendViewportData(List<List<Object>> visibleData, int startRow, int startCol, int topOffset, int leftOffset) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("type", "viewport_data");
+        response.put("tabId", _tabId);
+
+        response.put("data", visibleData);
+        response.put("startRow", startRow);
+        response.put("startCol", startCol);
+        response.put("topOffset", topOffset);
+        response.put("leftOffset", leftOffset);
+
+        _sessionHandler.send(response);
+    }
+
+    private void sendScrollMetricsVertical(int totalRows, double verticalThumbRatio, double verticalThumbPosition) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("type", "scroll_metrics_vertical");
+        response.put("tabId", _tabId);
+
+        response.put("totalRows", totalRows);
+        response.put("verticalThumbRatio", verticalThumbRatio);
+        response.put("verticalThumbPosition", verticalThumbPosition);
+
+        _sessionHandler.send(response);
+    }
+
+    private void sendScrollMetricsHorizontal(double horizontalThumbRatio, double horizontalThumbPosition) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("type", "scroll_metrics_horizontal");
+        response.put("tabId", _tabId);
+
+        response.put("horizontalThumbRatio", horizontalThumbRatio);
+        response.put("horizontalThumbPosition", horizontalThumbPosition);
+
+        _sessionHandler.send(response);
     }
 
     private void sendViewportData(boolean updateTailMode) {
@@ -550,22 +572,9 @@ public class SubscriberTab implements ISnSListener {
             }
         }
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("type", "viewport_data");
-        response.put("tabId", _tabId);
-        response.put("data", visibleData);
-        response.put("startRow", startRow);
-        response.put("startCol", startCol);
-        response.put("topOffset", topOffset);
-        response.put("leftOffset", leftOffset);
-        response.put("totalRows", totalRows);
-        response.put("totalCols", totalCols);
-        response.put("verticalThumbRatio", verticalThumbRatio);
-        response.put("verticalThumbPosition", verticalThumbPosition);
-        response.put("horizontalThumbRatio", horizontalThumbRatio);
-        response.put("horizontalThumbPosition", horizontalThumbPosition);
-
-        _sessionHandler.send(response);
+        sendScrollMetricsVertical(totalRows, verticalThumbRatio, verticalThumbPosition);
+        sendScrollMetricsHorizontal(horizontalThumbRatio, horizontalThumbPosition);
+        sendViewportData(visibleData, startRow, startCol, topOffset, leftOffset);
     }
 
 }
