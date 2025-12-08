@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static net.a_cappella.devtools.ColumnDef.*;
 import static net.a_cappella.devtools.ColumnDef.DEFAULT_WIDTH_BOOLEAN;
@@ -138,15 +139,22 @@ public class SubscriberTab implements ISnSListener {
 
             setColumns(subject, selectFields);
 
+            List<String> key = null;
+            if (pinByKey) {
+                ObjMetaInfo omi = ObjectManager.getInstance().getSubjectMetaInfo(subject);
+                if (omi == null) throw new Exception("Unknows subject " + subject);
+                key = omi.getKeys().stream().map(FieldMetaInfo::getName).collect(Collectors.toList());
+            }
+
             if ("snapSubscribe".equals(opType)) {
                 _subId = _sessionHandler._client.snapSubscribe(sqlComps, this);
-                sendStatus("Snap & Subscribe executing...");
+                sendStatus("Snap & Subscribe executing..." + ((key == null) ? "" : " key=" + key));
             } else if ("snap".equals(opType)) {
                 _sessionHandler._client.snap(sqlComps, this);
-                sendStatus("Snap executing...");
+                sendStatus("Snap executing..." + ((key == null) ? "" : " key=" + key));
             } else if ("subscribe".equals(opType)) {
                 _subId = _sessionHandler._client.subscribe(sqlComps, this);
-                sendStatus("Subscribe executing...");
+                sendStatus("Subscribe executing..." + ((key == null) ? "" : " key=" + key));
             } else {
                 sendStatus("Unknown Command " + opType);
                 sendUpdateState("new");
