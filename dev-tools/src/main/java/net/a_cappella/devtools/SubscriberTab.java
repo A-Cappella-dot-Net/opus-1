@@ -480,35 +480,37 @@ public class SubscriberTab implements ISnSListener {
         int totalRows = _table.getTotalRows();
         int totalHeight = totalRows * ROW_HEIGHT;
         int scrollableHeight = Math.max(0, totalHeight - _viewportHeight);
-        double verticalThumbPosition = scrollableHeight > 0 ? (double) _viewportPositionFromTop / scrollableHeight : 0.0;
-        verticalThumbPosition = Math.max(0.0, Math.min(1.0, verticalThumbPosition));
 
         if (updateTailMode) { // tailMode is only updated by scroll_update messages
-            _tailMode = verticalThumbPosition == 1.0;
+            _tailMode = _viewportPositionFromTop == scrollableHeight;
         }
 
-        if (_tailMode) {
-            verticalThumbPosition = 1.0;
-        }
-
-        double verticalThumbRatio = totalHeight > 0 ? (double) _viewportHeight / totalHeight : 1.0;
-        verticalThumbRatio = Math.max(0.05, Math.min(1.0, verticalThumbRatio));
-
-        // Calculate visible rows based on pixel offset
-        int partialRowHeight = _viewportHeight % ROW_HEIGHT;
-        int maxTopOffset = (partialRowHeight == 0) ? 0 : ROW_HEIGHT - partialRowHeight;
-        int topOffset = (int) Math.rint(verticalThumbPosition * maxTopOffset); // How many pixels of first row are hidden
-        int visibleRowCount = Math.min((int) Math.ceil((double) _viewportHeight /ROW_HEIGHT), totalRows); // Round up to show partial rows
+        // calculate startRow
+        int visibleRowCount = Math.min((int) Math.ceil((double) _viewportHeight / ROW_HEIGHT), totalRows); // Round up to show partial rows
         int startRow = _viewportPositionFromTop / ROW_HEIGHT;
-
         if (startRow + visibleRowCount > totalRows) {
             // viewport size has increased and I want to show no blank lines at the end
             startRow = totalRows - visibleRowCount;
         }
-
         if (_tailMode) {
             startRow = totalRows - visibleRowCount;
         }
+
+        // calculate verticalThumbRatio
+        double verticalThumbRatio = totalHeight > 0 ? (double) _viewportHeight / totalHeight : 1.0;
+        verticalThumbRatio = Math.max(0.05, Math.min(1.0, verticalThumbRatio));
+
+        // calculate verticalThumbPosition
+        double verticalThumbPosition = scrollableHeight > 0 ? (double) _viewportPositionFromTop / scrollableHeight : 0.0;
+        verticalThumbPosition = Math.max(0.0, Math.min(1.0, verticalThumbPosition));
+        if (_tailMode) {
+            verticalThumbPosition = 1.0;
+        }
+
+        // calculate topOffset
+        int partialRowHeight = _viewportHeight % ROW_HEIGHT;
+        int maxTopOffset = (partialRowHeight == 0) ? 0 : ROW_HEIGHT - partialRowHeight;
+        int topOffset = (int) Math.rint(verticalThumbPosition * maxTopOffset); // How many pixels of first row are hidden
 
 //        log.info("{} Vertical scroll: viewportHeight={}, _viewportPositionFromTop={}, startRow={}, maxTopOffset={}, topOffset={}, visibleRowCount={}, verticalThumbPosition={}, verticalThumbRatio={}",
 //                remote, viewportHeight, _viewportPositionFromTop, startRow, maxTopOffset, topOffset, visibleRowCount, verticalThumbPosition, verticalThumbRatio);
