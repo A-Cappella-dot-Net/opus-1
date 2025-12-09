@@ -89,7 +89,7 @@ public class SubscriberHandler {
         String tabId = msg.get("tabId").getAsString();
 
         SubscriberTab tab = _tabs.get(tabId);
-        tab.handleStartAction(msg.get("snsSql").getAsString(), msg.get("pinByKey").getAsBoolean(), msg.get("opType").getAsString());
+        tab.handleStartAction(msg.get("snsSql").getAsString(), msg.get("pinByKey").getAsBoolean(), msg.get("opType").getAsString(), msg.get("appendToBottom").getAsBoolean());
     }
 
     private void handleStopAction(JsonObject msg) {

@@ -16,6 +16,18 @@
   margin-bottom: 0;
 }
 
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-label {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+}
+
 .text-input {
   flex: 1;
   border: 1px solid #d1d5db;
@@ -36,24 +48,64 @@
   cursor: not-allowed;
 }
 
-.checkbox-label, .radio-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* Segmented Control Styles */
+.segmented-control {
+  display: inline-flex;
+  border: 1px solid #93c5fd;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.segment-button {
+  padding: 8px 16px;
+  border: none;
+  background-color: #dbeafe;
+  color: #1e40af;
+  font-size: 14px;
   cursor: pointer;
+  transition: all 0.2s;
+  border-right: 1px solid #93c5fd;
+  white-space: nowrap;
 }
 
-.checkbox-label.disabled, .radio-label.disabled {
+.segment-button:last-child {
+  border-right: none;
+}
+
+.segment-button.single {
+  border-right: none;
+}
+
+.segment-button.left {
+  border-radius: 0;
+}
+
+.segment-button.middle {
+  border-radius: 0;
+}
+
+.segment-button.right {
+  border-radius: 0;
+  border-right: none;
+}
+
+.segment-button.selected {
+  background-color: #3b82f6;
+  color: white;
+  font-weight: 500;
+}
+
+.segment-button:hover:not(:disabled):not(.selected) {
+  background-color: #bfdbfe;
+}
+
+.segment-button:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
-input[type="checkbox"], input[type="radio"] {
-  cursor: pointer;
-}
-
-input[type="checkbox"]:disabled, input[type="radio"]:disabled {
-  cursor: not-allowed;
+.segment-button:disabled.selected {
+  opacity: 0.7;
 }
 
 .btn {

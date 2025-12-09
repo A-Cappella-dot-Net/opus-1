@@ -6,6 +6,8 @@ export const ControlsPanel = ({
   setSnsSql,
   pinByKey,
   setPinByKey,
+  appendToBottom,
+  setAppendToBottom,
   opType,
   setOpType,
   onAutoFit,
@@ -37,48 +39,68 @@ export const ControlsPanel = ({
           placeholder="Enter sql..."
           disabled={!isEditable}
         />
-        <label className={`checkbox-label ${!isEditable ? 'disabled' : ''}`}>
-          <input
-            type="checkbox"
-            checked={pinByKey}
-            onChange={(e) => setPinByKey(e.target.checked)}
+
+        {/* Pin By Key - Single Toggle Button */}
+        <div className="segmented-control">
+          <button
+            onClick={() => setPinByKey(!pinByKey)}
+            className={`segment-button single ${pinByKey ? 'selected' : ''}`}
             disabled={!isEditable}
-          />
-          Pin By Key
-        </label>
+            title="When enabled, pins rows by their key column to maintain position"
+          >
+            Pin By Key
+          </button>
+        </div>
       </div>
 
       <div className="control-row">
-        <label className={`radio-label ${!isEditable ? 'disabled' : ''}`}>
-          <input
-            type="radio"
-            value="snapSubscribe"
-            checked={opType === 'snapSubscribe'}
-            onChange={(e) => setOpType(e.target.value)}
+        {/* Add to - Two Button Segmented Control */}
+        <div className="segmented-control">
+          <button
+            onClick={() => setAppendToBottom(false)}
+            className={`segment-button left ${!appendToBottom ? 'selected' : ''}`}
             disabled={!isEditable}
-          />
-          Snap & Subscribe
-        </label>
-        <label className={`radio-label ${!isEditable ? 'disabled' : ''}`}>
-          <input
-            type="radio"
-            value="snap"
-            checked={opType === 'snap'}
-            onChange={(e) => setOpType(e.target.value)}
+            title="Add new rows to the top of the table"
+          >
+            Top
+          </button>
+          <button
+            onClick={() => setAppendToBottom(true)}
+            className={`segment-button right ${appendToBottom ? 'selected' : ''}`}
             disabled={!isEditable}
-          />
-          Snap
-        </label>
-        <label className={`radio-label ${!isEditable ? 'disabled' : ''}`}>
-          <input
-            type="radio"
-            value="subscribe"
-            checked={opType === 'subscribe'}
-            onChange={(e) => setOpType(e.target.value)}
+            title="Add new rows to the bottom of the table"
+          >
+            Bottom
+          </button>
+        </div>
+
+        {/* Action - Three Button Segmented Control */}
+        <div className="segmented-control">
+          <button
+            onClick={() => setOpType('snapSubscribe')}
+            className={`segment-button left ${opType === 'snapSubscribe' ? 'selected' : ''}`}
             disabled={!isEditable}
-          />
-          Subscribe
-        </label>
+            title="Take a snapshot of current data and subscribe to future updates"
+          >
+            Snap & Subscribe
+          </button>
+          <button
+            onClick={() => setOpType('snap')}
+            className={`segment-button middle ${opType === 'snap' ? 'selected' : ''}`}
+            disabled={!isEditable}
+            title="Take a one-time snapshot of current data only"
+          >
+            Snap
+          </button>
+          <button
+            onClick={() => setOpType('subscribe')}
+            className={`segment-button right ${opType === 'subscribe' ? 'selected' : ''}`}
+            disabled={!isEditable}
+            title="Subscribe to future updates without initial snapshot"
+          >
+            Subscribe
+          </button>
+        </div>
       </div>
 
       <div className="control-row">

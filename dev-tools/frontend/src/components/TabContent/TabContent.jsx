@@ -13,6 +13,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
   const [snsSql, setSnsSql] = useState('');
   const [pinByKey, setPinByKey] = useState(false);
   const [opType, setOpType] = useState('snapSubscribe');
+  const [appendToBottom, setAppendToBottom] = useState(true); // or false for top
   const [statusText, setStatusText] = useState('Not snapped / subscribed yet...');
   const [state, setState] = useState('new');
 
@@ -613,11 +614,13 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
         setSnsSql={setSnsSql}
         pinByKey={pinByKey}
         setPinByKey={setPinByKey}
+        appendToBottom={appendToBottom}
+        setAppendToBottom={setAppendToBottom}
         opType={opType}
         setOpType={setOpType}
         onAutoFit={autoFitColumns}
         state={state}
-        onStart={() => sendTabAction(ws, tabId, 'start', { snsSql, pinByKey, opType })}
+        onStart={() => sendTabAction(ws, tabId, 'start', { snsSql, pinByKey, opType, appendToBottom })}
         onStop={() => sendTabAction(ws, tabId, 'stop')}
         onClear={() => sendTabAction(ws, tabId, 'clear')}
         onPause={() => sendTabAction(ws, tabId, 'pause')}

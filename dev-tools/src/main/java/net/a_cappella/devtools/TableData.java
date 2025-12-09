@@ -54,7 +54,7 @@ public class TableData {
         return false;
     }
 
-    public void addRow(Map<String, Object> rowData, ObjKey objKey) {
+    public void addRow(Map<String, Object> rowData, ObjKey objKey, boolean appendToBottom) {
         // Automatically add any new columns found in the row
         for (String colName : rowData.keySet()) {
             if (!columnExists(colName)) {
@@ -75,8 +75,11 @@ public class TableData {
                 _rows.set(newRowPos, rowData);
             }
         } else {
-            _rows.add(0, rowData); // add the row to the top of the table
-//            _rows.add(rowData); // add the row to the bottom of the table
+            if (appendToBottom) {
+                _rows.add(rowData);
+            } else {
+                _rows.add(0, rowData);
+            }
         }
     }
 

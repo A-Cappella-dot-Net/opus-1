@@ -53,6 +53,7 @@ public class SubscriberTab implements ISnSListener {
     private String _snsSql;
     private boolean _pinByKey;
     private String _opType;
+    private boolean _appendToBottom;
     private long _subId = -1;
 
     private boolean _hasAllColumns = false;
@@ -122,14 +123,15 @@ public class SubscriberTab implements ISnSListener {
 
 
 
-    public void handleStartAction(String snsSql, boolean pinByKey, String opType) {
+    public void handleStartAction(String snsSql, boolean pinByKey, String opType, boolean appendToBottom) {
         _snsSql = snsSql;
         _pinByKey = pinByKey;
         _opType = opType;
+        _appendToBottom = appendToBottom;
 
         _table._paused = false;
 
-        log.info("{} Executing SnS action: sql='{}' pinByKey={} opType={}", _remote, snsSql, pinByKey, opType);
+        log.info("{} Executing SnS action: sql='{}' pinByKey={} opType={} appendToBottom={}", _remote, snsSql, pinByKey, opType, appendToBottom);
 
         try {
             SqlParserResult sqlComps = SqlParser.parseSql(snsSql);
@@ -373,7 +375,7 @@ public class SubscriberTab implements ISnSListener {
     private void addRow(Map<String, Object> rowData, ObjKey objKey) {
         if (!_table._paused) {
             int columnsBefore = _table.getTotalCols();
-            _table.addRow(rowData, objKey);
+            _table.addRow(rowData, objKey, _appendToBottom);
             // If columns were added, send the update
             if (_table.getTotalCols() > columnsBefore) {
                 sendColumnUpdate();
