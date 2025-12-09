@@ -30,6 +30,7 @@ export const ControlsPanel = ({
 
   return (
     <div className="controls-panel">
+      {/* Row 1: SQL Input + Pin By Key + Auto-Fit */}
       <div className="control-row">
         <input
           type="text"
@@ -51,93 +52,100 @@ export const ControlsPanel = ({
             Pin By Key
           </button>
         </div>
-      </div>
 
-      <div className="control-row">
-        {/* Add to - Two Button Segmented Control */}
-        <div className="segmented-control">
-          <button
-            onClick={() => setAppendToBottom(false)}
-            className={`segment-button left ${!appendToBottom ? 'selected' : ''}`}
-            disabled={!isEditable}
-            title="Add new rows to the top of the table"
-          >
-            Top
-          </button>
-          <button
-            onClick={() => setAppendToBottom(true)}
-            className={`segment-button right ${appendToBottom ? 'selected' : ''}`}
-            disabled={!isEditable}
-            title="Add new rows to the bottom of the table"
-          >
-            Bottom
-          </button>
-        </div>
-
-        {/* Action - Three Button Segmented Control */}
-        <div className="segmented-control">
-          <button
-            onClick={() => setOpType('snapSubscribe')}
-            className={`segment-button left ${opType === 'snapSubscribe' ? 'selected' : ''}`}
-            disabled={!isEditable}
-            title="Take a snapshot of current data and subscribe to future updates"
-          >
-            Snap & Subscribe
-          </button>
-          <button
-            onClick={() => setOpType('snap')}
-            className={`segment-button middle ${opType === 'snap' ? 'selected' : ''}`}
-            disabled={!isEditable}
-            title="Take a one-time snapshot of current data only"
-          >
-            Snap
-          </button>
-          <button
-            onClick={() => setOpType('subscribe')}
-            className={`segment-button right ${opType === 'subscribe' ? 'selected' : ''}`}
-            disabled={!isEditable}
-            title="Subscribe to future updates without initial snapshot"
-          >
-            Subscribe
-          </button>
-        </div>
-      </div>
-
-      <div className="control-row">
+        {/* Auto-Fit Button */}
         <button onClick={onAutoFit} className="btn btn-purple">
-          Auto-Fit Columns
+          Auto-Fit
         </button>
-        {/* First button group: Start/Stop/Clear */}
-        <div className="button-group">
-          {showStart && (
-            <button onClick={onStart} className="btn btn-green">
-              Start
-            </button>
-          )}
-          {showStop && (
-            <button onClick={onStop} className="btn btn-red">
-              Stop
-            </button>
-          )}
-          {showClear && (
-            <button onClick={onClear} className="btn btn-gray">
-              Clear
-            </button>
-          )}
+      </div>
+
+      {/* Row 2: Action buttons (left) + Options (right) */}
+      <div className="control-row row-split">
+        {/* Left side: Action buttons */}
+        <div className="action-buttons">
+          {/* First button group: Start/Stop/Clear */}
+          <div className="button-group">
+            {showStart && (
+              <button onClick={onStart} className="btn btn-green">
+                Start
+              </button>
+            )}
+            {showStop && (
+              <button onClick={onStop} className="btn btn-red">
+                Stop
+              </button>
+            )}
+            {showClear && (
+              <button onClick={onClear} className="btn btn-gray">
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* Second button group: Pause/Resume */}
+          <div className="button-group">
+            {showPause && (
+              <button onClick={onPause} className="btn btn-orange">
+                Pause
+              </button>
+            )}
+            {showResume && (
+              <button onClick={onResume} className="btn btn-blue">
+                Resume
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Second button group: Pause/Resume */}
-        <div className="button-group">
-          {showPause && (
-            <button onClick={onPause} className="btn btn-orange">
-              Pause
+        {/* Right side: Add to + Action options */}
+        <div className="option-controls">
+          {/* Add to - Two Button Segmented Control */}
+          <div className="segmented-control">
+            <button
+              onClick={() => setAppendToBottom(false)}
+              className={`segment-button left ${!appendToBottom ? 'selected' : ''}`}
+              disabled={!isEditable}
+              title="Add new rows to the top of the table"
+            >
+              Top
             </button>
-          )}
-          {showResume && (
-            <button onClick={onResume} className="btn btn-blue">
-              Resume
+            <button
+              onClick={() => setAppendToBottom(true)}
+              className={`segment-button right ${appendToBottom ? 'selected' : ''}`}
+              disabled={!isEditable}
+              title="Add new rows to the bottom of the table"
+            >
+              Bottom
             </button>
-          )}
+          </div>
+
+          {/* Action - Three Button Segmented Control */}
+          <div className="segmented-control">
+            <button
+              onClick={() => setOpType('snapSubscribe')}
+              className={`segment-button left ${opType === 'snapSubscribe' ? 'selected' : ''}`}
+              disabled={!isEditable}
+              title="Take a snapshot of current data and subscribe to future updates"
+            >
+              Snap & Subscribe
+            </button>
+            <button
+              onClick={() => setOpType('snap')}
+              className={`segment-button middle ${opType === 'snap' ? 'selected' : ''}`}
+              disabled={!isEditable}
+              title="Take a one-time snapshot of current data only"
+            >
+              Snap
+            </button>
+            <button
+              onClick={() => setOpType('subscribe')}
+              className={`segment-button right ${opType === 'subscribe' ? 'selected' : ''}`}
+              disabled={!isEditable}
+              title="Subscribe to future updates without initial snapshot"
+            >
+              Subscribe
+            </button>
+          </div>
         </div>
       </div>
     </div>

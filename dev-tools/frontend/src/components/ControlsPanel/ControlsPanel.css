@@ -16,6 +16,24 @@
   margin-bottom: 0;
 }
 
+.control-row.row-split {
+  justify-content: space-between;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 220px;
+}
+
+.option-controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
 .control-group {
   display: flex;
   align-items: center;
