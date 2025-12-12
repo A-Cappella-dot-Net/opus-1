@@ -37,6 +37,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
 
   const tableHeaderRef = useRef(null);
   const tableBodyRef = useRef(null);
+  const actualRowHeightSentRef = useRef(false);
   const tableContainerRef = useRef(null);
   const vScrollTrackRef = useRef(null);
   const hScrollTrackRef = useRef(null);
@@ -269,6 +270,31 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
       }
     }
   }, [tabId, columns, ws, isActive]);
+
+  useEffect(() => {
+    if (!tableData.length || actualRowHeightSentRef.current) return;
+
+    const firstRow = tableBodyRef.current?.querySelector('tr');
+    if (firstRow && ws.current && ws.current.readyState === WebSocket.OPEN) {
+      const actualHeight = firstRow.getBoundingClientRect().height;
+      console.log('Actual row height:', actualHeight);
+
+      ws.current.send(JSON.stringify({
+        type: 'set_row_height',
+        tabId: tabId,
+        rowHeight: actualHeight
+      }));
+
+      actualRowHeightSentRef.current = true;
+    }
+  }, [tableData, tabId, ws]);
+
+  // Reset on unmount
+  useEffect(() => {
+    return () => {
+      actualRowHeightSentRef.current = false;
+    };
+  }, []);
 
   // Resize and wheel event handlers
   useEffect(() => {

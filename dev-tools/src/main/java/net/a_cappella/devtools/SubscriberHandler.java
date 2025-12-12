@@ -40,6 +40,9 @@ public class SubscriberHandler {
             case "viewport_update":
                 handleViewportUpdate(msg);
                 break;
+            case "set_row_height":
+                handleActualRowHeight(msg);
+                break;
             case "scroll_update":
                 handleScrollUpdate(msg);
                 break;
@@ -127,6 +130,13 @@ public class SubscriberHandler {
         if (tab != null) {
             tab.handleViewportUpdate(msg.get("viewportWidth").getAsInt(), msg.get("viewportHeight").getAsInt());
         }
+    }
+
+    private void handleActualRowHeight(JsonObject msg) {
+        String tabId = msg.get("tabId").getAsString();
+
+        SubscriberTab tab = _tabs.get(tabId);
+        tab.handleActualRowHeight(msg.get("rowHeight").getAsDouble());
     }
 
     private void handleScrollUpdate(JsonObject msg) {

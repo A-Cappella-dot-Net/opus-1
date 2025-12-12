@@ -43,6 +43,7 @@ public class SubscriberTab implements ISnSListener {
 
     private int _viewportHeight;
     private int _viewportPositionFromTop = 0; // Pixel-based vertical scroll
+    private double _rowHeightAdjustment; // diff between defined and actual row height in pixels
 
     private int _viewportWidth;
     private int _startCol = 0; // TODO not used
@@ -85,6 +86,10 @@ public class SubscriberTab implements ISnSListener {
         _viewportHeight = viewportHeight;
 
         sendViewportData(false, true);
+    }
+
+    public void handleActualRowHeight(double actualRowHeight) {
+        _rowHeightAdjustment = actualRowHeight - ROW_HEIGHT;
     }
 
     public void handleScrollUpdate(JsonObject msg) {
@@ -509,7 +514,7 @@ public class SubscriberTab implements ISnSListener {
 
         // calculate topOffset
         int partialRowHeight = _viewportHeight % ROW_HEIGHT;
-        int maxTopOffset = (partialRowHeight == 0) ? 0 : ROW_HEIGHT - partialRowHeight;
+        int maxTopOffset = (partialRowHeight == 0) ? 0 : ROW_HEIGHT - partialRowHeight + (int) (visibleRowCount * _rowHeightAdjustment);
         int topOffset = (int) Math.rint(verticalThumbPosition * maxTopOffset); // How many pixels of first row are hidden
 
 //        log.info("{} Vertical scroll: viewportHeight={}, _viewportPositionFromTop={}, startRow={}, maxTopOffset={}, topOffset={}, visibleRowCount={}, verticalThumbPosition={}, verticalThumbRatio={}",
