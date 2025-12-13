@@ -188,6 +188,9 @@ public class SubscriberTab implements ISnSListener {
     }
 
     public void handleClearAction() {
+        _viewportPositionFromTop = 0;
+        _viewportPositionFromLeft = 0;
+        _tailMode = false;
         _table.clear();
         sendClearTable(); // Clear client state table info
         sendUpdateState("new");
@@ -514,11 +517,12 @@ public class SubscriberTab implements ISnSListener {
 
         // calculate topOffset
         int partialRowHeight = _viewportHeight % ROW_HEIGHT;
-        int maxTopOffset = (partialRowHeight == 0) ? 0 : ROW_HEIGHT - partialRowHeight + (int) (visibleRowCount * _rowHeightAdjustment);
+        int rowAdjustment = ((visibleRowCount == totalRows) ? 0 : (int) (visibleRowCount * _rowHeightAdjustment));
+        int maxTopOffset = (partialRowHeight == 0) ? 0 : ROW_HEIGHT - partialRowHeight + rowAdjustment;
         int topOffset = (int) Math.rint(verticalThumbPosition * maxTopOffset); // How many pixels of first row are hidden
 
-//        log.info("{} Vertical scroll: viewportHeight={}, _viewportPositionFromTop={}, startRow={}, maxTopOffset={}, topOffset={}, visibleRowCount={}, verticalThumbPosition={}, verticalThumbRatio={}",
-//                remote, viewportHeight, _viewportPositionFromTop, startRow, maxTopOffset, topOffset, visibleRowCount, verticalThumbPosition, verticalThumbRatio);
+//        log.info("{} ===== viewportHeight={}, viewportPositionFromTop={}, startRow={}, maxTopOffset={}, topOffset={}, visibleRowCount={}, verticalThumbPosition={}, verticalThumbRatio={}",
+//                _remote, _viewportHeight, _viewportPositionFromTop, startRow, maxTopOffset, topOffset, visibleRowCount, verticalThumbPosition, verticalThumbRatio);
 
         // Calculate visible columns based on pixel offset
         int startCol;
