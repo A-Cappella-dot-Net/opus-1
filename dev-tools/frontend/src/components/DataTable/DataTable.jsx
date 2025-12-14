@@ -2,7 +2,6 @@ import React from 'react';
 import { TableHeader } from './TableHeader';
 import { TableBody } from './TableBody';
 import { CustomScrollbar } from './CustomScrollbar';
-import { ROW_HEIGHT } from '../../constants';
 import './DataTable.css';
 
 export const DataTable = ({
@@ -31,9 +30,10 @@ export const DataTable = ({
   handleVerticalTrackClick,
   handleVerticalThumbMouseDown,
   handleHorizontalTrackClick,
-  handleHorizontalThumbMouseDown
+  handleHorizontalThumbMouseDown,
+  actualRowHeight
 }) => {
-  const totalHeight = totalRows * ROW_HEIGHT;
+  const totalHeight = totalRows * actualRowHeight;
   const viewportHeight = tableBodyRef.current?.clientHeight || 0;
   const showVerticalScroll = totalHeight > viewportHeight;
 

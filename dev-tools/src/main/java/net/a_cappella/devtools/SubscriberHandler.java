@@ -78,7 +78,7 @@ public class SubscriberHandler {
         String tabId = msg.get("tabId").getAsString();
         _currentTab = tabId;
 
-        SubscriberTab tab = new SubscriberTab(_sessionHandler, tabId, _remote, msg.get("viewportWidth").getAsInt(), msg.get("viewportHeight").getAsInt());
+        SubscriberTab tab = new SubscriberTab(_sessionHandler, tabId, _remote, msg.get("viewportWidth").getAsInt(), msg.get("viewportHeight").getAsDouble());
         _tabs.put(tabId, tab);
     }
 
@@ -128,7 +128,7 @@ public class SubscriberHandler {
 
         SubscriberTab tab = _tabs.get(tabId);
         if (tab != null) {
-            tab.handleViewportUpdate(msg.get("viewportWidth").getAsInt(), msg.get("viewportHeight").getAsInt());
+            tab.handleViewportUpdate(msg.get("viewportWidth").getAsInt(), msg.get("viewportHeight").getAsDouble());
         }
     }
 

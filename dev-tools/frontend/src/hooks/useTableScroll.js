@@ -1,21 +1,20 @@
 import { useRef, useCallback } from 'react';
-import { ROW_HEIGHT } from '../constants';
 
-export const useTableScroll = (tabId, ws, startRow, startCol, topOffset, totalRows, columns) => {
+export const useTableScroll = (tabId, ws, startRow, startCol, topOffset, totalRows, columns, actualRowHeight) => {
   const vThumbDragRef = useRef({ dragging: false, startY: 0, startScroll: 0 });
   const hThumbDragRef = useRef({ dragging: false, startX: 0, startScroll: 0 });
 
   const scrollVertical = useCallback((direction, tableBodyRef) => {
-    const currentScroll = startRow * ROW_HEIGHT + topOffset;
-    const totalHeight = totalRows * ROW_HEIGHT;
+    const currentScroll = startRow * actualRowHeight + topOffset;
+    const totalHeight = totalRows * actualRowHeight;
     const viewportHeight = tableBodyRef.current?.clientHeight || 0;
     const scrollableHeight = totalHeight - viewportHeight;
 
     let viewportPositionFromTop;
     if (direction === 'up') {
-      viewportPositionFromTop = Math.max(0, currentScroll - ROW_HEIGHT);
+      viewportPositionFromTop = Math.max(0, currentScroll - actualRowHeight);
     } else if (direction === 'down') {
-      viewportPositionFromTop = Math.min(scrollableHeight, currentScroll + ROW_HEIGHT);
+      viewportPositionFromTop = Math.min(scrollableHeight, currentScroll + actualRowHeight);
     } else if (direction === 'top') {
       viewportPositionFromTop = 0;
     } else if (direction === 'bottom') {
@@ -29,7 +28,7 @@ export const useTableScroll = (tabId, ws, startRow, startCol, topOffset, totalRo
         viewportPositionFromTop: viewportPositionFromTop
       }));
     }
-  }, [tabId, ws, startRow, startCol, topOffset, totalRows]);
+  }, [tabId, ws, startRow, startCol, topOffset, totalRows, actualRowHeight]);
 
   const scrollHorizontal = useCallback((direction, tableBodyRef) => {
     let totalWidth = 0;

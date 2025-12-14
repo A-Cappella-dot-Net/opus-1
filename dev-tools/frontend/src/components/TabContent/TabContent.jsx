@@ -6,7 +6,6 @@ import { useTableScroll } from '../../hooks/useTableScroll';
 import { useColumnResize } from '../../hooks/useColumnResize';
 import { useRowSelection } from '../../hooks/useRowSelection';
 import { sendTabAction } from '../../utils/websocketHelpers';
-import { ROW_HEIGHT } from '../../constants';
 import './TabContent.css';
 
 export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTabLabel }) => {
@@ -18,12 +17,16 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
   const [state, setState] = useState('new');
 
   const [tableData, setTableData] = useState([]);
+
   const [startRow, setStartRow] = useState(0);
-  const [startCol, setStartCol] = useState(0);
   const [topOffset, setTopOffset] = useState(0);
-  const [leftOffset, setLeftOffset] = useState(0);
   const [totalRows, setTotalRows] = useState(0);
+  const [actualRowHeight, setActualRowHeight] = useState(33);
+
+  const [startCol, setStartCol] = useState(0);
+  const [leftOffset, setLeftOffset] = useState(0);
   const [totalCols, setTotalCols] = useState(0);
+
   const [scrollMetrics, setScrollMetrics] = useState({
     verticalThumbRatio: 1,
     verticalThumbPosition: 0,
@@ -58,7 +61,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
     useRowSelection(startRow);
 
   const { scrollVertical, scrollHorizontal, vThumbDragRef, hThumbDragRef } =
-    useTableScroll(tabId, ws, startRow, startCol, topOffset, totalRows, columns);
+    useTableScroll(tabId, ws, startRow, startCol, topOffset, totalRows, columns, actualRowHeight);
 
   const { handleResizeStart, handleResizeMove, handleResizeEnd } =
     useColumnResize(tabId, ws, startCol, columns, setColumns);
@@ -239,7 +242,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
 
     if (viewportHeight === 0 || viewportWidth === 0) return;
 
-    const rows = Math.max(1, Math.ceil(viewportHeight / ROW_HEIGHT));
+    const rows = Math.max(1, Math.ceil(viewportHeight / actualRowHeight));
     let cols = 0;
     let totalWidth = 0;
     if (columns.length > 0) {
@@ -269,7 +272,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
         }));
       }
     }
-  }, [tabId, columns, ws, isActive]);
+  }, [tabId, columns, ws, isActive, actualRowHeight]);
 
   useEffect(() => {
     if (!tableData.length || actualRowHeightSentRef.current) return;
@@ -278,6 +281,8 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
     if (firstRow && ws.current && ws.current.readyState === WebSocket.OPEN) {
       const actualHeight = firstRow.getBoundingClientRect().height;
       console.log('Actual row height:', actualHeight);
+
+      setActualRowHeight(actualHeight); // Store it in state
 
       ws.current.send(JSON.stringify({
         type: 'set_row_height',
@@ -310,12 +315,12 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
     const handleWheel = (e) => {
       e.preventDefault();
       const viewportHeight = tableBodyRef.current?.clientHeight || 0;
-      const totalHeight = totalRows * ROW_HEIGHT;
+      const totalHeight = totalRows * actualRowHeight;
       const deltaScroll =
-         e.deltaMode === WheelEvent.DOM_DELTA_LINE ? e.deltaY * ROW_HEIGHT :
-         e.deltaMode === WheelEvent.DOM_DELTA_PAGE ? e.deltaY * ROW_HEIGHT * Math.floor(viewportHeight / ROW_HEIGHT) :
+         e.deltaMode === WheelEvent.DOM_DELTA_LINE ? e.deltaY * actualRowHeight :
+         e.deltaMode === WheelEvent.DOM_DELTA_PAGE ? e.deltaY * actualRowHeight * Math.floor(viewportHeight / actualRowHeight) :
          e.deltaY; // WheelEvent.DOM_DELTA_PIXEL
-      const currentScroll = startRow * ROW_HEIGHT + topOffset;
+      const currentScroll = startRow * actualRowHeight + topOffset;
       const scrollableHeight = Math.max(0, totalHeight - viewportHeight);
       const viewportPositionFromTop = Math.max(0, Math.min(scrollableHeight, currentScroll + deltaScroll));
 
@@ -337,7 +342,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
       if (tableBody) tableBody.removeEventListener('wheel', handleWheel);
       if (resizeTimeoutRef.current) clearTimeout(resizeTimeoutRef.current);
     };
-  }, [isActive, calculateViewportSize, startRow, topOffset, totalRows, tabId, startCol, sendScrollUpdate]);
+  }, [isActive, calculateViewportSize, startRow, topOffset, totalRows, actualRowHeight, tabId, startCol, sendScrollUpdate]);
 
   // Mouse drag handlers
   useEffect(() => {
@@ -353,7 +358,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
         const maxThumbTop = trackHeight - thumbHeight;
         const deltaScroll = maxThumbTop > 0 ? (deltaY / maxThumbTop) : 0;
 
-        const totalHeight = totalRows * ROW_HEIGHT;
+        const totalHeight = totalRows * actualRowHeight;
         const viewportHeight = tableBodyRef.current?.clientHeight || 0;
         const scrollableHeight = Math.max(0, totalHeight - viewportHeight);
 
@@ -406,7 +411,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isActive, tabId, columns, startCol, startRow, topOffset, totalRows, scrollMetrics,
+  }, [isActive, tabId, columns, startCol, startRow, topOffset, totalRows, actualRowHeight, scrollMetrics,
       handleResizeMove, handleResizeEnd, vThumbDragRef, hThumbDragRef, sendScrollUpdate]);
 
   // Sync header scroll with body
@@ -431,8 +436,8 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
 
     if (clickY < thumbTop || clickY > thumbBottom) {
       const viewportHeight = tableBodyRef.current?.clientHeight || 0;
-      const currentScroll = startRow * ROW_HEIGHT + topOffset;
-      const totalHeight = totalRows * ROW_HEIGHT;
+      const currentScroll = startRow * actualRowHeight + topOffset;
+      const totalHeight = totalRows * actualRowHeight;
       const scrollableHeight = Math.max(0, totalHeight - viewportHeight);
 
       const viewportPositionFromTop = clickY < thumbTop
@@ -453,7 +458,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
     e.preventDefault();
     e.stopPropagation();
 
-    const currentScroll = startRow * ROW_HEIGHT + topOffset;
+    const currentScroll = startRow * actualRowHeight + topOffset;
     vThumbDragRef.current = {
       dragging: true,
       startY: e.clientY,
@@ -680,6 +685,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
         handleVerticalThumbMouseDown={handleVerticalThumbMouseDown}
         handleHorizontalTrackClick={handleHorizontalTrackClick}
         handleHorizontalThumbMouseDown={handleHorizontalThumbMouseDown}
+        actualRowHeight={actualRowHeight}
       />
 
       <StatusBar

@@ -34,17 +34,16 @@ public class SubscriberTab implements ISnSListener {
     private static final Logger log = LoggerFactory.getLogger(SubscriberTab.class);
 
     private static final String NO_ACTION = "Not snapped / subscribed yet...";
-    private static final int ROW_HEIGHT = 33;
+    private double _rowHeight = 33;
 
     private final SessionHandler _sessionHandler;
     private final String _tabId;
     private final String _remote;
     private final TableData _table;
 
-    private int _viewportHeight;
+    private double _viewportHeight;
     private int _startRow;
-    private int _viewportPositionFromTop = 0; // Pixel-based vertical scroll
-    private double _rowHeightAdjustment; // diff between defined and actual row height in pixels
+    private double _viewportPositionFromTop = 0; // Pixel-based vertical scroll
 
     private int _viewportWidth;
     private int _startCol = 0; // TODO not used
@@ -63,7 +62,7 @@ public class SubscriberTab implements ISnSListener {
 
 
 
-    public SubscriberTab(SessionHandler sessionHandler, String tabId, String remote, int viewportWidth, int viewportHeight) {
+    public SubscriberTab(SessionHandler sessionHandler, String tabId, String remote, int viewportWidth, double viewportHeight) {
         _sessionHandler = sessionHandler;
         _tabId = tabId;
         _remote = remote;
@@ -82,7 +81,7 @@ public class SubscriberTab implements ISnSListener {
     }
 
 
-    public void handleViewportUpdate(int viewportWidth, int viewportHeight) {
+    public void handleViewportUpdate(int viewportWidth, double viewportHeight) {
         _viewportWidth = viewportWidth;
         _viewportHeight = viewportHeight;
 
@@ -90,13 +89,13 @@ public class SubscriberTab implements ISnSListener {
     }
 
     public void handleActualRowHeight(double actualRowHeight) {
-        _rowHeightAdjustment = actualRowHeight - ROW_HEIGHT;
+        _rowHeight = actualRowHeight;
     }
 
     public void handleScrollUpdate(JsonObject msg) {
         boolean horizontalScroll = false;
         if (msg.has("viewportPositionFromTop")) {
-            _viewportPositionFromTop = msg.get("viewportPositionFromTop").getAsInt();
+            _viewportPositionFromTop = msg.get("viewportPositionFromTop").getAsDouble();
         } else if (msg.has("startCol") && msg.has("scrollLeftPixels")) {
             _startCol = msg.get("startCol").getAsInt();
             _viewportPositionFromLeft = msg.get("scrollLeftPixels").getAsInt();
@@ -487,21 +486,21 @@ public class SubscriberTab implements ISnSListener {
 
     private void sendViewportData(boolean updateTailMode, boolean sendHorizontalScrollMetrics, boolean addingRow) {
         int totalRows = _table.getTotalRows();
-        int totalHeight = totalRows * ROW_HEIGHT;
-        int scrollableHeight = Math.max(0, totalHeight - _viewportHeight);
+        double totalHeight = totalRows * _rowHeight;
+        double scrollableHeight = Math.max(0, totalHeight - _viewportHeight);
 
         if (updateTailMode) { // tailMode is only updated by scroll_update messages
             _tailMode = _viewportPositionFromTop == scrollableHeight;
         }
 
-        int visibleRowCount = Math.min((int) Math.ceil((double) _viewportHeight / ROW_HEIGHT), totalRows); // Round up to show partial rows
+        int visibleRowCount = Math.min((int) Math.ceil(_viewportHeight / _rowHeight), totalRows); // Round up to show partial rows
 
         if (_viewportPositionFromTop > 0 && addingRow && !_appendToBottom) {
             // adding row at the top and not in headMode => not not scroll off of the startRow
             _startRow++;
         } else {
             // calculate startRow
-            _startRow = _viewportPositionFromTop / ROW_HEIGHT;
+            _startRow = (int) (_viewportPositionFromTop / _rowHeight);
             if (_startRow + visibleRowCount > totalRows) {
                 // viewport size has increased and I want to show no blank lines at the end
                 _startRow = totalRows - visibleRowCount;
@@ -512,7 +511,7 @@ public class SubscriberTab implements ISnSListener {
         }
 
         // calculate verticalThumbRatio
-        double verticalThumbRatio = totalHeight > 0 ? (double) _viewportHeight / totalHeight : 1.0;
+        double verticalThumbRatio = totalHeight > 0 ? _viewportHeight / totalHeight : 1.0;
         verticalThumbRatio = Math.max(0.05, Math.min(1.0, verticalThumbRatio));
 
         // calculate verticalThumbPosition
@@ -523,13 +522,12 @@ public class SubscriberTab implements ISnSListener {
         }
 
         // calculate topOffset
-        int partialRowHeight = _viewportHeight % ROW_HEIGHT;
-        int rowAdjustment = ((visibleRowCount == totalRows) ? 0 : (int) (visibleRowCount * _rowHeightAdjustment));
-        int maxTopOffset = (partialRowHeight == 0) ? 0 : ROW_HEIGHT - partialRowHeight + rowAdjustment;
+        double partialRowHeight = _viewportHeight % _rowHeight;
+        double maxTopOffset = (partialRowHeight == 0) ? 0 : _rowHeight - partialRowHeight;
         int topOffset = (int) Math.rint(verticalThumbPosition * maxTopOffset); // How many pixels of first row are hidden
 
 //        log.info("{} ===== viewportHeight={}, viewportPositionFromTop={}, startRow={}, maxTopOffset={}, topOffset={}, visibleRowCount={}, verticalThumbPosition={}, verticalThumbRatio={}",
-//                _remote, _viewportHeight, _viewportPositionFromTop, startRow, maxTopOffset, topOffset, visibleRowCount, verticalThumbPosition, verticalThumbRatio);
+//                _remote, _viewportHeight, _viewportPositionFromTop, _startRow, maxTopOffset, topOffset, visibleRowCount, verticalThumbPosition, verticalThumbRatio);
 
         // Calculate visible columns based on pixel offset
         int startCol;
