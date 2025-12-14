@@ -42,6 +42,7 @@ public class SubscriberTab implements ISnSListener {
     private final TableData _table;
 
     private int _viewportHeight;
+    private int _startRow;
     private int _viewportPositionFromTop = 0; // Pixel-based vertical scroll
     private double _rowHeightAdjustment; // diff between defined and actual row height in pixels
 
@@ -50,11 +51,11 @@ public class SubscriberTab implements ISnSListener {
     private int _viewportPositionFromLeft = 0; // Pixel-based horizontal scroll
 
     private boolean _tailMode;
+    private boolean _appendToBottom;
 
     private String _snsSql;
     private boolean _pinByKey;
     private String _opType;
-    private boolean _appendToBottom;
     private long _subId = -1;
 
     private boolean _hasAllColumns = false;
@@ -85,7 +86,7 @@ public class SubscriberTab implements ISnSListener {
         _viewportWidth = viewportWidth;
         _viewportHeight = viewportHeight;
 
-        sendViewportData(false, true);
+        sendViewportData(false, true, false);
     }
 
     public void handleActualRowHeight(double actualRowHeight) {
@@ -102,7 +103,7 @@ public class SubscriberTab implements ISnSListener {
             horizontalScroll = true;
         }
 
-        sendViewportData(true, horizontalScroll);
+        sendViewportData(true, horizontalScroll, false);
     }
 
     public void handleResizeColumn(int colIndex, int newWidth) {
@@ -118,12 +119,12 @@ public class SubscriberTab implements ISnSListener {
             }
         }
 
-        sendViewportData(false, true);
+        sendViewportData(false, true, false);
     }
 
     public void handleReorderColumns(ArrayList<Integer> columnOrder) {
         _table.handleReorderColumns(columnOrder);
-        sendViewportData(false, true);
+        sendViewportData(false, true, false);
     }
 
 
@@ -388,7 +389,7 @@ public class SubscriberTab implements ISnSListener {
             if (_table.getTotalCols() > columnsBefore) {
                 sendColumnUpdate();
             }
-            sendViewportData(false, false);
+            sendViewportData(false, false, true);
         }
     }
 
@@ -484,7 +485,7 @@ public class SubscriberTab implements ISnSListener {
         _sessionHandler.send(response);
     }
 
-    private void sendViewportData(boolean updateTailMode, boolean sendHorizontalScrollMetrics) {
+    private void sendViewportData(boolean updateTailMode, boolean sendHorizontalScrollMetrics, boolean addingRow) {
         int totalRows = _table.getTotalRows();
         int totalHeight = totalRows * ROW_HEIGHT;
         int scrollableHeight = Math.max(0, totalHeight - _viewportHeight);
@@ -493,15 +494,21 @@ public class SubscriberTab implements ISnSListener {
             _tailMode = _viewportPositionFromTop == scrollableHeight;
         }
 
-        // calculate startRow
         int visibleRowCount = Math.min((int) Math.ceil((double) _viewportHeight / ROW_HEIGHT), totalRows); // Round up to show partial rows
-        int startRow = _viewportPositionFromTop / ROW_HEIGHT;
-        if (startRow + visibleRowCount > totalRows) {
-            // viewport size has increased and I want to show no blank lines at the end
-            startRow = totalRows - visibleRowCount;
-        }
-        if (_tailMode) {
-            startRow = totalRows - visibleRowCount;
+
+        if (_viewportPositionFromTop > 0 && addingRow && !_appendToBottom) {
+            // adding row at the top and not in headMode => not not scroll off of the startRow
+            _startRow++;
+        } else {
+            // calculate startRow
+            _startRow = _viewportPositionFromTop / ROW_HEIGHT;
+            if (_startRow + visibleRowCount > totalRows) {
+                // viewport size has increased and I want to show no blank lines at the end
+                _startRow = totalRows - visibleRowCount;
+            }
+            if (_tailMode) {
+                _startRow = totalRows - visibleRowCount;
+            }
         }
 
         // calculate verticalThumbRatio
@@ -574,7 +581,7 @@ public class SubscriberTab implements ISnSListener {
 
         // Extract visible data with column ordering
         List<List<Object>> visibleData = new ArrayList<>();
-        for (int i = startRow; i < startRow + visibleRowCount; i++) {
+        for (int i = _startRow; i < _startRow + visibleRowCount; i++) {
             List<Object> row = new ArrayList<>();
             Map<String, Object> rowData = _table.getRow(i);
             for (int j = startCol; j < endCol; j++) {
@@ -600,7 +607,7 @@ public class SubscriberTab implements ISnSListener {
 
         sendScrollMetricsVertical(totalRows, verticalThumbRatio, verticalThumbPosition);
         if (sendHorizontalScrollMetrics) sendScrollMetricsHorizontal(horizontalThumbRatio, horizontalThumbPosition);
-        sendViewportData(visibleData, startRow, startCol, topOffset, leftOffset);
+        sendViewportData(visibleData, _startRow, startCol, topOffset, leftOffset);
     }
 
 }
