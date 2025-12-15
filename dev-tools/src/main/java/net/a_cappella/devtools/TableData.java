@@ -54,40 +54,94 @@ public class TableData {
         return false;
     }
 
-    public void addRow(Map<String, Object> rowData, ObjKey objKey, boolean appendToBottom) {
+    public void addNewColumns(Map<String, Object> rowData) {
         // Automatically add any new columns found in the row
         for (String colName : rowData.keySet()) {
             if (!columnExists(colName)) {
                 addColumn(ColumnDef.newAdHocCol(colName, rowData.get(colName)));
             }
         }
+    }
 
-        if (objKey != null) {
-            int newRowPos = _index.indexOf(objKey);
-            if (newRowPos < 0) {
-                objKey.getObj().startUsing();
-                _index.add(0, objKey);
-                _rows.add(0, rowData);
-            } else {
-                objKey.getObj().startUsing();
-                _index.get(newRowPos).getObj().stopUsing();
-                _index.set(newRowPos, objKey);
-                _rows.set(newRowPos, rowData);
-            }
+
+    /**
+     *
+     * @param rowData
+     * @param objKey
+     * @param appendToBottom
+     * @return pos - position of new record in the table
+     *   when pinning by key (objKey != null) :
+     *     pos < 0 then the record at position (1 - pos) is replaced
+     *     pos > 0 then the new record is inserted at position (pos - 1)
+     */
+    public int addRow(Map<String, Object> rowData, ObjKey objKey, boolean appendToBottom) {
+        if (objKey == null) {
+            return addRow(rowData, appendToBottom);
         } else {
-            if (appendToBottom) {
-                _rows.add(rowData);
-            } else {
-                _rows.add(0, rowData);
-            }
+            return addPinnedByKey(rowData, objKey, appendToBottom);
         }
     }
 
-    public void updateCell(int row, String columnName, Object value) {
-        if (row >= 0 && row < _rows.size()) {
-            _rows.get(row).put(columnName, value);
+    private int addRow(Map<String, Object> rowData, boolean appendToBottom) {
+        if (appendToBottom) {
+            _rows.add(rowData);
+            return _rows.size();
+        } else {
+            _rows.add(0, rowData);
+            return 1;
         }
     }
+
+    private int addPinnedByKey(Map<String, Object> rowData, ObjKey objKey, boolean sortDescending) {
+        if (_index.size() == 0) { // empty table
+            objKey.getObj().startUsing();
+            _index.add(0, objKey);
+            _rows.add(0, rowData);
+            return 1;
+        } else {
+            for (int i = 0; i < _index.size(); i++) {
+                ObjKey key = _index.get(i);
+                switch (objKey.compareTo(key)) {
+                    case -1:
+                        if (sortDescending) {
+                            // did not find it, insert it here
+                            objKey.getObj().startUsing();
+                            _index.add(i, objKey);
+                            _rows.add(i, rowData);
+                            return i + 1;
+                        } else {
+                            // did not find it yet, keep going
+                            break;
+                        }
+                    case 0:
+                        // found it, replace the object
+                        objKey.getObj().startUsing();
+                        _index.get(i).getObj().stopUsing();
+                        _index.set(i, objKey);
+                        _rows.set(i, rowData);
+                        return -(i + 1);
+                    case 1:
+                        if (sortDescending) {
+                            // did not find it yet, keep going
+                            break;
+                        } else {
+                            // did not find it, insert it here
+                            objKey.getObj().startUsing();
+                            _index.add(i, objKey);
+                            _rows.add(i, rowData);
+                            return i + 1;
+                        }
+                }
+            }
+            // add last
+            int i = _index.size();
+            objKey.getObj().startUsing();
+            _index.add(i, objKey);
+            _rows.add(i, rowData);
+            return i + 1;
+        }
+    }
+
 
     public int getColumnIndex(String columnName) {
         for (int i = 0; i < getTotalCols(); i++) {
@@ -100,10 +154,6 @@ public class TableData {
 
     public void handleReorderColumns(ArrayList<Integer> columnOrder) {
         _columnOrder = columnOrder;
-        applyColumnOrdering();
-    }
-
-    public void applyColumnOrdering() {
         _orderedColumns = _columns;
         if (_columnOrder != null && _columnOrder.size() == getTotalCols()) {
             _orderedColumns = new ArrayList<>();
@@ -136,6 +186,10 @@ public class TableData {
         return _columns;
     }
 
+    public List<ColumnDef> getOrderedColumns() {
+        return _orderedColumns;
+    }
+
     public ColumnDef getColumn(int colIndex) {
         return _columns.get(colIndex);
     }
@@ -149,7 +203,7 @@ public class TableData {
     }
 
     public int getTotalCols() {
-        return _columns.size();
+        return (_columns == null) ? 0 : _columns.size();
     }
 
     public int getTotalWidth() {

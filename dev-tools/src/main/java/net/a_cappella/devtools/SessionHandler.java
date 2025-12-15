@@ -131,23 +131,23 @@ public class SessionHandler implements WebSocketListener {
 
             switch (type) {
                 case "login":
-                    log.info("{} onMessage {}", _remote, msg);
+                    log.info("{} received {}", _remote, msg);
                     handleLogin(msg);
                     break;
                 case "reauth":
-                    log.info("{} onMessage {}", _remote, msg);
+                    log.info("{} received {}", _remote, msg);
                     handleReauth(msg);
                     break;
                 case "logout":
-                    log.info("{} onMessage {}", _remote, msg);
+                    log.info("{} received {}", _remote, msg);
                     handleLogout();
                     break;
                 case "request_token":
-                    log.info("{} onMessage {}", _remote, msg);
+                    log.info("{} received {}", _remote, msg);
                     handleRequestToken();
                     break;
                 case "auth_with_token":
-                    log.info("{} onMessage {}", _remote, msg);
+                    log.info("{} received {}", _remote, msg);
                     handleAuthWithToken(msg);
                     break;
                 case "heartbeat":
@@ -157,7 +157,7 @@ public class SessionHandler implements WebSocketListener {
                     sendMessage(response, false);
                     break;
                 default:
-                    log.info("{} onMessage {}", _remote, msg);
+                    log.info("{} received {}", _remote, msg);
                     if (_isAuthenticated) {
                         String mode = msg.has("mode") ? msg.get("mode").getAsString() : "null";
                         if ("subscriber".equals(mode)) {

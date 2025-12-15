@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
 
-export const useRowSelection = (startRow) => {
+export const useRowSelection = (visibleStartRow) => {
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [lastSelectedRow, setLastSelectedRow] = useState(null);
 
   const handleRowClick = useCallback((e, rowIndex) => {
-    const absoluteRowIndex = startRow + rowIndex;
+    const absoluteRowIndex = visibleStartRow + rowIndex;
 
     if (e.shiftKey && lastSelectedRow !== null) {
       // Range selection
@@ -31,7 +31,7 @@ export const useRowSelection = (startRow) => {
       setSelectedRows(new Set([absoluteRowIndex]));
       setLastSelectedRow(absoluteRowIndex);
     }
-  }, [startRow, lastSelectedRow, selectedRows]);
+  }, [visibleStartRow, lastSelectedRow, selectedRows]);
 
   const clearSelection = useCallback(() => {
     setSelectedRows(new Set());

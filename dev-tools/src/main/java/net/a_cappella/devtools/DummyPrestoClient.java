@@ -116,7 +116,7 @@ public class DummyPrestoClient implements PrestoClient {
 
         private Obj generateMsg(int i) {
             PingObj obj = new PingObj();
-            obj.setId(i % 5);
+            obj.setId(i % 10);
             obj.setPayload(1000 + i);
 
 //            new ColumnDef("ID", "integer", 60);

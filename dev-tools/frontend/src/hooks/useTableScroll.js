@@ -1,11 +1,11 @@
 import { useRef, useCallback } from 'react';
 
-export const useTableScroll = (tabId, ws, startRow, startCol, topOffset, totalRows, columns, actualRowHeight) => {
+export const useTableScroll = (tabId, ws, visibleStartRow, startCol, topOffset, totalRows, columns, actualRowHeight) => {
   const vThumbDragRef = useRef({ dragging: false, startY: 0, startScroll: 0 });
   const hThumbDragRef = useRef({ dragging: false, startX: 0, startScroll: 0 });
 
   const scrollVertical = useCallback((direction, tableBodyRef) => {
-    const currentScroll = startRow * actualRowHeight + topOffset;
+    const currentScroll = visibleStartRow * actualRowHeight + topOffset;
     const totalHeight = totalRows * actualRowHeight;
     const viewportHeight = tableBodyRef.current?.clientHeight || 0;
     const scrollableHeight = totalHeight - viewportHeight;
@@ -25,10 +25,11 @@ export const useTableScroll = (tabId, ws, startRow, startCol, topOffset, totalRo
       ws.current.send(JSON.stringify({
         type: 'scroll_update',
         tabId: tabId,
+        source: direction,
         viewportPositionFromTop: viewportPositionFromTop
       }));
     }
-  }, [tabId, ws, startRow, startCol, topOffset, totalRows, actualRowHeight]);
+  }, [tabId, ws, visibleStartRow, startCol, topOffset, totalRows, actualRowHeight]);
 
   const scrollHorizontal = useCallback((direction, tableBodyRef) => {
     let totalWidth = 0;

@@ -37,11 +37,11 @@ public class SubscriberHandler {
                 handleCloseTab(msg);
                 break;
 
-            case "viewport_update":
-                handleViewportUpdate(msg);
-                break;
             case "set_row_height":
                 handleActualRowHeight(msg);
+                break;
+            case "viewport_update":
+                handleViewportUpdate(msg);
                 break;
             case "scroll_update":
                 handleScrollUpdate(msg);

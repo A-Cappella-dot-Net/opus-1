@@ -33,6 +33,7 @@ import static net.a_cappella.devtools.ColumnDef.DEFAULT_WIDTH_STRING;
 public class SubscriberTab implements ISnSListener {
     private static final Logger log = LoggerFactory.getLogger(SubscriberTab.class);
 
+    private static final double BUFFER_CAPACITY_MULTIPLIER = 3.0;
     private static final String NO_ACTION = "Not snapped / subscribed yet...";
     private double _rowHeight = 33;
 
@@ -42,12 +43,23 @@ public class SubscriberTab implements ISnSListener {
     private final TableData _table;
 
     private double _viewportHeight;
-    private int _startRow;
     private double _viewportPositionFromTop = 0; // Pixel-based vertical scroll
+    private int _topOffset;
+
+    private int _bufferCapacity;
+    private int _viewportCapacity;
+
+    private int _bufferStartRow = 0;
+    private int _bufferEndRow = -1;
+    private int _visibleStartRow = 0;
+    private int _visibleEndRow = -1;
 
     private int _viewportWidth;
-    private int _startCol = 0; // TODO not used
     private int _viewportPositionFromLeft = 0; // Pixel-based horizontal scroll
+
+    private int _startCol;
+    private int _endCol;
+    private int _leftOffset; // How many pixels of the first column are hidden
 
     private boolean _tailMode;
     private boolean _appendToBottom;
@@ -60,7 +72,17 @@ public class SubscriberTab implements ISnSListener {
     private boolean _hasAllColumns = false;
     private List<ColumnDef> _columns = new ArrayList<>();
 
+    private enum ScrollDirection {NONE, HORIZONTAL, VERTICAL};
 
+    private static class ScrollMetrics {
+        private double _thumbRatio;
+        private double _thumbPosition;
+    }
+
+    private ScrollMetrics _verticalScrollMetrics = new ScrollMetrics();
+    private ScrollMetrics _horizontalScrollMetrics = new ScrollMetrics();
+
+    private TestViewport _testViewport = null;
 
     public SubscriberTab(SessionHandler sessionHandler, String tabId, String remote, int viewportWidth, double viewportHeight) {
         _sessionHandler = sessionHandler;
@@ -68,8 +90,15 @@ public class SubscriberTab implements ISnSListener {
         _remote = remote;
         _table = new TableData(tabId, remote);
         _viewportWidth = viewportWidth;
-        _viewportHeight = viewportHeight;
+        updateCapacities(viewportHeight);
         sendStatus(NO_ACTION);
+    }
+
+    private void updateCapacities(double viewportHeight) {
+        _viewportHeight = viewportHeight;
+        _viewportCapacity = (int) Math.ceil(viewportHeight / _rowHeight);
+        _bufferCapacity = (int) (_viewportCapacity * BUFFER_CAPACITY_MULTIPLIER);
+        log.info("=== viewportHeight={} viewportCapacity={} bufferCapacity={}", _viewportHeight, _viewportCapacity, _bufferCapacity);
     }
 
     public void resetTab() {
@@ -81,31 +110,33 @@ public class SubscriberTab implements ISnSListener {
     }
 
 
-    public void handleViewportUpdate(int viewportWidth, double viewportHeight) {
+    public synchronized void handleViewportUpdate(int viewportWidth, double viewportHeight) {
         _viewportWidth = viewportWidth;
-        _viewportHeight = viewportHeight;
+        updateCapacities(viewportHeight);
 
-        sendViewportData(false, true, false);
+        sendViewportData(false, ScrollDirection.NONE, 0, true);
     }
 
     public void handleActualRowHeight(double actualRowHeight) {
         _rowHeight = actualRowHeight;
+        updateCapacities(_viewportHeight);
     }
 
-    public void handleScrollUpdate(JsonObject msg) {
-        boolean horizontalScroll = false;
+    public synchronized void handleScrollUpdate(JsonObject msg) {
+        ScrollDirection scrollDirection = ScrollDirection.NONE;
         if (msg.has("viewportPositionFromTop")) {
             _viewportPositionFromTop = msg.get("viewportPositionFromTop").getAsDouble();
+            scrollDirection = ScrollDirection.VERTICAL;
         } else if (msg.has("startCol") && msg.has("scrollLeftPixels")) {
-            _startCol = msg.get("startCol").getAsInt();
+            // TODO do not pass startCol from client to server
             _viewportPositionFromLeft = msg.get("scrollLeftPixels").getAsInt();
-            horizontalScroll = true;
+            scrollDirection = ScrollDirection.HORIZONTAL;
         }
 
-        sendViewportData(true, horizontalScroll, false);
+        sendViewportData(true, scrollDirection, 0, false);
     }
 
-    public void handleResizeColumn(int colIndex, int newWidth) {
+    public synchronized void handleResizeColumn(int colIndex, int newWidth) {
         log.info("=== resizing column {}", _table.getOrderedColumn(colIndex));
         int oldWidth = _table.getOrderedColumn(colIndex).width;
 
@@ -118,12 +149,17 @@ public class SubscriberTab implements ISnSListener {
             }
         }
 
-        sendViewportData(false, true, false);
+        sendViewportData(false, ScrollDirection.NONE, 0, true);
     }
 
-    public void handleReorderColumns(ArrayList<Integer> columnOrder) {
+    public synchronized void handleReorderColumns(ArrayList<Integer> columnOrder) {
         _table.handleReorderColumns(columnOrder);
-        sendViewportData(false, true, false);
+
+        if (_testViewport != null) {
+            _testViewport.handleColumnUpdate(_table.getOrderedColumns());
+        }
+
+        sendViewportData(false, ScrollDirection.NONE, 0, true);
     }
 
 
@@ -168,6 +204,12 @@ public class SubscriberTab implements ISnSListener {
                 return;
             }
             sendUpdateState("running");
+
+            if ("ping".equals(subject)) {
+                _testViewport = new TestViewport((pinByKey) ? "id" : "payload", appendToBottom);
+            } else {
+                _testViewport = null;
+            }
 
         } catch (Exception x) {
             log.error("", x);
@@ -315,7 +357,9 @@ public class SubscriberTab implements ISnSListener {
                 _columns.addAll(allColumns);
             }
 
-            setColumns(_columns);
+            _table.setColumns(_columns);
+            sendColumnUpdate();
+
         }
     }
 
@@ -331,7 +375,7 @@ public class SubscriberTab implements ISnSListener {
 
     @Override
     public void onSubscriptionMessage(Obj obj, long subId) {
-        log.info("{} onSubscriptionMessage {} {}", _tabId, obj, subId);
+        log.debug("{} onSubscriptionMessage {} {}", _tabId, obj, subId);
         Map<String, Object> row = new HashMap<>();
 
         if (_hasAllColumns) {
@@ -344,14 +388,19 @@ public class SubscriberTab implements ISnSListener {
                 // all the defined columns have already been added
             }
             if (obj.hasAdHocs()) {
+                boolean added = false;
                 for (String fieldName : obj.getAdHocFields()) {
                     Object fieldValue = obj.get(fieldName);
                     row.put(fieldName, fieldValue);
                     // TODO this adds one column at a time; can this be batched?
-                    addColumn(ColumnDef.newAdHocCol(fieldName, fieldValue));
+                    added |= _table.addColumn(ColumnDef.newAdHocCol(fieldName, fieldValue));
+                }
+                if (added) {
+                    sendColumnUpdate();
                 }
             }
         } else {
+            boolean added = false;
             for (int i = 0; i < _columns.size(); i++) {
                 ColumnDef columnDef = _columns.get(i);
                 String fieldName = columnDef.name;
@@ -360,35 +409,29 @@ public class SubscriberTab implements ISnSListener {
                 if ("tbd".equals(columnDef.type)) {
                     ColumnDef adHocCol = ColumnDef.newAdHocCol(fieldName, fieldValue);
                     // TODO make sure GUI accepts columnDef updates
-                    addColumn(adHocCol);
+                    added |= _table.addColumn(adHocCol);
                     columnDef.type = adHocCol.type; // update column type
                 }
+            }
+            if (added) {
+                sendColumnUpdate();
             }
         }
 
         addRow(row, (_pinByKey) ? obj.getObjKey() : null);
     }
 
-    private void setColumns(List<ColumnDef> columns) {
-        _table.setColumns(columns);
-        sendColumnUpdate();
-    }
-
-    private void addColumn(ColumnDef column) {
-        if (_table.addColumn(column)) {
-            sendColumnUpdate();
-        }
-    }
-
-    private void addRow(Map<String, Object> rowData, ObjKey objKey) {
+    private synchronized void addRow(Map<String, Object> rowData, ObjKey objKey) {
         if (!_table._paused) {
             int columnsBefore = _table.getTotalCols();
-            _table.addRow(rowData, objKey, _appendToBottom);
-            // If columns were added, send the update
-            if (_table.getTotalCols() > columnsBefore) {
+            _table.addNewColumns(rowData);
+            if (_table.getTotalCols() > columnsBefore) { // If columns were added, send the update
                 sendColumnUpdate();
             }
-            sendViewportData(false, false, true);
+
+            int position = _table.addRow(rowData, objKey, _appendToBottom);
+
+            sendViewportData(false, ScrollDirection.NONE, position, false);
         }
     }
 
@@ -429,6 +472,10 @@ public class SubscriberTab implements ISnSListener {
         update.put("tabId", _tabId);
         update.put("columns", _table.getColumns());
         _sessionHandler.send(update);
+
+        if (_testViewport != null) {
+            _testViewport.handleColumnUpdate(_table.getOrderedColumns());
+        }
     }
 
     private void sendStatus(String status) {
@@ -447,30 +494,97 @@ public class SubscriberTab implements ISnSListener {
         _sessionHandler.sendMessage(update);
     }
 
-    private void sendViewportData(List<List<Object>> visibleData, int startRow, int startCol, int topOffset, int leftOffset) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("type", "viewport_data");
-        response.put("tabId", _tabId);
+    private Map<String, Object> prepareFullUpdate(List<List<Object>> rows) {
+        if (_testViewport != null) {
+            _testViewport.handleFullUpdate(rows, _visibleStartRow);
+        }
 
-        response.put("data", visibleData);
-        response.put("startRow", startRow);
-        response.put("startCol", startCol);
-        response.put("topOffset", topOffset);
-        response.put("leftOffset", leftOffset);
-
-        _sessionHandler.send(response);
+        Map<String, Object> msg = new HashMap<>();
+        msg.put("type", "full_update");
+        msg.put("tabId", _tabId);
+        msg.put("data", rows);
+        msg.put("startRow", _visibleStartRow);
+        msg.put("startCol", _startCol);
+        msg.put("topOffset", _topOffset);
+        msg.put("leftOffset", _leftOffset);
+        return msg;
     }
 
-    private void sendScrollMetricsVertical(int totalRows, double verticalThumbRatio, double verticalThumbPosition) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("type", "scroll_metrics_vertical");
-        response.put("tabId", _tabId);
+    private Map<String, Object> prepareRowUpdate(List<Object> row, int rowIndex) {
+        if (_testViewport != null) {
+            _testViewport.handleRowUpdate(row, rowIndex);
+        }
 
-        response.put("totalRows", totalRows);
-        response.put("verticalThumbRatio", verticalThumbRatio);
-        response.put("verticalThumbPosition", verticalThumbPosition);
+        Map<String, Object> msg = new HashMap<>();
+        msg.put("type", "row_update");
+        msg.put("tabId", _tabId);
+        msg.put("data", row);
+        msg.put("rowIndex", rowIndex);
+        return msg;
+    }
 
-        _sessionHandler.send(response);
+    private Map<String, Object> prepareDeltaUpdate(List<List<Object>> rows, int position) {
+        if (_testViewport != null) {
+            _testViewport.handleDeltaUpdate(rows, position, _bufferStartRow, _bufferEndRow, _visibleStartRow, _visibleEndRow);
+        }
+
+        Map<String, Object> msg = new HashMap<>();
+        msg.put("type", "delta_update");
+        msg.put("tabId", _tabId);
+        msg.put("data", rows);
+        msg.put("position", position);
+        msg.put("startRow", _bufferStartRow);
+        msg.put("endRow", _bufferEndRow);
+        msg.put("visibleStartRow", _visibleStartRow);
+        msg.put("visibleEndRow", _visibleEndRow);
+        msg.put("topOffset", _topOffset);
+        return msg;
+    }
+
+    private Map<String, Object> prepareDeltaUpdate(List<List<Object>> rows, int position, int removeCount, String removeFrom) {
+        if (_testViewport != null) {
+            _testViewport.handleDeltaUpdate(rows, position, _bufferStartRow, _bufferEndRow, _visibleStartRow, _visibleEndRow, removeCount, removeFrom);
+        }
+
+        Map<String, Object> msg = new HashMap<>();
+        msg.put("type", "delta_update");
+        msg.put("tabId", _tabId);
+        msg.put("data", rows);
+        msg.put("position", position);
+        msg.put("startRow", _bufferStartRow);
+        msg.put("endRow", _bufferEndRow);
+        msg.put("visibleStartRow", _visibleStartRow);
+        msg.put("visibleEndRow", _visibleEndRow);
+        msg.put("topOffset", _topOffset);
+        msg.put("removeCount", removeCount);
+        msg.put("removeFrom", removeFrom);
+        return msg;
+    }
+
+    private void send(Map<String, Object> msg) {
+        _sessionHandler.send(msg);
+    }
+
+    private Map<String, Object> prepareScrollMetricsVerticalMessage(int totalRows, ScrollMetrics scrollMetrics) {
+        Map<String, Object> msg = new HashMap<>();
+        msg.put("type", "scroll_metrics_vertical");
+        msg.put("tabId", _tabId);
+        msg.put("totalRows", totalRows);
+        msg.put("verticalThumbRatio", scrollMetrics._thumbRatio);
+        msg.put("verticalThumbPosition", scrollMetrics._thumbPosition);
+        return msg;
+    }
+
+    private void adjustScrollMetricsVertical(Map<String, Object> msg) {
+        msg.put("visibleStartRow", _visibleStartRow);
+        msg.put("visibleEndRow", _visibleEndRow);
+        msg.put("startRow", _bufferStartRow);
+        msg.put("endRow", _bufferEndRow);
+        msg.put("topOffset", _topOffset);
+
+        if (_testViewport != null) {
+            _testViewport.handleScrollMetricsVertical(_bufferStartRow, _bufferEndRow, _visibleStartRow, _visibleEndRow);
+        }
     }
 
     private void sendScrollMetricsHorizontal(double horizontalThumbRatio, double horizontalThumbPosition) {
@@ -484,7 +598,23 @@ public class SubscriberTab implements ISnSListener {
         _sessionHandler.send(response);
     }
 
-    private void sendViewportData(boolean updateTailMode, boolean sendHorizontalScrollMetrics, boolean addingRow) {
+    private List<List<Object>> extractRows(int startCol, int endCol, int startRow, int endRow) {
+        List<List<Object>> rows = new ArrayList<>();
+        for (int i = startRow; i <= endRow; i++) {
+            List<Object> row = new ArrayList<>();
+            Map<String, Object> rowData = _table.getRow(i);
+            for (int j = startCol; j < endCol; j++) {
+                String colName = _table.getOrderedColumn(j).name;
+                row.add(rowData.getOrDefault(colName, ""));
+            }
+            rows.add(row);
+        }
+        return rows;
+    }
+
+    private void sendViewportData(boolean updateTailMode, ScrollDirection scrollDirection, int position, boolean fullUpdate) {
+        boolean addingRow = position != 0;
+
         int totalRows = _table.getTotalRows();
         double totalHeight = totalRows * _rowHeight;
         double scrollableHeight = Math.max(0, totalHeight - _viewportHeight);
@@ -493,106 +623,285 @@ public class SubscriberTab implements ISnSListener {
             _tailMode = _viewportPositionFromTop == scrollableHeight;
         }
 
-        int visibleRowCount = Math.min((int) Math.ceil(_viewportHeight / _rowHeight), totalRows); // Round up to show partial rows
+        calculateScrollMetricsVertical(_verticalScrollMetrics); // calculates metrics
+        Map<String, Object> smvMsg = prepareScrollMetricsVerticalMessage(totalRows, _verticalScrollMetrics); // uses metrics
+        calculateTopOffset(_verticalScrollMetrics); // uses metrics
 
-        if (_viewportPositionFromTop > 0 && addingRow && !_appendToBottom) {
-            // adding row at the top and not in headMode => not not scroll off of the startRow
-            _startRow++;
-        } else {
-            // calculate startRow
-            _startRow = (int) (_viewportPositionFromTop / _rowHeight);
-            if (_startRow + visibleRowCount > totalRows) {
+        calculateVisibleColumns();
+
+        if (scrollDirection == ScrollDirection.HORIZONTAL || fullUpdate) {
+            sendScrollMetricsHorizontal();
+        }
+
+        int visibleRowCount = Math.min(_viewportCapacity, totalRows); // Round up to show partial rows
+
+        Map<String, Object> msg = null;
+        List<List<Object>> rows;
+        int overflow;
+        if (addingRow) { // position != 0
+            boolean replace = position < 0;
+            position = ((replace) ? - position : position) - 1;
+            rows = extractRows(_startCol, _endCol, position, position);
+            if (replace) {
+                smvMsg = null;
+                log.trace("=== REPLACE mode position={}", position);
+                log.trace("====== REPLACE before bSR={} vSR={} vER={} bER={}", _bufferStartRow, _visibleStartRow, _visibleEndRow, _bufferEndRow);
+                if (_bufferStartRow <= position && position <= _bufferEndRow) {
+                    log.trace("=== REPLACE inside");
+                    msg = prepareRowUpdate(rows.get(0), position - _bufferStartRow);
+                } else {
+                    log.trace("=== REPLACE outside");
+                    // position is outside buffer, msg == null
+                    if (smvMsg != null) adjustScrollMetricsVertical(smvMsg);
+                }
+            } else { // pinToKey addition OR non pinToKey addition
+                log.trace("=== ADDING appendToBottom={} viewportPositionFromTop={} scrollableHeight={}", _appendToBottom, _viewportPositionFromTop, scrollableHeight);
+                if (!_appendToBottom && _viewportPositionFromTop == 0) { // head mode
+                    log.trace("=== HEAD mode position={}", position);
+                    log.trace("====== HEAD before bSR={} vSR={} vER={} bER={}", _bufferStartRow, _visibleStartRow, _visibleEndRow, _bufferEndRow);
+                    _visibleStartRow = 0;
+                    _visibleEndRow = visibleRowCount - 1;
+                    _bufferStartRow = 0;
+                    if (position < _bufferCapacity) {
+                        _bufferEndRow++;
+
+                        overflow = _bufferEndRow - _bufferStartRow - _bufferCapacity;
+                        if (overflow <= 0) {
+                            log.trace("====== HEAD  after 1. bSR={} vSR={} vER={} bER={}", _bufferStartRow, _visibleStartRow, _visibleEndRow, _bufferEndRow);
+                            msg = prepareDeltaUpdate(rows, position);
+                        } else {
+                            _bufferEndRow -= overflow;
+                            log.trace("====== HEAD  after 2. bSR={} vSR={} vER={} bER={} overflow={}", _bufferStartRow, _visibleStartRow, _visibleEndRow, _bufferEndRow, overflow);
+                            msg = prepareDeltaUpdate(rows, position, overflow, "bottom");
+                        }
+                    } else {
+                        // insertion outside the buffer, bER unchanged
+                        adjustScrollMetricsVertical(smvMsg);
+                        log.trace("====== HEAD  after 3. bSR={} vSR={} vER={} bER={}", _bufferStartRow, _visibleStartRow, _visibleEndRow, _bufferEndRow);
+                    }
+
+                } else if ((_appendToBottom && _viewportPositionFromTop == scrollableHeight) || _tailMode) { // tail mode
+                    log.trace("=== TAIL mode position={}", position);
+                    log.trace("====== TAIL before bSR={} vSR={} vER={} bER={}", _bufferStartRow, _visibleStartRow, _visibleEndRow, _bufferEndRow);
+                    _visibleStartRow = totalRows - visibleRowCount;
+                    _visibleEndRow = totalRows - 1;
+                    _bufferEndRow = totalRows - 1;
+                    // _bufferStartRow does not change unless bER - bSR - bufferCapacity > 0
+                    if (position >= totalRows - _bufferCapacity) {
+                        overflow = _bufferEndRow - _bufferStartRow - _bufferCapacity;
+                        if (overflow <= 0) {
+                            log.trace("====== TAIL  after 1. bSR={} vSR={} vER={} bER={}", _bufferStartRow, _visibleStartRow, _visibleEndRow, _bufferEndRow);
+                            msg = prepareDeltaUpdate(rows, position);
+                        } else {
+                            _bufferStartRow += overflow;
+                            log.trace("====== TAIL  after 2. bSR={} vSR={} vER={} bER={} overflow={}", _bufferStartRow, _visibleStartRow, _visibleEndRow, _bufferEndRow, overflow);
+                            msg = prepareDeltaUpdate(rows, position + overflow, overflow, "top");
+                        }
+                    } else {
+                        // insertion outside the buffer
+                        _bufferStartRow++;
+                        log.trace("====== TAIL  after 3. bSR={} vSR={} vER={} bER={}", _bufferStartRow, _visibleStartRow, _visibleEndRow, _bufferEndRow);
+                        adjustScrollMetricsVertical(smvMsg);
+                    }
+
+                } else { // pinned mode
+                    log.trace("=== PINNED mode position={}", position);
+                    log.trace("====== PINNED before bSR={} vSR={} vER={} bER={}", _bufferStartRow, _visibleStartRow, _visibleEndRow, _bufferEndRow);
+                    boolean withinBuffer;
+                    if (position <= _bufferStartRow) {
+                        _bufferStartRow++;
+                        _visibleStartRow++;
+                        _visibleEndRow++;
+                        _bufferEndRow++;
+                        withinBuffer = false;
+                    } else if (position <= _visibleStartRow) {
+                        _visibleStartRow++;
+                        _visibleEndRow++;
+                        _bufferEndRow++;
+                        withinBuffer = true;
+                    } else if (position <= _visibleEndRow) {
+                        _visibleEndRow++;
+                        _bufferEndRow++;
+                        withinBuffer = true;
+                    } else if (position <= _bufferEndRow) {
+                        _bufferEndRow++;
+                        withinBuffer = true;
+                    } else { // position > _bER
+                        withinBuffer = false;
+                    }
+                    log.trace("====== PINNED  after bSR={} vSR={} vER={} bER={}", _bufferStartRow, _visibleStartRow, _visibleEndRow, _bufferEndRow);
+                    if (withinBuffer) {
+                        overflow = _bufferEndRow - _bufferStartRow - _bufferCapacity;
+                        if (overflow <= 0) {
+                            msg = prepareDeltaUpdate(rows, position);
+                        } else {
+                            if ((_bufferEndRow - _visibleEndRow) > (_visibleStartRow - _bufferStartRow)) { // more hidden rows below the visible rows than above
+                                _bufferEndRow -= overflow;
+                                msg = prepareDeltaUpdate(rows, position, overflow, "bottom");
+                            } else {
+                                _bufferStartRow += overflow;
+                                msg = prepareDeltaUpdate(rows, position + overflow, overflow, "top");
+                            }
+                        }
+                    } else {
+                        // outside buffer, ignore
+                        adjustScrollMetricsVertical(smvMsg);
+                    }
+                }
+            }
+        } else if (scrollDirection == ScrollDirection.VERTICAL) {
+            log.trace("====== SCROLL before bSR={} vSR={} vER={} bER={}", _bufferStartRow, _visibleStartRow, _visibleEndRow, _bufferEndRow);
+            _visibleStartRow = (int) (_viewportPositionFromTop / _rowHeight);
+            _visibleEndRow = _visibleStartRow + visibleRowCount - 1;
+            log.trace("====== SCROLL  after vSR={} vER={}", _visibleStartRow, _visibleEndRow);
+
+            if (_bufferStartRow <= _visibleStartRow && _visibleEndRow <= _bufferEndRow) {
+                // all new visible rows are in the buffer, do nothing
+                adjustScrollMetricsVertical(smvMsg);
+            } else if (_bufferEndRow < _visibleStartRow || _visibleEndRow < _bufferStartRow) {
+                fullUpdate = true;
+                log.trace("====== SCROLL need full update");
+            } else if (_visibleEndRow > _bufferEndRow) {
+                rows = extractRows(_startCol, _endCol, _bufferEndRow + 1, _visibleEndRow);
+
+                position = _bufferEndRow + 1;
+                log.trace("=== 1. inserting {} row(s) at position {}", rows.size(), position);
+
+                _bufferEndRow = _visibleEndRow;
+                overflow = _bufferEndRow - _bufferStartRow - _bufferCapacity;
+                if (overflow > 0) {
+                    _bufferStartRow += overflow;
+                    msg = prepareDeltaUpdate(rows, position + overflow, overflow, "top");
+                } else {
+                    msg = prepareDeltaUpdate(rows, position);
+                }
+                adjustScrollMetricsVertical(smvMsg);
+            } else if (_visibleStartRow < _bufferStartRow) {
+                rows = extractRows(_startCol, _endCol, _visibleStartRow, _bufferStartRow - 1);
+
+                position = _visibleStartRow;
+                log.trace("=== 2. inserting {} row(s) at position {}", rows.size(), position);
+
+                _bufferStartRow = _visibleStartRow;
+
+                overflow = _bufferEndRow - _bufferStartRow - _bufferCapacity;
+                if (overflow > 0) {
+                    _bufferEndRow -= overflow;
+                    msg = prepareDeltaUpdate(rows, position, overflow, "bottom");
+                } else {
+                    msg = prepareDeltaUpdate(rows, position);
+                }
+                adjustScrollMetricsVertical(smvMsg);
+            }
+            if (!fullUpdate) log.trace("====== SCROLL  after bSR={} vSR={} vER={} bER={}", _bufferStartRow, _visibleStartRow, _visibleEndRow, _bufferEndRow);
+        }
+        if (fullUpdate) {
+            _visibleStartRow = (int) (_viewportPositionFromTop / _rowHeight);
+            if (_visibleStartRow + visibleRowCount > totalRows) {
                 // viewport size has increased and I want to show no blank lines at the end
-                _startRow = totalRows - visibleRowCount;
+                _visibleStartRow = totalRows - visibleRowCount;
             }
             if (_tailMode) {
-                _startRow = totalRows - visibleRowCount;
+                _visibleStartRow = totalRows - visibleRowCount;
             }
+            _visibleEndRow = _visibleStartRow + visibleRowCount - 1;
+
+            _bufferStartRow = _visibleStartRow;
+            _bufferEndRow = _visibleEndRow;
+            log.trace("=== FULL bSR=vSR={} vER=bER={}", _bufferStartRow, _bufferEndRow);
+            rows = extractRows(_startCol, _endCol, _visibleStartRow, _visibleEndRow);
+            msg = prepareFullUpdate(rows);
         }
+
+        if (smvMsg != null) {
+            send(smvMsg);
+        }
+
+        if (msg != null) {
+            send(msg);
+        }
+    }
+
+    private void calculateTopOffset(ScrollMetrics scrollMetrics) {
+        // calculate topOffset
+        double partialRowHeight = _viewportHeight % _rowHeight;
+        double maxTopOffset = (partialRowHeight == 0) ? 0 : _rowHeight - partialRowHeight;
+        _topOffset = (int) Math.rint(scrollMetrics._thumbPosition * maxTopOffset); // How many pixels of first row are hidden
+    }
+
+    private void calculateScrollMetricsVertical(ScrollMetrics verticalScrollMetrics) {
+        int totalRows = _table.getTotalRows();
+        double totalHeight = totalRows * _rowHeight;
+        double scrollableHeight = Math.max(0, totalHeight - _viewportHeight);
 
         // calculate verticalThumbRatio
         double verticalThumbRatio = totalHeight > 0 ? _viewportHeight / totalHeight : 1.0;
         verticalThumbRatio = Math.max(0.05, Math.min(1.0, verticalThumbRatio));
 
         // calculate verticalThumbPosition
-        double verticalThumbPosition = scrollableHeight > 0 ? (double) _viewportPositionFromTop / scrollableHeight : 0.0;
+        double verticalThumbPosition = scrollableHeight > 0 ? _viewportPositionFromTop / scrollableHeight : 0.0;
         verticalThumbPosition = Math.max(0.0, Math.min(1.0, verticalThumbPosition));
         if (_tailMode) {
             verticalThumbPosition = 1.0;
         }
 
-        // calculate topOffset
-        double partialRowHeight = _viewportHeight % _rowHeight;
-        double maxTopOffset = (partialRowHeight == 0) ? 0 : _rowHeight - partialRowHeight;
-        int topOffset = (int) Math.rint(verticalThumbPosition * maxTopOffset); // How many pixels of first row are hidden
+        verticalScrollMetrics._thumbPosition = verticalThumbPosition;
+        verticalScrollMetrics._thumbRatio = verticalThumbRatio;
+    }
 
-//        log.info("{} ===== viewportHeight={}, viewportPositionFromTop={}, startRow={}, maxTopOffset={}, topOffset={}, visibleRowCount={}, verticalThumbPosition={}, verticalThumbRatio={}",
-//                _remote, _viewportHeight, _viewportPositionFromTop, _startRow, maxTopOffset, topOffset, visibleRowCount, verticalThumbPosition, verticalThumbRatio);
-
+    private void calculateVisibleColumns() {
         // Calculate visible columns based on pixel offset
-        int startCol;
-        int endCol;
-        int leftOffset; // How many pixels of the first column are hidden
 
         int totalCols = _table.getTotalCols();
-        int totalWidth = _table.getTotalWidth();
+        int totalWidth = _table.getTotalWidth(); // TODO compute when columns change and store rather than compute each time
 
         if (totalWidth <= _viewportWidth) {
-            startCol = 0;
-            endCol = totalCols;
-            leftOffset = 0;
+            _startCol = 0;
+            _endCol = totalCols;
+            _leftOffset = 0;
         } else {
-            log.debug("=== A. viewportWidth={} viewportPositionFromLeft={} totalCols={} columnOrder={}", _viewportWidth, _viewportPositionFromLeft, totalCols, _table.getColumnOrder());
+            log.trace("=== A. viewportWidth={} viewportPositionFromLeft={} totalCols={} columnOrder={}", _viewportWidth, _viewportPositionFromLeft, totalCols, _table.getColumnOrder());
 
             // calculate startCol
-            startCol = 0;
-            int cumWidth = _table.colWidth(startCol);
+            _startCol = 0;
+            int cumWidth = _table.colWidth(_startCol);
             while (cumWidth < _viewportPositionFromLeft) {
-                startCol++;
-                cumWidth += _table.colWidth(startCol);
+                _startCol++;
+                cumWidth += _table.colWidth(_startCol);
             }
-            log.debug("=== B. startCol={}", startCol);
+            log.trace("=== B. startCol={}", _startCol);
 
             // calculate endCol
-            endCol = startCol + 1;
+            _endCol = _startCol + 1;
             cumWidth -= _viewportPositionFromLeft;
-            while (endCol < totalCols && cumWidth <= _viewportWidth) {
-                cumWidth += _table.colWidth(endCol);
-                endCol++;
+            while (_endCol < totalCols && cumWidth <= _viewportWidth) {
+                cumWidth += _table.colWidth(_endCol);
+                _endCol++;
             }
-            log.debug("=== C. endCol={} visibleColumnsWidth={}", endCol, cumWidth);
+            log.trace("=== C. endCol={} visibleColumnsWidth={}", _endCol, cumWidth);
 
             // adjust startCol if there is space at the end
             while (cumWidth < _viewportWidth) {
-                startCol--;
-                cumWidth += _table.colWidth(startCol);
+                _startCol--;
+                cumWidth += _table.colWidth(_startCol);
             }
 
             // calculate leftOffset
             cumWidth = 0;
-            for (int i = 0; i < startCol; i++) {
+            for (int i = 0; i < _startCol; i++) {
                 cumWidth += _table.colWidth(i);
             }
-            leftOffset = _viewportPositionFromLeft - cumWidth;
-            log.debug("=== D. startCol={} additionalVisibleColumnsWidth={} leftOffset={}", startCol, cumWidth, leftOffset);
+            _leftOffset = _viewportPositionFromLeft - cumWidth;
+            log.trace("=== D. startCol={} additionalVisibleColumnsWidth={} leftOffset={}", _startCol, cumWidth, _leftOffset);
         }
+    }
 
-        // Extract visible data with column ordering
-        List<List<Object>> visibleData = new ArrayList<>();
-        for (int i = _startRow; i < _startRow + visibleRowCount; i++) {
-            List<Object> row = new ArrayList<>();
-            Map<String, Object> rowData = _table.getRow(i);
-            for (int j = startCol; j < endCol; j++) {
-                String colName = _table.getOrderedColumn(j).name;
-                row.add(rowData.getOrDefault(colName, ""));
-            }
-            visibleData.add(row);
-        }
+    private void sendScrollMetricsHorizontal() {
+        int totalCols = _table.getTotalCols();
+        int totalWidth = _table.getTotalWidth();
 
-        // For horizontal, calculate based on actual widths to handle partial columns
         double horizontalThumbRatio = 1.0;
         double horizontalThumbPosition = 0.0;
-
         if (_viewportWidth > 0 && totalCols > 0) {
             // Calculate total width of all columns
 
@@ -602,10 +911,7 @@ public class SubscriberTab implements ISnSListener {
                 horizontalThumbPosition = Math.max(0.0, Math.min(1.0, (double) _viewportPositionFromLeft / scrollableWidth));
             }
         }
-
-        sendScrollMetricsVertical(totalRows, verticalThumbRatio, verticalThumbPosition);
-        if (sendHorizontalScrollMetrics) sendScrollMetricsHorizontal(horizontalThumbRatio, horizontalThumbPosition);
-        sendViewportData(visibleData, _startRow, startCol, topOffset, leftOffset);
+        sendScrollMetricsHorizontal(horizontalThumbRatio, horizontalThumbPosition);
     }
 
 }

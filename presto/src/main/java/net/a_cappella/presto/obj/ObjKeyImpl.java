@@ -211,4 +211,69 @@ public class ObjKeyImpl implements ObjKey {
         sb.append('>');
         return sb.toString();
     }
+
+    @Override
+    public int compareTo(Object object) {
+        if (this == object) return 0;
+        if (getClass() != object.getClass()) return getClass().getName().compareTo(object.getClass().getName());
+
+        List<FieldMetaInfo> keys = _obj.getObjMetaInfo().getKeys();
+        Obj obj = ((ObjKeyImpl) object)._obj;
+        int cmp = 0;
+
+        for (int i=0; i<keys.size(); i++) {
+            FieldMetaInfo fmi = keys.get(i);
+            try {
+                switch (fmi.getType()) {
+                    case CHAR:
+                        cmp = Character.compare(_obj.getChar(fmi.getName()), obj.getChar(fmi.getName()));
+                        break;
+                    case STRING:
+                        cmp = _obj.getString(fmi.getName()).compareTo(obj.getString(fmi.getName()));
+                        break;
+                    case SHORT:
+                        cmp = Short.compare(_obj.getShort(fmi.getName()), obj.getShort(fmi.getName()));
+                        break;
+                    case INT:
+                        cmp = Integer.compare(_obj.getInt(fmi.getName()), obj.getInt(fmi.getName()));
+                        break;
+                    case LONG:
+                        cmp = Long.compare(_obj.getLong(fmi.getName()), obj.getLong(fmi.getName()));
+                        break;
+                    case FLOAT:
+                        cmp = Float.compare(_obj.getFloat(fmi.getName()), obj.getFloat(fmi.getName()));
+                        break;
+                    case DOUBLE:
+                        cmp = Double.compare(_obj.getDouble(fmi.getName()), obj.getDouble(fmi.getName()));
+                        break;
+                    case BOOLEAN:
+                        cmp = Boolean.compare(_obj.getBoolean(fmi.getName()), obj.getBoolean(fmi.getName()));
+                        break;
+                    case TIMESTAMP:
+                        cmp = Long.compare(_obj.getTimestamp(fmi.getName()), obj.getTimestamp(fmi.getName()));
+                        break;
+                    case NANOS:
+                        cmp = Long.compare(_obj.getNanos(fmi.getName()), obj.getNanos(fmi.getName()));
+                        break;
+                    case TIME:
+                        cmp = Integer.compare(_obj.getTime(fmi.getName()), obj.getTime(fmi.getName()));
+                        break;
+                    case DATE:
+                        cmp = Integer.compare(_obj.getDate(fmi.getName()), obj.getDate(fmi.getName()));
+                        break;
+                    case ENUM:
+                        cmp = Integer.compare(_obj.getEnum(fmi.getName()).ordinal(), obj.getEnum(fmi.getName()).ordinal());
+                        break;
+                    case UNKNOWN:
+                }
+            } catch (Exception x) {
+                log.error("Error computing compareTo for "+this, x);
+                throw new RuntimeException(x);
+            }
+            if (cmp != 0) {
+                return cmp;
+            }
+        }
+        return cmp;
+    }
 }

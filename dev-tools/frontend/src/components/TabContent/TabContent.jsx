@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ControlsPanel } from '../ControlsPanel/ControlsPanel';
 import { DataTable } from '../DataTable/DataTable';
 import { StatusBar } from '../StatusBar/StatusBar';
@@ -16,9 +16,16 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
   const [statusText, setStatusText] = useState('Not snapped / subscribed yet...');
   const [state, setState] = useState('new');
 
-  const [tableData, setTableData] = useState([]);
+  // Buffer state - stores all cached rows (visible + hidden)
+  const [bufferData, setBufferData] = useState([]);
+  const [bufferStartRow, setBufferStartRow] = useState(0);
+  const [bufferEndRow, setBufferEndRow] = useState(-1);
 
-  const [startRow, setStartRow] = useState(0);
+  // Visible viewport within buffer
+  const [visibleStartRow, setVisibleStartRow] = useState(0);
+  const [visibleEndRow, setVisibleEndRow] = useState(-1);
+
+  // Offsets for smooth scrolling
   const [topOffset, setTopOffset] = useState(0);
   const [totalRows, setTotalRows] = useState(0);
   const [actualRowHeight, setActualRowHeight] = useState(33);
@@ -58,13 +65,22 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
 
   // Use custom hooks
   const { selectedRows, handleRowClick, clearSelection, setSelectedRows, setLastSelectedRow } =
-    useRowSelection(startRow);
+    useRowSelection(visibleStartRow);
 
   const { scrollVertical, scrollHorizontal, vThumbDragRef, hThumbDragRef } =
-    useTableScroll(tabId, ws, startRow, startCol, topOffset, totalRows, columns, actualRowHeight);
+    useTableScroll(tabId, ws, visibleStartRow, startCol, topOffset, totalRows, columns, actualRowHeight);
 
   const { handleResizeStart, handleResizeMove, handleResizeEnd } =
     useColumnResize(tabId, ws, startCol, columns, setColumns);
+
+  // Compute visible data from buffer
+  const visibleTableData = useMemo(() => {
+    if (bufferData.length === 0 || bufferEndRow < bufferStartRow) return [];
+    const startIdx = visibleStartRow - bufferStartRow;
+    const endIdx = visibleEndRow - bufferStartRow;
+    if (startIdx < 0 || endIdx >= bufferData.length) return [];
+    return bufferData.slice(startIdx, endIdx + 1);
+  }, [bufferData, bufferStartRow, visibleStartRow, visibleEndRow]);
 
   // Throttle function for scroll events
   const throttle = useCallback((fn, delay = 50) => {
@@ -72,19 +88,16 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
       const now = Date.now();
       const timeSinceLastExecution = now - scrollThrottleRef.current.lastExecuted;
 
-      // Clear any pending timeout
       if (scrollThrottleRef.current.timeoutId) {
         clearTimeout(scrollThrottleRef.current.timeoutId);
         scrollThrottleRef.current.timeoutId = null;
       }
 
       if (timeSinceLastExecution >= delay) {
-        // Execute immediately if enough time has passed
         scrollThrottleRef.current.lastExecuted = now;
         scrollThrottleRef.current.pendingArgs = null;
         fn(...args);
       } else {
-        // Schedule execution for later and save args
         scrollThrottleRef.current.pendingArgs = args;
         scrollThrottleRef.current.timeoutId = setTimeout(() => {
           scrollThrottleRef.current.lastExecuted = Date.now();
@@ -112,9 +125,8 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
     const handleMessage = (event) => {
       const msg = JSON.parse(event.data);
 
-      // Filter messages by mode - only process subscriber messages
       if (msg.mode && msg.mode !== 'subscriber') {
-        return; // Ignore messages meant for other modes
+        return;
       }
 
       if (msg.tabId !== tabId) return;
@@ -138,12 +150,60 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
           }
           break;
 
-        case 'viewport_data':
-          if (msg.data !== undefined) setTableData(msg.data);
-          if (msg.startRow !== undefined) setStartRow(msg.startRow);
-          if (msg.startCol !== undefined) setStartCol(msg.startCol);
-          if (msg.topOffset !== undefined) setTopOffset(msg.topOffset);
-          if (msg.leftOffset !== undefined) setLeftOffset(msg.leftOffset);
+        case 'full_update':
+          const numRows = msg.data.length;
+          setBufferData(msg.data || []);
+          setBufferStartRow(msg.startRow || 0);
+          setBufferEndRow(msg.startRow + numRows - 1);
+          setVisibleStartRow(msg.startRow || 0);
+          setVisibleEndRow(msg.startRow + numRows - 1);
+          setTopOffset(msg.topOffset);
+          setStartCol(msg.startCol);
+          setLeftOffset(msg.leftOffset);
+          break;
+
+        case 'delta_update':
+          // Insert rows at position, optionally remove from ends
+          setBufferData(prev => {
+            let newBuffer = [...prev];
+
+            // First: Insert new rows at the specified position (absolute row index)
+            const insertIndex = msg.position - msg.startRow;
+            if (insertIndex >= 0 && insertIndex <= newBuffer.length) {
+              newBuffer.splice(insertIndex, 0, ...msg.data);
+            }
+
+            // Second: Remove rows if specified
+            if (msg.removeCount && msg.removeFrom) {
+              if (msg.removeFrom === 'top') {
+                // Remove from the beginning
+                newBuffer.splice(0, msg.removeCount);
+              } else if (msg.removeFrom === 'bottom') {
+                // Remove from the end
+                newBuffer.splice(newBuffer.length - msg.removeCount, msg.removeCount);
+              }
+            }
+
+            return newBuffer;
+          });
+
+          setBufferStartRow(msg.startRow);
+          setBufferEndRow(msg.endRow);
+          setVisibleStartRow(msg.visibleStartRow);
+          setVisibleEndRow(msg.visibleEndRow);
+          setTopOffset(msg.topOffset || 0);
+          break;
+
+        case 'row_update':
+          setBufferData(prev => {
+            const rowIdx = msg.rowIndex;
+            if (rowIdx < 0 || rowIdx > prev.length) {
+              return prev;
+            }
+            const newBuffer = [...prev];
+            newBuffer[rowIdx] = msg.data;
+            return newBuffer;
+          });
           break;
 
         case 'scroll_metrics_vertical':
@@ -155,6 +215,11 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
               verticalThumbPosition: msg.verticalThumbPosition !== undefined ? msg.verticalThumbPosition : prev.verticalThumbPosition
             }));
           }
+          if (msg.visibleStartRow !== undefined) setVisibleStartRow(msg.visibleStartRow);
+          if (msg.visibleEndRow !== undefined) setVisibleEndRow(msg.visibleEndRow);
+          if (msg.startRow !== undefined) setBufferStartRow(msg.startRow);
+          if (msg.endRow !== undefined) setBufferEndRow(msg.endRow);
+          if (msg.topOffset !== undefined) setTopOffset(msg.topOffset);
           break;
 
         case 'scroll_metrics_horizontal':
@@ -176,13 +241,18 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
           break;
 
         case 'clear_table':
-          setTableData([]);
+          setBufferData([]);
+          setBufferStartRow(0);
+          setBufferEndRow(-1);
+          setVisibleStartRow(0);
+          setVisibleEndRow(-1);
           setColumns([]);
           setColumnOrder([]);
-          setStartRow(0);
           setStartCol(0);
           setTotalRows(0);
           setTotalCols(0);
+          setTopOffset(0);
+          setLeftOffset(0);
           setStatusText('Not snapped / subscribed yet...');
           clearSelection();
           setScrollMetrics({
@@ -224,7 +294,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
         ws.current.removeEventListener('message', handleMessage);
       }
     };
-  }, [isActive, tabId, wsReady, onUpdateTabLabel, startRow, startCol, clearSelection, ws]);
+  }, [isActive, tabId, wsReady, onUpdateTabLabel, clearSelection, ws]);
 
   // Reset hasInitialized on unmount (for page refresh)
   useEffect(() => {
@@ -275,14 +345,14 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
   }, [tabId, columns, ws, isActive, actualRowHeight]);
 
   useEffect(() => {
-    if (!tableData.length || actualRowHeightSentRef.current) return;
+    if (!visibleTableData.length || actualRowHeightSentRef.current) return;
 
     const firstRow = tableBodyRef.current?.querySelector('tr');
     if (firstRow && ws.current && ws.current.readyState === WebSocket.OPEN) {
       const actualHeight = firstRow.getBoundingClientRect().height;
       console.log('Actual row height:', actualHeight);
 
-      setActualRowHeight(actualHeight); // Store it in state
+      setActualRowHeight(actualHeight);
 
       ws.current.send(JSON.stringify({
         type: 'set_row_height',
@@ -292,7 +362,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
 
       actualRowHeightSentRef.current = true;
     }
-  }, [tableData, tabId, ws]);
+  }, [visibleTableData, tabId, ws]);
 
   // Reset on unmount
   useEffect(() => {
@@ -320,7 +390,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
          e.deltaMode === WheelEvent.DOM_DELTA_LINE ? e.deltaY * actualRowHeight :
          e.deltaMode === WheelEvent.DOM_DELTA_PAGE ? e.deltaY * actualRowHeight * Math.floor(viewportHeight / actualRowHeight) :
          e.deltaY; // WheelEvent.DOM_DELTA_PIXEL
-      const currentScroll = startRow * actualRowHeight + topOffset;
+      const currentScroll = visibleStartRow * actualRowHeight + topOffset;
       const scrollableHeight = Math.max(0, totalHeight - viewportHeight);
       const viewportPositionFromTop = Math.max(0, Math.min(scrollableHeight, currentScroll + deltaScroll));
 
@@ -328,6 +398,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
         sendScrollUpdate({
           type: 'scroll_update',
           tabId: tabId,
+          source: "wheel",
           viewportPositionFromTop: viewportPositionFromTop
         });
       }
@@ -342,7 +413,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
       if (tableBody) tableBody.removeEventListener('wheel', handleWheel);
       if (resizeTimeoutRef.current) clearTimeout(resizeTimeoutRef.current);
     };
-  }, [isActive, calculateViewportSize, startRow, topOffset, totalRows, actualRowHeight, tabId, startCol, sendScrollUpdate]);
+  }, [isActive, calculateViewportSize, visibleStartRow, topOffset, totalRows, actualRowHeight, tabId, startCol, sendScrollUpdate]);
 
   // Mouse drag handlers
   useEffect(() => {
@@ -368,6 +439,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
         sendScrollUpdate({
           type: 'scroll_update',
           tabId: tabId,
+          source: "drag",
           viewportPositionFromTop: viewportPositionFromTop
         });
       }
@@ -411,7 +483,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isActive, tabId, columns, startCol, startRow, topOffset, totalRows, actualRowHeight, scrollMetrics,
+  }, [isActive, tabId, columns, startCol, visibleStartRow, topOffset, totalRows, actualRowHeight, scrollMetrics,
       handleResizeMove, handleResizeEnd, vThumbDragRef, hThumbDragRef, sendScrollUpdate]);
 
   // Sync header scroll with body
@@ -436,7 +508,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
 
     if (clickY < thumbTop || clickY > thumbBottom) {
       const viewportHeight = tableBodyRef.current?.clientHeight || 0;
-      const currentScroll = startRow * actualRowHeight + topOffset;
+      const currentScroll = visibleStartRow * actualRowHeight + topOffset;
       const totalHeight = totalRows * actualRowHeight;
       const scrollableHeight = Math.max(0, totalHeight - viewportHeight);
 
@@ -448,6 +520,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
         ws.current.send(JSON.stringify({
           type: 'scroll_update',
           tabId: tabId,
+          source: "track",
           viewportPositionFromTop: viewportPositionFromTop
         }));
       }
@@ -458,7 +531,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
     e.preventDefault();
     e.stopPropagation();
 
-    const currentScroll = startRow * actualRowHeight + topOffset;
+    const currentScroll = visibleStartRow * actualRowHeight + topOffset;
     vThumbDragRef.current = {
       dragging: true,
       startY: e.clientY,
@@ -659,9 +732,9 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
       />
 
       <DataTable
-        tableData={tableData}
+        tableData={visibleTableData}
         columns={columns}
-        startRow={startRow}
+        startRow={visibleStartRow}
         startCol={startCol}
         topOffset={topOffset}
         leftOffset={leftOffset}

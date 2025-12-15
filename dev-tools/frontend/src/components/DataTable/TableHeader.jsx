@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 export const TableHeader = ({
   columns,
   startCol,
-  tableData,
   onResizeStart,
   onDragStart,
   onDragOver,
@@ -13,8 +12,7 @@ export const TableHeader = ({
 }) => {
   const [isDropZoneActive, setIsDropZoneActive] = useState(false);
 
-  const numDataCols = tableData.length > 0 ? tableData[0].length : 0;
-  const visibleCols = columns.slice(startCol, startCol + numDataCols);
+  const visibleCols = columns.slice(startCol);
 
   return (
     <div ref={tableHeaderRef} className="table-header">
