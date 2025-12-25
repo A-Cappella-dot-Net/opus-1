@@ -16,8 +16,6 @@ public class SubscriberHandler {
 
     private final Map<String, SubscriberTab> _tabs = new ConcurrentHashMap<>();
 
-    private String _currentTab; // TODO need to update on tab switch; updates should be only for the current tab
-
     public SubscriberHandler(SessionHandler sessionHandler) {
         _sessionHandler = sessionHandler;
         _remote = sessionHandler._remote;
@@ -76,7 +74,6 @@ public class SubscriberHandler {
 
     private void handleInitTab(JsonObject msg) {
         String tabId = msg.get("tabId").getAsString();
-        _currentTab = tabId;
 
         SubscriberTab tab = new SubscriberTab(_sessionHandler, tabId, _remote, msg.get("viewportWidth").getAsInt(), msg.get("viewportHeight").getAsDouble());
         _tabs.put(tabId, tab);
@@ -86,6 +83,51 @@ public class SubscriberHandler {
         String tabId = msg.get("tabId").getAsString();
 
         _tabs.remove(tabId).resetTab();
+    }
+
+    private void handleActualRowHeight(JsonObject msg) {
+        String tabId = msg.get("tabId").getAsString();
+
+        SubscriberTab tab = _tabs.get(tabId);
+        tab.handleActualRowHeight(msg.get("rowHeight").getAsDouble());
+    }
+
+    private void handleViewportUpdate(JsonObject msg) {
+        String tabId = msg.get("tabId").getAsString();
+
+        SubscriberTab tab = _tabs.get(tabId);
+        if (tab != null) {
+            tab.handleViewportUpdate(msg.get("viewportWidth").getAsInt(), msg.get("viewportHeight").getAsDouble());
+        }
+    }
+
+    private void handleScrollUpdate(JsonObject msg) {
+        String tabId = msg.get("tabId").getAsString();
+
+        SubscriberTab tab = _tabs.get(tabId);
+        if (msg.has("viewportPositionFromTop")) {
+            tab.handleVerticalScrollUpdate(msg.get("viewportPositionFromTop").getAsDouble());
+        } else if (msg.has("scrollLeftPixels")) {
+            tab.handleHorizontalScrollUpdate(msg.get("scrollLeftPixels").getAsInt());
+        }
+    }
+
+    private void handleResizeColumn(JsonObject msg) {
+        String tabId = msg.get("tabId").getAsString();
+
+        SubscriberTab tab = _tabs.get(tabId);
+        tab.handleResizeColumn(msg.get("colIndex").getAsInt(), msg.get("newWidth").getAsInt());
+    }
+
+    private void handleReorderColumns(JsonObject msg) {
+        String tabId = msg.get("tabId").getAsString();
+
+        SubscriberTab tab = _tabs.get(tabId);
+        ArrayList<Integer> columnOrder = new ArrayList<>();
+        for (var elem : msg.get("columnOrder").getAsJsonArray()) {
+            columnOrder.add(elem.getAsInt());
+        }
+        tab.handleReorderColumns(columnOrder);
     }
 
     private void handleStartAction(JsonObject msg) {
@@ -123,46 +165,4 @@ public class SubscriberHandler {
         tab.handleResumeAction();
     }
 
-    private void handleViewportUpdate(JsonObject msg) {
-        String tabId = msg.get("tabId").getAsString();
-
-        SubscriberTab tab = _tabs.get(tabId);
-        if (tab != null) {
-            tab.handleViewportUpdate(msg.get("viewportWidth").getAsInt(), msg.get("viewportHeight").getAsDouble());
-        }
-    }
-
-    private void handleActualRowHeight(JsonObject msg) {
-        String tabId = msg.get("tabId").getAsString();
-
-        SubscriberTab tab = _tabs.get(tabId);
-        tab.handleActualRowHeight(msg.get("rowHeight").getAsDouble());
-    }
-
-    private void handleScrollUpdate(JsonObject msg) {
-        String tabId = msg.get("tabId").getAsString();
-
-        SubscriberTab tab = _tabs.get(tabId);
-        tab.handleScrollUpdate(msg);
-    }
-
-    private void handleResizeColumn(JsonObject msg) {
-        String tabId = msg.get("tabId").getAsString();
-
-        SubscriberTab tab = _tabs.get(tabId);
-        tab.handleResizeColumn(msg.get("colIndex").getAsInt(), msg.get("newWidth").getAsInt());
-    }
-
-    private void handleReorderColumns(JsonObject msg) {
-        String tabId = msg.get("tabId").getAsString();
-
-        SubscriberTab tab = _tabs.get(tabId);
-        if (msg.has("columnOrder")) {
-            ArrayList<Integer> columnOrder = new ArrayList<>();
-            for (var elem : msg.get("columnOrder").getAsJsonArray()) {
-                columnOrder.add(elem.getAsInt());
-            }
-            tab.handleReorderColumns(columnOrder);
-        }
-    }
 }

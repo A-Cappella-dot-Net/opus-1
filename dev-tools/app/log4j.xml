@@ -96,6 +96,30 @@
         <level value="INFO" />
     </logger>
 
+    <logger name="net.a_cappella.devtools.SubscriberTab">
+        <level value="INFO" />
+    </logger>
+    <logger name="net.a_cappella.devtools.SessionHandler">
+        <level value="DEBUG" />
+    </logger>
+    <logger name="net.a_cappella.devtools.TestViewport">
+        <level value="INFO" />
+    </logger>
+    <logger name="net.a_cappella.devtools.LoopbackPrestoClient">
+        <level value="INFO" />
+    </logger>
+    <logger name="net.a_cappella.devtools.ObjGenerator">
+        <level value="INFO" />
+    </logger>
+
+    <logger name="net.a_cappella.continuo.managed.MsgInstantiator">
+        <level value="INFO" />
+    </logger>
+    <logger name="net.a_cappella.presto.ps.AeronObjCoder">
+        <level value="INFO" />
+    </logger>
+
+
     <!-- ============================== -->
     <!-- Root logger                    -->
     <!-- ============================== -->

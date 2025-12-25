@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -24,16 +23,13 @@ public class SessionHandler implements WebSocketListener {
     private static final Logger log = LoggerFactory.getLogger(SessionHandler.class);
 
     public final PrestoClient _client;
-    private VsUserManager _userManager;
+    private final ScheduledExecutorService _scheduler;
+    private final HandlersBySession _handlersBySession;
+    private final VsUserManager _userManager;
+    private final Map<String, TokenInfo> _tokenStore;
 
-    public Session _session;
     public String _remote = "unknown";
-
-    public String _username;
-    public String _password;
-    public boolean _isAuthenticated = false;
-
-    Gson _gsonOut = new GsonBuilder()
+    private Gson _gsonOut = new GsonBuilder()
             .registerTypeAdapter(Double.class, (JsonSerializer<Double>) (src, typeOfSrc, context) -> {
                 if (src.isNaN()) return new JsonPrimitive("NaN");
                 if (src.isInfinite()) return new JsonPrimitive(src > 0 ? "Inf" : "-Inf");
@@ -49,16 +45,19 @@ public class SessionHandler implements WebSocketListener {
             .registerTypeAdapter(PDate.class, new PDateSerializer())
             .registerTypeAdapter(PNanos.class, new PNanosSerializer())
             .create();
-    Gson _gsonIn = new GsonBuilder()
+    private Gson _gsonIn = new GsonBuilder()
             .registerTypeAdapter(PTimestamp.class, new PTimestampSerializer())
             .registerTypeAdapter(PTime.class, new PTimeSerializer())
             .registerTypeAdapter(PDate.class, new PDateSerializer())
             .registerTypeAdapter(PNanos.class, new PNanosSerializer())
             .create();
 
-    private final ScheduledExecutorService _scheduler;
-    private final HandlersBySession _handlersBySession;
+    public Session _session;
     private ScheduledFuture<?> _pingTask;
+
+    public String _username;
+    public String _password;
+    public boolean _isAuthenticated = false;
 
     private SubscriberHandler _subscriberHandler;
     private PublisherHandler _publisherHandler;
@@ -68,6 +67,7 @@ public class SessionHandler implements WebSocketListener {
         _scheduler = viewServer._scheduler;
         _handlersBySession = viewServer._handlersBySession;
         _userManager = viewServer._userManager;
+        _tokenStore = viewServer._tokenStore;
     }
 
     public void start() {
@@ -76,7 +76,7 @@ public class SessionHandler implements WebSocketListener {
         _pingTask = _scheduler.scheduleAtFixedRate(() -> {
             try {
                 if (_session.isOpen()) {
-                    log.debug("{} Sending ping", _remote);
+                    log.trace("{} Sending ping", _remote);
                     _session.getRemote().sendPing(keepalive);
                 }
             } catch (Exception e) {
@@ -131,23 +131,23 @@ public class SessionHandler implements WebSocketListener {
 
             switch (type) {
                 case "login":
-                    log.info("{} received {}", _remote, msg);
+                    log.debug("{} received {}", _remote, msg);
                     handleLogin(msg);
                     break;
                 case "reauth":
-                    log.info("{} received {}", _remote, msg);
+                    log.debug("{} received {}", _remote, msg);
                     handleReauth(msg);
                     break;
                 case "logout":
-                    log.info("{} received {}", _remote, msg);
+                    log.debug("{} received {}", _remote, msg);
                     handleLogout();
                     break;
                 case "request_token":
-                    log.info("{} received {}", _remote, msg);
+                    log.debug("{} received {}", _remote, msg);
                     handleRequestToken();
                     break;
                 case "auth_with_token":
-                    log.info("{} received {}", _remote, msg);
+                    log.debug("{} received {}", _remote, msg);
                     handleAuthWithToken(msg);
                     break;
                 case "heartbeat":
@@ -157,7 +157,7 @@ public class SessionHandler implements WebSocketListener {
                     sendMessage(response, false);
                     break;
                 default:
-                    log.info("{} received {}", _remote, msg);
+                    log.debug("{} received {}", _remote, msg);
                     if (_isAuthenticated) {
                         String mode = msg.has("mode") ? msg.get("mode").getAsString() : "null";
                         if ("subscriber".equals(mode)) {
@@ -223,8 +223,6 @@ public class SessionHandler implements WebSocketListener {
         }
     }
 
-    private static Map<String, TokenInfo> _tokenStore = new ConcurrentHashMap<>();
-
     private void handleRequestToken() {
         if (!_isAuthenticated) {
             sendError("Not authenticated", "token_request");
@@ -275,7 +273,7 @@ public class SessionHandler implements WebSocketListener {
     }
 
     public void send(Map<String, Object> response) {
-        log.info("{} sending {}", _remote, response);
+        log.debug("{} sending {}", _remote, response);
         try {
             if (_session != null && _session.isOpen()) {
                 _session.getRemote().sendString(_gsonOut.toJson(response));
@@ -290,7 +288,7 @@ public class SessionHandler implements WebSocketListener {
     }
     public void sendMessage(JsonObject jsonObject, boolean logOp) {
         String message = jsonObject.toString();
-        if (logOp) log.info("{} sending {}", _remote, message);
+        if (logOp) log.debug("{} sending {}", _remote, message);
         try {
             if (_session != null && _session.isOpen()) {
                 _session.getRemote().sendString(message);

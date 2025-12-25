@@ -6,13 +6,12 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -21,11 +20,11 @@ public class ViewServer {
 
     public final PrestoClient _client;
     public final ScheduledExecutorService _scheduler = Executors.newScheduledThreadPool(1);
+    public final HandlersBySession _handlersBySession = new HandlersBySession();
+    public final VsUserManager _userManager;
+    public final Map<String, TokenInfo> _tokenStore = new ConcurrentHashMap<>();
 
     private final Server _server;
-    public final HandlersBySession _handlersBySession = new HandlersBySession();
-
-    public final VsUserManager _userManager;
 
     public ViewServer(PrestoClient client) {
         _client = client;

@@ -23,21 +23,24 @@ public class TestViewport {
         _ascending = ascending;
     }
 
-    public void handleColumnUpdate(List<ColumnDef> columns) {
+    public void updateIdColumnIndex(TableData table, int startCol, int endCol) {
+        List<ColumnDef> columns = table.getOrderedColumns();
         _idColumnIndex = -1;
         for (int i = 0; i < columns.size(); i++) {
             ColumnDef columnDef = columns.get(i);
             if (columnDef.name.equals(_idColumnName)) {
                 if ("integer".equals(columnDef.type)) {
-                    _idColumnIndex = i;
+                    if (startCol <= i && i < endCol) {
+                        _idColumnIndex = i - startCol;
+                    }
                 } else {
-                    log.error("handleColumnUpdate: the idColumn {} needs to be of 'integer' type, it's of type {}", _idColumnName, columnDef.type);
+                    log.error("updateIdColumnIndex: the idColumn {} needs to be of 'integer' type, it's of type {}", _idColumnName, columnDef.type);
                     handleException();
                 }
                 return;
             }
         }
-        log.error("handleColumnUpdate: please double check the idColumnName {} as it does not appear in the defined columns {}", _idColumnName, columns);
+        log.error("updateIdColumnIndex: please double check the idColumnName {} as it does not appear in the defined columns {}", _idColumnName, columns);
         handleException();
     }
 
@@ -46,7 +49,9 @@ public class TestViewport {
             log.error("handleRowUpdate: invalid position {} as there are only {} rows in the viewport", relativePosition, _rows.size());
             handleException();
         } else {
-            _rows.set(relativePosition, (Number) row.get(_idColumnIndex));
+            if (_idColumnIndex >= 0) {
+                _rows.set(relativePosition, (Number) row.get(_idColumnIndex));
+            }
         }
     }
 
@@ -55,7 +60,7 @@ public class TestViewport {
         _bER = bER;
         _vSR = vSR;
         _vER = vER;
-        if (verifyRange() && verifyPosition(position)) {
+        if (verifyRange() && verifyPosition(position) && _idColumnIndex >= 0) {
             position -= _bSR;
             List<Number> delta = new ArrayList<>();
             for (int i = 0; i < rows.size(); i++) {
@@ -75,7 +80,7 @@ public class TestViewport {
         _bER = bER;
         _vSR = vSR;
         _vER = vER;
-        if (verifyRange() && verifyPosition(position) && verifyDeleteFrom(deleteFrom)) {
+        if (verifyRange() && verifyPosition(position) && verifyDeleteFrom(deleteFrom) && _idColumnIndex >= 0) {
             position -= _bSR;
             List<Number> delta = new ArrayList<>();
             for (int i = 0; i < rows.size(); i++) {
@@ -100,12 +105,14 @@ public class TestViewport {
         _bSR = _vSR = startRow;
         _bER = _vER = startRow + _rows.size() - 1;
         _rows.clear();
-        for (int i = 0; i < rows.size(); i++) {
-            List<Object> row = rows.get(i);
-            Number id = (Number) row.get(_idColumnIndex);
-            _rows.add(id);
+        if (_idColumnIndex >= 0) {
+            for (int i = 0; i < rows.size(); i++) {
+                List<Object> row = rows.get(i);
+                Number id = (Number) row.get(_idColumnIndex);
+                _rows.add(id);
+            }
+            verifyRowOrder();
         }
-        verifyRowOrder();
     }
 
     public void handleScrollMetricsVertical(int bSR, int bER, int vSR, int vER) {
@@ -113,7 +120,7 @@ public class TestViewport {
         _bER = bER;
         _vSR = vSR;
         _vER = vER;
-        if (verifyRange()) {
+        if (verifyRange() && _idColumnIndex >= 0) {
             verifyBounds();
             log.debug("****************** handleScrollMetricsVertical rows[{}]={} {}", _vSR, _rows.get(_vSR-_bSR), _rows);
         }

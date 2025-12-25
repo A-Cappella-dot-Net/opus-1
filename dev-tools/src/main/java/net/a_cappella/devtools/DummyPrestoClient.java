@@ -119,24 +119,6 @@ public class DummyPrestoClient implements PrestoClient {
             obj.setId(i % 10);
             obj.setPayload(1000 + i);
 
-//            new ColumnDef("ID", "integer", 60);
-//            new ColumnDef("Name", "string", 100);
-//            new ColumnDef("Status", "string", 100);
-//            new ColumnDef("ExtraCol", "string", 150);
-//
-//            new ColumnDef("ID", "integer", 100);
-//            new ColumnDef("Price", "decimal", 120, 3); // decimals:2
-//            new ColumnDef("Timestamp", "datetime", 180, "time"); // format:short,ISO,locale,date,time
-//            new ColumnDef("Active", "boolean", 80); // align:center,left,right
-//            new ColumnDef("Name", "string", 200);
-//
-//            obj.setAdHoc("ID", i % 10);
-//            obj.setAdHoc("Name", "Item " + i);
-//            obj.setAdHoc("Status", i % 2 == 0 ? "Active" : "Inactive");
-//            if (i % 10 == 3) {
-//                obj.setAdHoc("ExtraCol", "Special value " + i);
-//            }
-
             obj.setAdHoc("ID", i % 10);
             obj.setAdHoc("Price", i * 3.1415926);
             obj.setAdHoc("Active", i % 2 == 0 ? true : false);

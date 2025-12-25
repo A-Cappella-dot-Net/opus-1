@@ -181,10 +181,12 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
         _aeron = Aeron.connect(new Aeron.Context());
     }
 
+    @Override
     public void addSnippet(TightLoopSnippet snippet) {
         _tightLoopThread.add(snippet);
     }
 
+    @Override
     public boolean onTLT() {
         return _tightLoopThread.isCurrentThread();
     }
@@ -532,6 +534,7 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
         }
     }
 
+    @Override
     public int publish(Obj obj) throws Exception {
         String subject = obj.getSubject();
         if (subject==null) {
@@ -566,6 +569,7 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
         return offer(pubIpc, pubMct, buffer, len);
     }
 
+    @Override
     public int serialize(Obj obj) throws Exception {
         String subject = obj.getSubject();
         if (subject==null) {
@@ -600,6 +604,7 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
         return offer(pubIpc, pubMct, buffer, len);
     }
 
+    @Override
     public int request(SnapRequestObj obj) {
         obj.getRtg().setOriginClient(_myInfo.getId());
         obj.setSerialId(0L);
@@ -612,6 +617,7 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
         return offer(_pubIpc_3, _pubMct_3, buffer, len);
     }
 
+    @Override
     public int reply(Obj obj, PubType pubType) {
         if (obj instanceof MapObj) {
             ObjMetaInfo metaInfo = ObjectManager.getInstance().getSubjectMetaInfo(obj.getSubject());
@@ -628,6 +634,7 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
         return offer(_pubIpc_3, _pubMct_3, buffer, len);
     }
 
+    @Override
     public void loopback(Obj obj) throws Exception {
         obj.setOnLoopback(true);
         obj.setSerialId(0L);

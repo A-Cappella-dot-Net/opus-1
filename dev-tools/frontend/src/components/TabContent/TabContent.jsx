@@ -464,7 +464,6 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
         sendScrollUpdate({
           type: 'scroll_update',
           tabId: tabId,
-          startCol: startCol,
           scrollLeftPixels: viewportPositionFromLeft
         });
       }

@@ -98,7 +98,7 @@ public class SubscriberTab implements ISnSListener {
         _viewportHeight = viewportHeight;
         _viewportCapacity = (int) Math.ceil(viewportHeight / _rowHeight);
         _bufferCapacity = (int) (_viewportCapacity * BUFFER_CAPACITY_MULTIPLIER);
-        log.info("=== viewportHeight={} viewportCapacity={} bufferCapacity={}", _viewportHeight, _viewportCapacity, _bufferCapacity);
+        log.debug("=== viewportHeight={} viewportCapacity={} bufferCapacity={}", _viewportHeight, _viewportCapacity, _bufferCapacity);
     }
 
     public void resetTab() {
@@ -122,18 +122,16 @@ public class SubscriberTab implements ISnSListener {
         updateCapacities(_viewportHeight);
     }
 
-    public synchronized void handleScrollUpdate(JsonObject msg) {
-        ScrollDirection scrollDirection = ScrollDirection.NONE;
-        if (msg.has("viewportPositionFromTop")) {
-            _viewportPositionFromTop = msg.get("viewportPositionFromTop").getAsDouble();
-            scrollDirection = ScrollDirection.VERTICAL;
-        } else if (msg.has("startCol") && msg.has("scrollLeftPixels")) {
-            // TODO do not pass startCol from client to server
-            _viewportPositionFromLeft = msg.get("scrollLeftPixels").getAsInt();
-            scrollDirection = ScrollDirection.HORIZONTAL;
-        }
+    public synchronized void handleVerticalScrollUpdate(double viewportPositionFromTop) {
+        _viewportPositionFromTop = viewportPositionFromTop;
 
-        sendViewportData(true, scrollDirection, 0, false);
+        sendViewportData(true, ScrollDirection.VERTICAL, 0, false);
+    }
+
+    public synchronized void handleHorizontalScrollUpdate(int scrollLeftPixels) {
+        _viewportPositionFromLeft = scrollLeftPixels;
+
+        sendViewportData(true, ScrollDirection.HORIZONTAL, 0, true);
     }
 
     public synchronized void handleResizeColumn(int colIndex, int newWidth) {
@@ -156,7 +154,7 @@ public class SubscriberTab implements ISnSListener {
         _table.handleReorderColumns(columnOrder);
 
         if (_testViewport != null) {
-            _testViewport.handleColumnUpdate(_table.getOrderedColumns());
+            _testViewport.updateIdColumnIndex(_table, _startCol, _endCol);
         }
 
         sendViewportData(false, ScrollDirection.NONE, 0, true);
@@ -205,7 +203,7 @@ public class SubscriberTab implements ISnSListener {
             }
             sendUpdateState("running");
 
-            if ("ping".equals(subject)) {
+            if (_sessionHandler._client instanceof DummyPrestoClient && "ping".equals(subject)) {
                 _testViewport = new TestViewport((pinByKey) ? "id" : "payload", appendToBottom);
             } else {
                 _testViewport = null;
@@ -474,7 +472,7 @@ public class SubscriberTab implements ISnSListener {
         _sessionHandler.send(update);
 
         if (_testViewport != null) {
-            _testViewport.handleColumnUpdate(_table.getOrderedColumns());
+            _testViewport.updateIdColumnIndex(_table, _startCol, _endCol);
         }
     }
 
@@ -587,13 +585,17 @@ public class SubscriberTab implements ISnSListener {
         }
     }
 
-    private void sendScrollMetricsHorizontal(double horizontalThumbRatio, double horizontalThumbPosition) {
+    private void sendScrollMetricsHorizontal(double horizontalThumbRatio, double horizontalThumbPosition, int startCol, int endCol) {
         Map<String, Object> response = new HashMap<>();
         response.put("type", "scroll_metrics_horizontal");
         response.put("tabId", _tabId);
 
         response.put("horizontalThumbRatio", horizontalThumbRatio);
         response.put("horizontalThumbPosition", horizontalThumbPosition);
+
+        if (_testViewport != null) {
+            _testViewport.updateIdColumnIndex(_table, _startCol, _endCol);
+        }
 
         _sessionHandler.send(response);
     }
@@ -824,7 +826,9 @@ public class SubscriberTab implements ISnSListener {
 
     private void calculateTopOffset(ScrollMetrics scrollMetrics) {
         // calculate topOffset
-        double partialRowHeight = _viewportHeight % _rowHeight;
+        int totalRows = _table.getTotalRows();
+        double totalHeight = totalRows * _rowHeight;
+        double partialRowHeight = (_viewportHeight > totalHeight) ? 0.0 : _viewportHeight % _rowHeight;
         double maxTopOffset = (partialRowHeight == 0) ? 0 : _rowHeight - partialRowHeight;
         _topOffset = (int) Math.rint(scrollMetrics._thumbPosition * maxTopOffset); // How many pixels of first row are hidden
     }
@@ -864,35 +868,35 @@ public class SubscriberTab implements ISnSListener {
 
             // calculate startCol
             _startCol = 0;
-            int cumWidth = _table.colWidth(_startCol);
-            while (cumWidth < _viewportPositionFromLeft) {
+            int cumWidth1 = _table.colWidth(_startCol);
+            while (cumWidth1 < _viewportPositionFromLeft) {
                 _startCol++;
-                cumWidth += _table.colWidth(_startCol);
+                cumWidth1 += _table.colWidth(_startCol);
             }
-            log.trace("=== B. startCol={}", _startCol);
+            log.trace("=== B. startCol={} cumWidth1={}", _startCol, cumWidth1);
 
             // calculate endCol
             _endCol = _startCol + 1;
-            cumWidth -= _viewportPositionFromLeft;
-            while (_endCol < totalCols && cumWidth <= _viewportWidth) {
-                cumWidth += _table.colWidth(_endCol);
+            int cumWidth2 = cumWidth1 - _viewportPositionFromLeft;
+            int cumWidth3 = _table.colWidth(_startCol);
+            while (_endCol < totalCols && cumWidth2 <= _viewportWidth) {
+                cumWidth2 += _table.colWidth(_endCol);
+                cumWidth3 += _table.colWidth(_endCol);
                 _endCol++;
             }
-            log.trace("=== C. endCol={} visibleColumnsWidth={}", _endCol, cumWidth);
+            log.trace("=== C. endCol={} cumWidth2={} cumWidth3={}", _endCol, cumWidth2, cumWidth3);
 
-            // adjust startCol if there is space at the end
-            while (cumWidth < _viewportWidth) {
-                _startCol--;
-                cumWidth += _table.colWidth(_startCol);
+            if (cumWidth2 < _viewportWidth) {
+                while (cumWidth3 < totalWidth) {
+                    _startCol--;
+                    cumWidth3 += _table.colWidth(_startCol);
+                }
+                _leftOffset = cumWidth3 - _viewportWidth;
+                log.trace("=== D.1 startCol={} cumWidth3={} leftOffset={}", _startCol, cumWidth3, _leftOffset);
+            } else {
+                _leftOffset = cumWidth3 - cumWidth2;
+                log.trace("=== D.2 cumWidth1={} leftOffset={}", cumWidth1, _leftOffset);
             }
-
-            // calculate leftOffset
-            cumWidth = 0;
-            for (int i = 0; i < _startCol; i++) {
-                cumWidth += _table.colWidth(i);
-            }
-            _leftOffset = _viewportPositionFromLeft - cumWidth;
-            log.trace("=== D. startCol={} additionalVisibleColumnsWidth={} leftOffset={}", _startCol, cumWidth, _leftOffset);
         }
     }
 
@@ -908,10 +912,21 @@ public class SubscriberTab implements ISnSListener {
             if (totalWidth > _viewportWidth) {
                 horizontalThumbRatio = Math.max(0.05, Math.min(1.0, (double) _viewportWidth / totalWidth));
                 int scrollableWidth = totalWidth - _viewportWidth;
-                horizontalThumbPosition = Math.max(0.0, Math.min(1.0, (double) _viewportPositionFromLeft / scrollableWidth));
+                log.trace("=== calculate horizontalThumbPosition: totalWidth={} _viewportWidth={} => scrollableWidth={}", totalWidth, _viewportWidth, scrollableWidth);
+
+                int cumWidth = 0;
+                for (int i = 0; i < _startCol; i++) {
+                    cumWidth += _table.colWidth(i);
+                }
+                log.trace("=== calculate horizontalThumbPosition: cumWidth={} _leftOffset={} => cumWidth={}", cumWidth, _leftOffset, cumWidth + _leftOffset);
+                cumWidth += _leftOffset;
+
+                horizontalThumbPosition = Math.max(0.0, Math.min(1.0, (double) cumWidth / scrollableWidth));
+                log.trace("=== calculate horizontalThumbPosition => {}", horizontalThumbPosition);
+
             }
         }
-        sendScrollMetricsHorizontal(horizontalThumbRatio, horizontalThumbPosition);
+        sendScrollMetricsHorizontal(horizontalThumbRatio, horizontalThumbPosition, _startCol, _endCol);
     }
 
 }

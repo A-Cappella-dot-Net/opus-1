@@ -26,12 +26,11 @@ import java.util.Map;
 public class PublisherHandler {
     private static final Logger log = LoggerFactory.getLogger(PublisherHandler.class);
 
-    public static String NL = "\n";
+    private static final String NL = "\n";
 
-    public final PrestoClient _client;
-
-    private final SessionHandler sessionHandler;
     private final String remote;
+    private final PrestoClient _client;
+    private final SessionHandler sessionHandler;
 
     public PublisherHandler(SessionHandler sessionHandler, PrestoClient client) {
         this.sessionHandler = sessionHandler;
@@ -40,7 +39,6 @@ public class PublisherHandler {
     }
 
     public void resetTabs() {
-
     }
 
     public void handleAuthenticatedMessage(JsonObject msg) {

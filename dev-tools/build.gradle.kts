@@ -15,6 +15,8 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.jetty.server)
     implementation(libs.jetty.server.websocket)
+
+    implementation(libs.sbe)
 }
 
 tasks.test {

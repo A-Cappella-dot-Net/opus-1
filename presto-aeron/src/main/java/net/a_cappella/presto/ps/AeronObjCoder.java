@@ -127,7 +127,7 @@ public class AeronObjCoder {
         if (pubType==PubType.SNP_BEGIN || pubType==PubType.SNP_END || pubType==PubType.SNP_MSG || pubType==PubType.SNP_HWM) {
             // is this RPL not for this client?
             if (!_myClientId.equals(originClient)) {
-                log.debug("Not my RPL message {}", originClient);
+                log.debug("Not my RPL message {} {}", originClient, _myClientId);
                 return null;
             }
         }
