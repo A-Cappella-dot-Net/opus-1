@@ -34,10 +34,6 @@ public class ViewServer {
         ShutdownHook.registerShutdownAction(() -> stop());
     }
 
-    public static void main(String[] args) throws Exception {
-        new ViewServer(new DummyPrestoClient()).init();
-    }
-
     public void init() throws Exception {
         _client.waitUntilInitialized();
 

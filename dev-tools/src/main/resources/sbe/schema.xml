@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+                   xmlns:xi="http://www.w3.org/2001/XInclude"
+                   package="sbe.generated"
+                   id="1"
+                   version="0"
+                   semanticVersion="1.0"
+                   description="Presto Messages SBE schema"
+                   byteOrder="littleEndian">
+
+    <xi:include href="../../../../../presto-aeron/src/main/resources/sbe/common.xml"/>
+
+    <types>
+        <type name="RemoteType" length="48" primitiveType="char" semanticType="String"/>
+    </types>
+
+    <sbe:message name="WebSocketMsgObj" id="64001" description="Raw Web Socket Message">
+        <field name="remote" id="1" type="RemoteType"/>
+        <!-- String msg -->
+        <data name="msg" id="2" type="varStringEncoding"/>
+    </sbe:message>
+
+</sbe:messageSchema>

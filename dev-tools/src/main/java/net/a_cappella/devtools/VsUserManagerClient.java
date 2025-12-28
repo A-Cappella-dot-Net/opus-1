@@ -12,14 +12,14 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.function.Consumer;
 
-public class MyUserManagerClient extends UserManagerClient {
-    private static final Logger log = LoggerFactory.getLogger(MyUserManagerClient.class);
+public class VsUserManagerClient extends UserManagerClient {
+    private static final Logger log = LoggerFactory.getLogger(VsUserManagerClient.class);
 
     private String _userStatusResult = "";
     private String _ecnUserStatusResult = "";
     private Consumer<UserStatusObj> _consumer;
 
-    public MyUserManagerClient(PrestoClient client, Consumer<UserStatusObj> consumer) {
+    public VsUserManagerClient(PrestoClient client, Consumer<UserStatusObj> consumer) {
         super(client, null);
         _consumer = consumer;
     }

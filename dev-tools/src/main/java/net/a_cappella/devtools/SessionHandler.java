@@ -5,6 +5,13 @@ import net.a_cappella.continuo.datatypes.PDate;
 import net.a_cappella.continuo.datatypes.PNanos;
 import net.a_cappella.continuo.datatypes.PTime;
 import net.a_cappella.continuo.datatypes.PTimestamp;
+import net.a_cappella.continuo.managed.MsgInstantiator;
+import net.a_cappella.continuo.managed.ObjectManager;
+import net.a_cappella.continuo.managed.Pool;
+import net.a_cappella.continuo.msg.Msg;
+import net.a_cappella.devtools.obj.DevToolsConstants;
+import net.a_cappella.devtools.obj.WebSocketMsgCoder;
+import net.a_cappella.devtools.obj.WebSocketMsgObj;
 import net.a_cappella.presto.ps.PrestoClient;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.WebSocketListener;
@@ -12,7 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
@@ -21,6 +30,33 @@ import java.util.concurrent.TimeUnit;
 
 public class SessionHandler implements WebSocketListener {
     private static final Logger log = LoggerFactory.getLogger(SessionHandler.class);
+
+    private static final ObjectManager _objectManager = ObjectManager.getInstance();
+    static {
+        try {
+            MsgInstantiator webSocketMsgInstantiator = new MsgInstantiator(WebSocketMsgObj.class.getName(), WebSocketMsgCoder.class.getName());
+
+            _objectManager.setMsgInstantiators(Arrays.asList(
+                    webSocketMsgInstantiator
+            ));
+            _objectManager.setMsgPools(Arrays.asList(
+                    new Pool<Msg>(webSocketMsgInstantiator, 10, 10)
+            ));
+        } catch (Exception x) {
+            x.printStackTrace();
+        }
+    }
+
+    private static final ThreadLocal<WebSocketMsgObj> _webSocketMsgThreadLocal = new ThreadLocal<>() {
+        public WebSocketMsgObj initialValue() {
+            return new WebSocketMsgObj();
+        }
+        public WebSocketMsgObj get() {
+            WebSocketMsgObj obj = super.get();
+            obj.reset();
+            return obj;
+        }
+    };
 
     public final PrestoClient _client;
     private final ScheduledExecutorService _scheduler;
@@ -53,6 +89,7 @@ public class SessionHandler implements WebSocketListener {
             .create();
 
     public Session _session;
+    public String _host;
     private ScheduledFuture<?> _pingTask;
 
     public String _username;
@@ -61,6 +98,8 @@ public class SessionHandler implements WebSocketListener {
 
     private SubscriberHandler _subscriberHandler;
     private PublisherHandler _publisherHandler;
+
+    private final String _webSocketMsgSubSql = "select * from " + DevToolsConstants.SUBJ_WEBSOCKET_MSG + " where remote='%s'";
 
     public SessionHandler(ViewServer viewServer) {
         _client = viewServer._client;
@@ -83,6 +122,15 @@ public class SessionHandler implements WebSocketListener {
                 log.error("{} Failed to send ping: {}", _remote, e.getMessage());
             }
         }, period, period, TimeUnit.SECONDS);
+
+        try {
+            _client.subscribe(String.format(_webSocketMsgSubSql, _remote), (obj, subsId) -> {
+                onWebSocketMessage((WebSocketMsgObj) obj);
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     public void stop() {
@@ -125,6 +173,19 @@ public class SessionHandler implements WebSocketListener {
 
     @Override
     public void onWebSocketText(String message) {
+        WebSocketMsgObj obj = _webSocketMsgThreadLocal.get();
+        obj.set(_remote, message);
+        try {
+            _client.loopback(obj);
+        } catch (Exception e) {
+            log.error("{}", _remote, e);
+        }
+    }
+
+    public void onWebSocketMessage(WebSocketMsgObj obj) {
+        // it is guaranteed to be my message because of the where clause
+        String message = obj.getMsg();
+
         try {
             JsonObject msg = _gsonIn.fromJson(message, JsonObject.class);
             String type = msg.get("type").getAsString();

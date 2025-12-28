@@ -5,8 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class SubscriberHandler {
     private static final Logger log = LoggerFactory.getLogger(SubscriberHandler.class);
@@ -14,7 +14,7 @@ public class SubscriberHandler {
     private final SessionHandler _sessionHandler;
     private final String _remote;
 
-    private final Map<String, SubscriberTab> _tabs = new ConcurrentHashMap<>();
+    private final Map<String, SubscriberTab> _tabs = new HashMap<>();
 
     public SubscriberHandler(SessionHandler sessionHandler) {
         _sessionHandler = sessionHandler;

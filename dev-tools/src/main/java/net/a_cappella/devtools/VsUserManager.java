@@ -6,12 +6,9 @@ import net.a_cappella.madrigal.common.obj.UserStatusObj;
 import net.a_cappella.madrigal.user.IUserManagerClient;
 import net.a_cappella.presto.ps.AeronClient;
 import net.a_cappella.presto.ps.PrestoClient;
-import org.eclipse.jetty.websocket.api.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -34,7 +31,6 @@ public class VsUserManager {
         String pwd = userStatus.getPwd();
         int reqId = userStatus.getReqId();
         SessionHandler handler = _sessionHandlersByReqId.remove(reqId);
-        Session session = handler._session;
         JsonObject result;
         if (userStatus.getReqStatus() == MadrigalUserStatus.On) {
             handler._username = uid;
@@ -45,24 +41,17 @@ public class VsUserManager {
         } else {
             result = loginFailed(uid);
         }
-        sendMessage(session, result);
+        handler.sendMessage(result);
     };
 
-    public void sendMessage(Session session, JsonObject msg) {
-        try {
-            session.getRemote().sendString(msg.toString());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
 
     public VsUserManager(PrestoClient client) {
         _client = client;
         if (_client instanceof AeronClient) {
-            _userMgr = new MyUserManagerClient(_client, _consumer);
+            _userMgr = new VsUserManagerClient(_client, _consumer);
         } else {
-            _userMgr = new DummyUserManagerClient(_consumer);
+            _userMgr = new LoopbackUserManagerClient(_consumer);
         }
     }
 
@@ -87,8 +76,7 @@ public class VsUserManager {
     }
 
     public void login(SessionHandler handler, String uid, String pwd) {
-        Session session = handler._session;
-        String host = ((InetSocketAddress) session.getRemoteAddress()).getHostName();
+        String host = handler._host;
         AuthDetails ad = _authDetailsByUid.get(uid);
         if (ad != null && ad._pwd != null && System.currentTimeMillis() < ad._expiry) {
             if (pwd.equals(ad._pwd)) {
@@ -97,9 +85,9 @@ public class VsUserManager {
                 if (!uidAuthDetail.containsKey(uid)) {
                     uidAuthDetail.put(uid, ad);
                 } // otherwise it's the ad object which we just updated
-                sendMessage(session, loginSucceeded(uid, pwd));
+                handler.sendMessage(loginSucceeded(uid, pwd));
             } else {
-                sendMessage(session, loginFailed(uid));
+                handler.sendMessage(loginFailed(uid));
             }
         } else { // need to login
             int reqId = _userMgr.login(uid, pwd, false);

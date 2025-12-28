@@ -3,6 +3,32 @@ plugins {
     id("com.github.node-gradle.node") version "7.0.2"
 }
 
+val sbeOutputDir = layout.buildDirectory.dir("generated-sources")
+
+sourceSets["main"].java.srcDir(sbeOutputDir)
+
+val generateSbeSources by tasks.registering(JavaExec::class) {
+    group = "code generation"
+    description = "Generates Java sources from SBE schema"
+
+    classpath = configurations.runtimeClasspath.get()
+    mainClass.set("uk.co.real_logic.sbe.SbeTool")
+    jvmArgs = listOf(
+        "-Dsbe.output.dir=${sbeOutputDir.get()}",
+        "-Dsbe.xinclude.aware=true",
+        "-Dsbe.java.generate.interfaces=true"
+    )
+    args = listOf(
+        "$projectDir/src/main/resources/sbe/schema.xml"
+    )
+
+    outputs.upToDateWhen { false }
+}
+
+tasks.compileJava {
+    dependsOn(generateSbeSources)
+}
+
 dependencies {
     implementation(project(":madrigal"))
 

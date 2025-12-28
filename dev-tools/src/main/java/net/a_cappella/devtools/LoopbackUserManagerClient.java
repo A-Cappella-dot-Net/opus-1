@@ -13,8 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class DummyUserManagerClient implements IUserManagerClient {
-    private static final Logger log = LoggerFactory.getLogger(DummyUserManagerClient.class);
+public class LoopbackUserManagerClient implements IUserManagerClient {
+    private static final Logger log = LoggerFactory.getLogger(LoopbackUserManagerClient.class);
 
     private static final Map<String, String> USERS = new HashMap<>();
     static {
@@ -38,7 +38,7 @@ public class DummyUserManagerClient implements IUserManagerClient {
     private int _responseDelayMillis = 100;
 
 
-    public DummyUserManagerClient(Consumer<UserStatusObj> consumer) {
+    public LoopbackUserManagerClient(Consumer<UserStatusObj> consumer) {
         _consumer = consumer;
     }
 

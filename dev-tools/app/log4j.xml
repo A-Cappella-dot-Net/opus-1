@@ -13,7 +13,7 @@
     <appender name="STDOUT" class="org.apache.log4j.ConsoleAppender">
         <param name="Target" value="System.out" />
         <layout class="org.apache.log4j.PatternLayout">
-            <param name="ConversionPattern" value="%d{ABSOLUTE} %p [%c{1}] %m%n" />
+            <param name="ConversionPattern" value="%d{ABSOLUTE} %p [%t][%c{1}] %m%n" />
         </layout>
         <filter class="org.apache.log4j.varia.LevelRangeFilter">
             <param name="LevelMin" value="TRACE" />
@@ -71,6 +71,16 @@
         <level value="INFO" />
     </logger>
 
+    <logger name="net.a_cappella.presto.managed.ObjectManager">
+        <level value="INFO" />
+    </logger>
+    <logger name="net.a_cappella.continuo.managed.MsgInstantiator">
+        <level value="INFO" />
+    </logger>
+
+    <logger name="net.a_cappella.presto.ps.AeronObjCoder">
+        <level value="INFO" />
+    </logger>
     <logger name="net.a_cappella.presto.ps.AeronClient">
         <level value="INFO" />
     </logger>
@@ -88,22 +98,15 @@
         <level value="INFO" />
     </logger>
 
-    <logger name="net.a_cappella.presto.managed.ObjectManager">
-        <level value="INFO" />
-    </logger>
-
     <logger name="net.a_cappella.devtools.TableData">
         <level value="INFO" />
     </logger>
 
     <logger name="net.a_cappella.devtools.SubscriberTab">
-        <level value="INFO" />
+        <level value="TRACE" />
     </logger>
     <logger name="net.a_cappella.devtools.SessionHandler">
         <level value="DEBUG" />
-    </logger>
-    <logger name="net.a_cappella.devtools.TestViewport">
-        <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.devtools.LoopbackPrestoClient">
         <level value="INFO" />
@@ -111,13 +114,10 @@
     <logger name="net.a_cappella.devtools.ObjGenerator">
         <level value="INFO" />
     </logger>
+    <logger name="net.a_cappella.devtools.TestViewport">
+        <level value="DEBUG" />
+    </logger>
 
-    <logger name="net.a_cappella.continuo.managed.MsgInstantiator">
-        <level value="INFO" />
-    </logger>
-    <logger name="net.a_cappella.presto.ps.AeronObjCoder">
-        <level value="INFO" />
-    </logger>
 
 
     <!-- ============================== -->

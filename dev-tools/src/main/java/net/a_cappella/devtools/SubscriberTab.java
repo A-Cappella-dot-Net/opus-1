@@ -110,7 +110,7 @@ public class SubscriberTab implements ISnSListener {
     }
 
 
-    public synchronized void handleViewportUpdate(int viewportWidth, double viewportHeight) {
+    public void handleViewportUpdate(int viewportWidth, double viewportHeight) {
         _viewportWidth = viewportWidth;
         updateCapacities(viewportHeight);
 
@@ -122,19 +122,19 @@ public class SubscriberTab implements ISnSListener {
         updateCapacities(_viewportHeight);
     }
 
-    public synchronized void handleVerticalScrollUpdate(double viewportPositionFromTop) {
+    public void handleVerticalScrollUpdate(double viewportPositionFromTop) {
         _viewportPositionFromTop = viewportPositionFromTop;
 
         sendViewportData(true, ScrollDirection.VERTICAL, 0, false);
     }
 
-    public synchronized void handleHorizontalScrollUpdate(int scrollLeftPixels) {
+    public void handleHorizontalScrollUpdate(int scrollLeftPixels) {
         _viewportPositionFromLeft = scrollLeftPixels;
 
         sendViewportData(true, ScrollDirection.HORIZONTAL, 0, true);
     }
 
-    public synchronized void handleResizeColumn(int colIndex, int newWidth) {
+    public void handleResizeColumn(int colIndex, int newWidth) {
         log.info("=== resizing column {}", _table.getOrderedColumn(colIndex));
         int oldWidth = _table.getOrderedColumn(colIndex).width;
 
@@ -150,7 +150,7 @@ public class SubscriberTab implements ISnSListener {
         sendViewportData(false, ScrollDirection.NONE, 0, true);
     }
 
-    public synchronized void handleReorderColumns(ArrayList<Integer> columnOrder) {
+    public void handleReorderColumns(ArrayList<Integer> columnOrder) {
         _table.handleReorderColumns(columnOrder);
 
         if (_testViewport != null) {
@@ -203,8 +203,8 @@ public class SubscriberTab implements ISnSListener {
             }
             sendUpdateState("running");
 
-            if (_sessionHandler._client instanceof DummyPrestoClient && "ping".equals(subject)) {
-                _testViewport = new TestViewport((pinByKey) ? "id" : "payload", appendToBottom);
+            if (_sessionHandler._client instanceof LoopbackPrestoClient && "ping".equals(subject)) {
+                _testViewport = new TestViewport(_remote, (pinByKey) ? "id" : "payload", appendToBottom, pinByKey);
             } else {
                 _testViewport = null;
             }
@@ -419,7 +419,7 @@ public class SubscriberTab implements ISnSListener {
         addRow(row, (_pinByKey) ? obj.getObjKey() : null);
     }
 
-    private synchronized void addRow(Map<String, Object> rowData, ObjKey objKey) {
+    private void addRow(Map<String, Object> rowData, ObjKey objKey) {
         if (!_table._paused) {
             int columnsBefore = _table.getTotalCols();
             _table.addNewColumns(rowData);
