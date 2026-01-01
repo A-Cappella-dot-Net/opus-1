@@ -36,7 +36,17 @@ public class TableData {
         // Check if column already exists
         for (ColumnDef col : _columns) {
             if (col.name.equals(column.name)) {
-                return false; // Column already exists
+                if ("tbd".equals(col.type)) {
+                    col.type = column.type;
+                    col.width = column.width;
+                    col.align = column.align;
+                    col.decimals = column.decimals;
+                    col.format = column.format;
+                    log.info("{} Updated 'tbd' column {} to table {}", _remote, column.name, _tabId);
+                    return true;
+                } else {
+                    return false; // Column already exists
+                }
             }
         }
         _columns.add(column);

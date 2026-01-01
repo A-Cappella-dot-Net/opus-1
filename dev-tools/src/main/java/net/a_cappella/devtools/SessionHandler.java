@@ -135,6 +135,8 @@ public class SessionHandler implements WebSocketListener {
 
     public void stop() {
         _handlersBySession.remove(_session);
+        _userManager.onSessionEnd(this);
+
         // Cancel the ping task
         if (_pingTask != null) {
             _pingTask.cancel(false);
@@ -153,6 +155,7 @@ public class SessionHandler implements WebSocketListener {
     @Override
     public void onWebSocketConnect(Session session) {
         _session = session;
+        _host = ((InetSocketAddress) session.getRemoteAddress()).getHostName();
         _handlersBySession.put(session, this);
         _remote = session.getRemoteAddress().toString();
 
@@ -249,6 +252,24 @@ public class SessionHandler implements WebSocketListener {
         }
     }
 
+    public void authenticated(String uid, String pwd) {
+        _username = uid;
+        _password = pwd;
+        _isAuthenticated = true;
+    }
+
+    public void notAuthenticated(String uid, String pwd) {
+        _username = uid;
+        _password = pwd;
+        _isAuthenticated = false;
+    }
+
+    public void forceLogout() {
+        _isAuthenticated = false;
+        resetTabs();
+        sendError("Not authenticated", null);
+    }
+
     private void handleLogin(JsonObject msg) {
         String username = msg.get("username").getAsString();
         String password = msg.get("password").getAsString();
@@ -276,6 +297,10 @@ public class SessionHandler implements WebSocketListener {
         _password = null;
         _isAuthenticated = false;
 
+        resetTabs();
+    }
+
+    public void resetTabs() {
         if (_subscriberHandler != null) {
             _subscriberHandler.resetTabs();
         }

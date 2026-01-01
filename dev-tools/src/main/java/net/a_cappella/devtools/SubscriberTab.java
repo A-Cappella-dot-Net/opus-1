@@ -317,48 +317,48 @@ public class SubscriberTab implements ISnSListener {
 
     private void setColumns(String subject, List<String> fixedColumnNames) {
         ObjMetaInfo metaInfo = ObjectManager.getInstance().getSubjectMetaInfo(subject);
-        if (metaInfo == null) {
-            sendStatus("Unknown subject '"+subject+"'");
-        } else {
-            List<ColumnDef> headerColumns = new ArrayList<>();
-            for (FieldMetaInfo fmi : ObjMetaInfo._headerFieldsMap.values()) {
-                headerColumns.add(getColumnDef(fmi));
-            }
-            List<ColumnDef> allColumns = new ArrayList<>();
+
+        List<ColumnDef> headerColumns = new ArrayList<>();
+        for (FieldMetaInfo fmi : ObjMetaInfo._headerFieldsMap.values()) {
+            headerColumns.add(getColumnDef(fmi));
+        }
+        List<ColumnDef> allColumns = new ArrayList<>();
+        if (metaInfo != null) {
             for (FieldMetaInfo fmi : metaInfo.getKeys()) {
                 allColumns.add(getColumnDef(fmi));
             }
             for (FieldMetaInfo fmi : metaInfo.getNonKeys()) {
                 allColumns.add(getColumnDef(fmi));
             }
+        }
 
-            for (String colName : fixedColumnNames) {
-                if ("*".equals(colName)) {
-                    _hasAllColumns = true;
-                } else {
-                    ColumnDef columnDef = remove(allColumns, colName);
+        for (String colName : fixedColumnNames) {
+            if ("*".equals(colName)) {
+                _hasAllColumns = true;
+            } else {
+                ColumnDef columnDef = remove(allColumns, colName);
+                if (columnDef == null) {
+                    // header columns need to be explicitly added to the select statement
+                    columnDef = remove(headerColumns, colName);
                     if (columnDef == null) {
-                        // header columns need to be explicitly added to the select statement
-                        columnDef = remove(headerColumns, colName);
-                        if (columnDef == null) {
-                            _columns.add(new ColumnDef(colName, "tbd", 250));
-                        } else {
-                            _columns.add(columnDef);
-                        }
+                        // will update type when the first row that contains this column is received
+                        _columns.add(new ColumnDef(colName, "tbd", 250));
                     } else {
                         _columns.add(columnDef);
                     }
+                } else {
+                    _columns.add(columnDef);
                 }
             }
-            if (_hasAllColumns) {
-                // add remaining columns to the end
-                _columns.addAll(allColumns);
-            }
-
-            _table.setColumns(_columns);
-            sendColumnUpdate();
-
         }
+        if (_hasAllColumns) {
+            // add remaining columns to the end
+            _columns.addAll(allColumns);
+        }
+
+        _table.setColumns(_columns);
+        sendColumnUpdate();
+
     }
 
     @Override
@@ -390,7 +390,6 @@ public class SubscriberTab implements ISnSListener {
                 for (String fieldName : obj.getAdHocFields()) {
                     Object fieldValue = obj.get(fieldName);
                     row.put(fieldName, fieldValue);
-                    // TODO this adds one column at a time; can this be batched?
                     added |= _table.addColumn(ColumnDef.newAdHocCol(fieldName, fieldValue));
                 }
                 if (added) {
@@ -406,7 +405,6 @@ public class SubscriberTab implements ISnSListener {
                 row.put(fieldName, fieldValue);
                 if ("tbd".equals(columnDef.type)) {
                     ColumnDef adHocCol = ColumnDef.newAdHocCol(fieldName, fieldValue);
-                    // TODO make sure GUI accepts columnDef updates
                     added |= _table.addColumn(adHocCol);
                     columnDef.type = adHocCol.type; // update column type
                 }

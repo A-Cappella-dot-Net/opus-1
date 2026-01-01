@@ -105,7 +105,14 @@ public class MadrigalUserManager {
 
 	@VisibleForTesting
 	public void onCredentialsMessage(CredentialsObj credentials) {
-       	_credentialsCache.put(credentials.getUid(), credentials);
+		String uid = credentials.getUid();
+		CredentialsObj prevCredentials = _credentialsCache.put(uid, credentials);
+		if (prevCredentials != null && !prevCredentials.getPwd().equals(credentials.getPwd())) {
+			StatusAndClIds statusAndClIds = _cache.get(uid);
+			if (statusAndClIds != null) for (String clId : statusAndClIds._clIds) {
+				statusAndClIds._userStatus = publishResponse(clId, -1, uid, logout, Off, Off, "Password Reset");
+			}
+		}
 	}
 
 	@VisibleForTesting

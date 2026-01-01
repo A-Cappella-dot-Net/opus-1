@@ -10,10 +10,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
-
-import static javax.management.timer.Timer.ONE_DAY;
 
 public class VsUserManager {
     private static final Logger log = LoggerFactory.getLogger(VsUserManager.class);
@@ -21,27 +21,41 @@ public class VsUserManager {
     private final PrestoClient _client;
     private final IUserManagerClient _userMgr;
 
-    private Map<String, AuthDetails> _authDetailsByUid = new HashMap<>(); // (pwd, expiry)
-    private Map<String, Map<String, AuthDetails>> _uidAuthDetailsByHost = new HashMap<>(); // (host, (uid, (pwd, expiry)))
+    private Map<Integer, SessionHandler> _handlersByReqId = new HashMap<>(); // pending requests to MUM
+    private Map<String, String> _loggedInUsers = new HashMap<>(); // (uid, pwd) - caches credentials of logged in users
 
-    private Map<Integer, SessionHandler> _sessionHandlersByReqId = new HashMap<>();
+    // logout affects all sessions associated to the initiating host and leaves the others unchanged
+    private Map<String, Map<String, Set<SessionHandler>>> _handlersByHostAnUid = new HashMap<>(); // (host, (uid, handler))
 
     private Consumer<UserStatusObj> _consumer = (userStatus) -> {
         String uid = userStatus.getUid();
-        String pwd = userStatus.getPwd();
         int reqId = userStatus.getReqId();
-        SessionHandler handler = _sessionHandlersByReqId.remove(reqId);
-        JsonObject result;
-        if (userStatus.getReqStatus() == MadrigalUserStatus.On) {
-            handler._username = uid;
-            handler._password = pwd;
-            handler._isAuthenticated = true;
 
-            result = loginSucceeded(uid, pwd);
+        if (reqId < 0) { // unsolicited logoff (e.g., when the password is changed)
+            _loggedInUsers.remove(uid);
+            _handlersByHostAnUid.forEach((host, handlersByUid) -> {
+                Set<SessionHandler> handlers = handlersByUid.get(uid);
+                if (handlersByUid != null) {
+                    handlers.forEach(h -> h.forceLogout());
+                }
+            });
         } else {
-            result = loginFailed(uid);
+            SessionHandler handler = _handlersByReqId.remove(reqId);
+            if (handler != null) {
+                // the password is not coming back in UserStatusObj so it's retrieved from handler
+                String pwd = handler._password;
+                if (userStatus.getReqStatus() == MadrigalUserStatus.On) {
+                    _loggedInUsers.put(uid, pwd);
+                    handler.authenticated(uid, pwd);
+                    _handlersByHostAnUid.computeIfAbsent(handler._host, h -> new HashMap<>())
+                            .computeIfAbsent(uid, u -> new HashSet<>())
+                            .add(handler);
+                    handler.sendMessage(loginSucceeded(uid, pwd));
+                } else { // userStatus.getReqStatus() == MadrigalUserStatus.Off
+                    handler.sendMessage(loginFailed(uid));
+                }
+            }
         }
-        handler.sendMessage(result);
     };
 
 
@@ -75,50 +89,65 @@ public class VsUserManager {
         return response;
     }
 
+
+
+
+
+
     public void login(SessionHandler handler, String uid, String pwd) {
-        String host = handler._host;
-        AuthDetails ad = _authDetailsByUid.get(uid);
-        if (ad != null && ad._pwd != null && System.currentTimeMillis() < ad._expiry) {
-            if (pwd.equals(ad._pwd)) {
-                ad._expiry = System.currentTimeMillis() + ONE_DAY;
-                Map<String, AuthDetails> uidAuthDetail = _uidAuthDetailsByHost.computeIfAbsent(host, h -> new HashMap<>());
-                if (!uidAuthDetail.containsKey(uid)) {
-                    uidAuthDetail.put(uid, ad);
-                } // otherwise it's the ad object which we just updated
+        if (_loggedInUsers.containsKey(uid)) {
+            String verPwd = _loggedInUsers.get(uid);
+            if (verPwd.equals(pwd)) {
+                handler.authenticated(uid, pwd);
+                _handlersByHostAnUid.computeIfAbsent(handler._host, h -> new HashMap<>())
+                        .computeIfAbsent(uid, u -> new HashSet<>())
+                        .add(handler);
                 handler.sendMessage(loginSucceeded(uid, pwd));
             } else {
+                handler.notAuthenticated(uid, null);
+                _handlersByHostAnUid.computeIfAbsent(handler._host, h -> new HashMap<>())
+                        .computeIfAbsent(uid, u -> new HashSet<>())
+                        .remove(handler);
                 handler.sendMessage(loginFailed(uid));
             }
         } else { // need to login
             int reqId = _userMgr.login(uid, pwd, false);
-            _sessionHandlersByReqId.put(reqId, handler);
+            handler.notAuthenticated(uid, pwd); // optimistically storing the pwd in the handler
+            _handlersByReqId.put(reqId, handler);
         }
     }
 
     public void logout(SessionHandler handler, String uid, String pwd) {
-        AuthDetails ad = _authDetailsByUid.get(uid);
-        if (ad != null) {
-            ad._pwd = null;
+        Map<String, Set<SessionHandler>> handlersByUid = _handlersByHostAnUid.get(handler._host);
+        if (handlersByUid != null) {
+            Set<SessionHandler> handlers = handlersByUid.get(uid);
+            if (handlers != null) {
+                handlers.stream().filter(h -> h._password.equals(pwd)).forEach(h -> h.forceLogout());
+            }
         }
-        _userMgr.logout(uid, pwd, false);
     }
 
     public boolean reauth(SessionHandler handler, String uid) {
-        AuthDetails ad = _authDetailsByUid.get(uid);
-        if (ad == null || ad._expiry < System.currentTimeMillis() || ad._pwd == null) {
-            return false;
+        Map<String, Set<SessionHandler>> handlersByUid = _handlersByHostAnUid.get(handler._host);
+        if (handlersByUid != null) {
+            Set<SessionHandler> handlers = handlersByUid.get(uid);
+            if (handlers != null) {
+                return handlers.contains(handler);
+            } else {
+                return false;
+            }
         } else {
-            return true;
+            return false;
         }
     }
 
-    private static class AuthDetails {
-        private String _pwd;
-        private long _expiry;
-
-        public AuthDetails(String pwd) {
-            _pwd = pwd;
-            _expiry = System.currentTimeMillis() + 24 * 3_600 * 1_000; // 24 hours from now
+    public void onSessionEnd(SessionHandler handler) {
+        Map<String, Set<SessionHandler>> handlersByUid = _handlersByHostAnUid.get(handler._host);
+        if (handlersByUid != null) {
+            Set<SessionHandler> handlers = handlersByUid.get(handler._username);
+            if (handlers != null) {
+                handlers.remove(handler);
+            }
         }
     }
 }

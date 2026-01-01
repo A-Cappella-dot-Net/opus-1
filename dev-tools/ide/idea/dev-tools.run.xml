@@ -1,10 +1,10 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="dev-tools-local" type="Application" factoryName="Application">
-    <output_file path="C:\temp\dev-tools-local.log" is_save="true" />
+  <configuration default="false" name="dev-tools" type="Application" factoryName="Application">
+    <output_file path="C:\temp\dev-tools.log" is_save="true" />
     <option name="MAIN_CLASS_NAME" value="net.a_cappella.continuo.Main" />
     <module name="opus-1.dev-tools.main" />
-    <option name="PROGRAM_PARAMETERS" value="app-spring-local.xml" />
-    <option name="VM_PARAMETERS" value="-Dinstance=_0 -Xbootclasspath/a:config;app -Xms100M -Xmx100M -XX:SoftMaxHeapSize=50M -XX:+UseZGC -XX:+ZGenerational -XX:+AlwaysPreTouch -Xlog:gc*:file=C:\temp\dev-tools-local-gc.log" />
+    <option name="PROGRAM_PARAMETERS" value="app-spring.xml" />
+    <option name="VM_PARAMETERS" value="-Dinstance=_0 -Xbootclasspath/a:config;app -Xms100M -Xmx100M -XX:SoftMaxHeapSize=50M -XX:+UseZGC -XX:+ZGenerational -XX:+AlwaysPreTouch -Xlog:gc*:file=C:\temp\dev-tools-gc.log" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/dev-tools" />
     <extension name="coverage">
       <pattern>
