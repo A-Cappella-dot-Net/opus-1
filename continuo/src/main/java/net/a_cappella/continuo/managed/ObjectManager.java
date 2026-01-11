@@ -104,7 +104,7 @@ public class ObjectManager {
                 int objType = pool.getInstantiator().getObjType();
                 Class<?> clazz = pool.getInstantiator().getMsgClass();
                 if (_poolsByObjType.containsKey(objType) || _poolsByClass.containsKey(clazz)) {
-                    log.warn("Pools map aready contains key "+objType+" and/or "+clazz.getCanonicalName()+". Ignoring "+pool);
+                    log.warn("Pools map already contains key "+objType+" and/or "+clazz.getCanonicalName()+". Ignoring "+pool);
                 } else {
                     _poolsByObjType.put(objType, pool);
                     _poolsByClass.put(clazz, pool);
