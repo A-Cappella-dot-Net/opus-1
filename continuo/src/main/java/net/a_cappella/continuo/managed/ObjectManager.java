@@ -27,7 +27,7 @@ public class ObjectManager {
     private final Set<Class<?>> _reportedBadClasses = new HashSet<>();
 
     private final TIntObjectMap<Pool<?>> _poolsByObjType = new TIntObjectHashMap<>();
-    public final TIntObjectMap<MsgInstantiator> _instantiatorsByObjType = new TIntObjectHashMap<>();
+    private final TIntObjectMap<MsgInstantiator> _instantiatorsByObjType = new TIntObjectHashMap<>();
     private final TIntSet _reportedBadTypes = new TIntHashSet();
 
     private final Map<String, ObjMetaInfo> _metaInfoBySubject = new HashMap<>();

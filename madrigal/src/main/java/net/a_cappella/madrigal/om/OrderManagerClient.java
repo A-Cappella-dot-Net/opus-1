@@ -2,10 +2,7 @@ package net.a_cappella.madrigal.om;
 
 import net.a_cappella.continuo.managed.ObjectManager;
 import net.a_cappella.continuo.utils.Utils;
-import net.a_cappella.madrigal.common.constants.MadrigalOrdStatus;
-import net.a_cappella.madrigal.common.constants.MadrigalOrdType;
-import net.a_cappella.madrigal.common.constants.MadrigalSide;
-import net.a_cappella.madrigal.common.constants.MadrigalTimeInForce;
+import net.a_cappella.madrigal.common.constants.*;
 import net.a_cappella.madrigal.common.obj.FinalizeOrderObj;
 import net.a_cappella.madrigal.common.obj.OrderObj;
 import net.a_cappella.madrigal.common.utils.StringDelayer;
@@ -97,7 +94,7 @@ public abstract class OrderManagerClient {
     	}
 
     	try {
-        	OrderObj order = ObjectManager.getInstance().acquire(OrderObj.class);
+        	OrderObj order = ObjectManager.getInstance().acquire(MadrigalConstants.TYPE_ORDER);
 	        _orderCache.put(ordId, order);
 
 	    	int ver = 0;

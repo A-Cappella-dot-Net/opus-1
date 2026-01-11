@@ -1,5 +1,6 @@
 package net.a_cappella.presto.ps;
 
+import net.a_cappella.continuo.PrestoConstants;
 import net.a_cappella.continuo.managed.MsgInstantiator;
 import net.a_cappella.continuo.managed.ObjectManager;
 import net.a_cappella.continuo.managed.Pool;
@@ -40,7 +41,7 @@ public class MsgAccumulatorTest {
     }
 
     private PingObj newPing(int id, long payload) {
-        PingObj ping = ObjectManager.getInstance().acquire(PingObj.class);
+        PingObj ping = ObjectManager.getInstance().acquire(PrestoConstants.TYPE_PING);
         ping.setId(id);
         ping.setPayload(payload);
         return ping;
