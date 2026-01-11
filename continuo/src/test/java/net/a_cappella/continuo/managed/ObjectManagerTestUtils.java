@@ -9,10 +9,10 @@ public class ObjectManagerTestUtils {
     protected static Logger log = LoggerFactory.getLogger(ObjectManagerTestUtils.class);
 
     public static void checkPools() {
-        for (Pool<?> pool : ObjectManager.getInstance().getPools()) {
+        ObjectManager.getInstance().forEachPool(pool -> {
             checkNumUsersAndLength(pool.getInstantiator(), pool.getAvailableObjects(), true, 20);
             checkNumUsersAndLength(pool.getInstantiator(), pool.getUsedCells(), false, 0);
-        }
+        });
     }
     private static void checkNumUsersAndLength(MsgInstantiator instantiator, Pool.ListCell<?> cell, boolean hasObject, int expectedLen) {
         int len = 0;

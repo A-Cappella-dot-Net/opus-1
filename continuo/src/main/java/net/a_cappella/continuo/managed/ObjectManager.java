@@ -1,12 +1,12 @@
 package net.a_cappella.continuo.managed;
 
 import java.lang.reflect.Constructor;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import net.a_cappella.continuo.obj.Coder;
 import net.a_cappella.continuo.obj.Obj;
@@ -180,8 +180,11 @@ public class ObjectManager {
         if (pool!=null) pool.release(obj);
     }
 
-    public Collection<Pool<?>> getPools() {
-        return _poolsByClass.values();
+    public void forEachPool(Consumer<Pool<?>> consumer) {
+        for (int i = 0; i < _poolsByObjType.size(); i++) {
+            Pool<?> pool = _poolsByObjType.get(i);
+            consumer.accept(pool);
+        }
     }
 
     public ObjMetaInfo getSubjectMetaInfo(String subject) {
@@ -194,9 +197,9 @@ public class ObjectManager {
 
     public String toString() {
         return
-                "poolsByObjType="+_poolsByObjType+"\n"+
-                        "poolsByClass="+_poolsByClass+"\n"+
-                        "instantiatorsByObjType="+_instantiatorsByObjType+"\n"+
-                        "instantiatorsByClass="+_instantiatorsByClass+"\n";
+            "poolsByObjType="+_poolsByObjType+"\n"+
+            "poolsByClass="+_poolsByClass+"\n"+
+            "instantiatorsByObjType="+_instantiatorsByObjType+"\n"+
+            "instantiatorsByClass="+_instantiatorsByClass+"\n";
     }
 }
