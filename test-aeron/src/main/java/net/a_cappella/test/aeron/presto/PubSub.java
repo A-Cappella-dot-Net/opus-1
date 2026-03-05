@@ -17,7 +17,7 @@ public class PubSub extends PubSubBase {
     public void start() throws Exception {
     	_client.waitUntilInitialized();
 
-    	_statsLogger.dataPointHeader(configHeader() + _statsTestsParams.header());
+    	_statsLogger.logHeader(configHeader() + _statsTestsParams.header());
     	_statsTestsParams.initTestParams();
 
 		new Thread(() -> {
@@ -92,7 +92,7 @@ public class PubSub extends PubSubBase {
 			_client.unsubscribe(_subsId);
 	
 			log.info("test ended!");
-	    	_statsLogger.logResults(_h, currentConfigValues() + _statsTestsParams.currentTestParams());
+	    	_statsLogger.logRow(_h, currentConfigValues() + _statsTestsParams.currentTestParams());
 	
 	    	ObjectManager.getInstance().verifyPoolSize(PrestoConstants.TYPE_TEST, 10);
 	    	ObjectManager.getInstance().verifyPoolSize(PrestoConstants.TYPE_PING, 10);

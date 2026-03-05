@@ -74,7 +74,7 @@ public class MadMix {
 
     	_client.waitUntilInitialized();
 
-    	_statsLogger.dataPointHeader(configHeader() + TestParams.header());
+    	_statsLogger.logHeader(configHeader() + TestParams.header());
 
 		_client.subscribe(_sql, (obj, subsId) -> {
 			if (MINE_IN_SQL || obj.getMine() == (short) 1) {
@@ -115,10 +115,10 @@ public class MadMix {
 
 		    	endCycle();
 
-		    	_statsLogger.logResults(_madHiPri.getHistogram(), currentConfigValues() + params.values("hi", tstCnt));
-		    	_statsLogger.logResults(_madConf.getHistogram(), currentConfigValues() + params.values("conf", tstCnt));
-		    	_statsLogger.logResults(_madRegPri.getHistogram(), currentConfigValues() + params.values("reg", tstCnt));
-		    	_statsLogger.logResults(_madLowPri.getHistogram(), currentConfigValues() + params.values("low", tstCnt));
+		    	_statsLogger.logRow(_madHiPri.getHistogram(), currentConfigValues() + params.values("hi", tstCnt));
+		    	_statsLogger.logRow(_madConf.getHistogram(), currentConfigValues() + params.values("conf", tstCnt));
+		    	_statsLogger.logRow(_madRegPri.getHistogram(), currentConfigValues() + params.values("reg", tstCnt));
+		    	_statsLogger.logRow(_madLowPri.getHistogram(), currentConfigValues() + params.values("low", tstCnt));
 
 				_client.logStats();
 			}

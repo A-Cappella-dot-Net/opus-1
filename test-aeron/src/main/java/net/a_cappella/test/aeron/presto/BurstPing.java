@@ -74,7 +74,7 @@ public class BurstPing {
     public void start() throws Exception {
     	_client.waitUntilInitialized();
 
-    	_statsLogger.dataPointHeader(configHeader() + _statsTestsParams.header());
+    	_statsLogger.logHeader(configHeader() + _statsTestsParams.header());
     	_statsTestsParams.initTestParams();
 
     	new Thread(() -> {
@@ -180,7 +180,7 @@ public class BurstPing {
 
     	log.info("test ended!");
 
-    	_statsLogger.logResults(_h, currentConfigValues() + _statsTestsParams.currentTestParams());
+    	_statsLogger.logRow(_h, currentConfigValues() + _statsTestsParams.currentTestParams());
     }
 
 

@@ -29,8 +29,8 @@ public class StatsLogger {
         _values = new long[chartSamples];
     }
 
-    public void dataPointHeader(String paramsHeader) {
-        String header = DATAPOINT_MARKER + TAB + paramsHeader;
+    public void logHeader(String headerPrefix) {
+        String header = DATAPOINT_MARKER + TAB + headerPrefix;
         header += "cnt"+TAB+"min"+TAB+"50%"+TAB+"90%"+TAB+"99%"+TAB+"max"+TAB;
         header += zoomInHeader(100)+zoomInHeader(99)+zoomInHeader(90)+zoomInHeader(50);
         _log.info(header);
@@ -46,7 +46,7 @@ public class StatsLogger {
         return zih;
     }
 
-    public void logResults(final Histogram h, final String params) {
+    public void logRow(final Histogram h, final String rowPrefix) {
         long cnt = h.getTotalCount();
         long min = (cnt==0) ? 0 : h.getMinValue();
         long at50 = (cnt==0) ? 0 : h.getValueAtPercentile(50);
@@ -64,7 +64,7 @@ public class StatsLogger {
         dataPoint += zoomIn(h, min, at90, 90);
         dataPoint += zoomIn(h, min, at50, 50);
 
-        _log.info(DATAPOINT_MARKER + TAB + params + dataPoint);
+        _log.info(DATAPOINT_MARKER + TAB + rowPrefix + dataPoint);
     }
     private String zoomIn(Histogram h, long min, long max, int pct) {
         for (int i=0; i<=_chartSamples; i++) {
@@ -98,4 +98,32 @@ public class StatsLogger {
         }
         return dataPoint;
     }
+
+    public void logHeader(String headerPrefix, int noBuckets) {
+        String header = DATAPOINT_MARKER + TAB + headerPrefix;
+        header += "cnt"+TAB+"min"+TAB+"max"+TAB;
+        for (int i = 0; i <= noBuckets; i++) {
+            header += "i" + i + TAB;
+        }
+        _log.info(header);
+    }
+
+    public void logRow(final Histogram h, final String rowPrefix, int noBuckets) {
+        long cnt = h.getTotalCount();
+        long min = h.getMinValue();
+        long max = h.getMaxValue();
+        double step = (max - min) / (double) noBuckets;
+
+        String dataPoint = cnt + TAB + min + TAB + max + TAB;
+
+        for (int i = 0; i < noBuckets; i++) {
+            long low = min + (long)(i * step);
+            long high = (i == noBuckets - 1) ? max : min + (long)((i + 1) * step) - 1;
+            long count = h.getCountBetweenValues(low, high);
+            dataPoint += count + TAB;
+        }
+
+        _log.info(DATAPOINT_MARKER + TAB + rowPrefix + dataPoint);
+    }
+
 }

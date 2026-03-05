@@ -57,7 +57,7 @@ public class KPPerfTest implements IKPHandler<String, Histogram> {
 
     public KPPerfTest(String[] args) throws Exception {
         parseArgs(args);
-        _statsLogger.dataPointHeader(configHeader() + TestParams.header());
+        _statsLogger.logHeader(configHeader() + TestParams.header());
         _objectManager.setMsgInstantiators(Arrays.asList(_msgInstantiator));
     }
 
@@ -168,7 +168,7 @@ public class KPPerfTest implements IKPHandler<String, Histogram> {
             long msgNanos = msg.getTimeNanos();
             msg.stopUsing();
             if (msgNanos == 0) {
-                _statsLogger.logResults(h, currentConfigValues() + _params.values(_testIndex));
+                _statsLogger.logRow(h, currentConfigValues() + _params.values(_testIndex));
                 h.reset();
             } else if (msgNanos < 0) {
                 // ignore, warmup

@@ -38,10 +38,27 @@ public class SimpleHistogram {
     }
 
     public boolean isEmpty() {
-        return _max == Integer.MIN_VALUE;
+        return _max <= 0;
     }
 
     public String toString() {
-        return "max="+_max+" "+Arrays.toString(_h);
+        if (_size <= 20) {
+            return "max="+_max+" "+Arrays.toString(_h);
+        } else {
+            StringBuilder sb = new StringBuilder("max=").append(_max).append(" [ ");
+            for (int i = 1, j = 0; i <= _size; i++) {
+                int hi = _h[i];
+                if (hi > 0) {
+                    sb.append(hi).append("@").append(i).append(" ");
+                    j++;
+                }
+                if (j > 20) {
+                    sb.append("...");
+                    break;
+                }
+            }
+            sb.append("]");
+            return sb.toString();
+        }
     }
 }
