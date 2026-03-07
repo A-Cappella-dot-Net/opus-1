@@ -1,6 +1,7 @@
 package net.a_cappella.test.aeron.madrigal;
 
 import net.a_cappella.continuo.ObjPriority;
+import net.a_cappella.continuo.ShutdownHook;
 import net.a_cappella.continuo.obj.Obj;
 import net.a_cappella.continuo.utils.StatsLogger;
 import net.a_cappella.continuo.utils.Utils;
@@ -10,6 +11,8 @@ import net.a_cappella.madrigal.common.constants.MadrigalTimeInForce;
 import net.a_cappella.madrigal.common.obj.EcnPriceObj;
 import net.a_cappella.madrigal.common.obj.OrderObj;
 import net.a_cappella.presto.ps.PrestoClient;
+import net.openhft.affinity.Affinity;
+import net.openhft.affinity.AffinityLock;
 import org.HdrHistogram.Histogram;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,19 +28,34 @@ public class MadBurst {
 
     private final PrestoClient _client;
 
+    private int _pinToCpu = 0;
+    public void setPinToCpu(String pinToCpu) {
+        _pinToCpu = net.a_cappella.continuo.utils.Utils.parseAsInt("pinToCpu", pinToCpu, _pinToCpu);
+    }
+
     private volatile CountDownLatch _batchCompletedLatch;
     private CountDownLatch getBatchCompletedLatch() {
         return _batchCompletedLatch;
     }
+    private volatile boolean _stop = false;
 
     private Test _test = new Test();
 
 
     public MadBurst(PrestoClient client) {
         _client = client;
+
+        ShutdownHook.registerShutdownAction(() -> _stop = true);
     }
 
     public void start() throws Exception {
+        if (_pinToCpu>0) {
+            Affinity.setAffinity(_pinToCpu);
+            log.info("Pinned to CPU "+Affinity.getCpu()+" of "+ AffinityLock.BASE_AFFINITY);
+        } else {
+            log.info("Starting on CPU "+Affinity.getCpu()+" of "+AffinityLock.BASE_AFFINITY);
+        }
+
         _client.waitUntilInitialized();
 
         _test.logHeader();
@@ -55,12 +73,15 @@ public class MadBurst {
             }
         }
 
-        _client.setMaxReads(10_000, 10_000, 1, 1_000);
+        _client.setMaxReads(11_000, 11_000, 1, 1_000);
 
+        outerLoop:
         for (int index = 0; index < _test.testLength(); index++) {
             for (int tstCnt = 0; tstCnt < REPEAT_CNT; tstCnt++) {
                 System.gc();
                 Thread.sleep(1000);
+
+                if (_stop) break outerLoop;
 
                 log.info("---------------------------------------");
                 _client.resetStats();
@@ -110,17 +131,20 @@ public class MadBurst {
         public void publishBatch(byte tstCnt, int paramsIdx) throws Exception {
             TestParams params;
             if (paramsIdx >= 0) {
-                params = _burst._test.testParams[paramsIdx];
+                params = _burst._test._testParams[paramsIdx];
             } else {
-                params = _burst._test.warmupParams[- paramsIdx - 1];
+                params = _burst._test._warmupParams[- paramsIdx - 1];
             }
             int lastOrderInBatch = params._sectionsPerBatch - 1;
             int lastPriceInBatch = params._pricesPerSection - 1;
+            int publicationIntervalMicros = params._publicationIntervalMicros;
             int k = 0;
             for (int i = 0; i < params._sectionsPerBatch; i++) {
                 publishOrder(tstCnt, paramsIdx, i == 0, i == lastOrderInBatch);
+                Utils.busyMicrosDelay(publicationIntervalMicros);
                 for (int j = 0; j < params._pricesPerSection; j++) {
                     publishPrice(tstCnt, paramsIdx, k, i == lastOrderInBatch && j == lastPriceInBatch);
+                    Utils.busyMicrosDelay(publicationIntervalMicros);
                     k++;
                     if (k == params._uniquePrices) {
                         k = 0;
@@ -175,9 +199,9 @@ public class MadBurst {
                 if (firstOrderInBatch) {
                     TestParams params;
                     if (paramsIdx >= 0) {
-                        params = _burst._test.testParams[paramsIdx];
+                        params = _burst._test._testParams[paramsIdx];
                     } else {
-                        params = _burst._test.warmupParams[- paramsIdx - 1];
+                        params = _burst._test._warmupParams[- paramsIdx - 1];
                     }
 
                     _processingTimeMicros = params._processingTimeMicros;
@@ -242,24 +266,51 @@ public class MadBurst {
         public static final ObjPriority _pricePriority = new EcnPriceObj().getPriority();
         public static final ObjPriority _orderPriority = new OrderObj().getPriority();
 
+        private final TestParams[] _warmupParams =
+                new TestParams[] {
+                        new TestParams(10, 100, 100, 0, 1)
+                };
+
+        private final TestParams[] _testParamsSeed = new TestParams[] {
+                new TestParams(10, 10, 10),
+                new TestParams(10, 100, 10),
+                new TestParams(100, 10, 10),
+                new TestParams(100, 100, 100)
+        };
+        private final int[] _publicationIntervals = new int[] {0, 5, 50, 200};
+        private final int[] _processingTimes = new int[] {1, 10, 100};
+
+        private final TestParams[] _testParams = new TestParams[_testParamsSeed.length * _publicationIntervals.length * _processingTimes.length];
+
+        public Test() {
+            int l = 0;
+            for (int k = 0; k < _testParamsSeed.length; k++) {
+                for (int j = 0; j < _processingTimes.length; j++) {
+                    for (int i = 0; i < _publicationIntervals.length; i++) {
+                        _testParams[l++] = new TestParams(_testParamsSeed[k], _publicationIntervals[i], _processingTimes[j]);
+                    }
+                }
+            }
+        }
+
         public int warmupLength() {
-            return warmupParams.length;
+            return _warmupParams.length;
         }
 
         public TestParams warmupParamsAtIndex(int index) {
-            return warmupParams[index];
+            return _warmupParams[index];
         }
 
         public int testLength() {
-            return testParams.length;
+            return _testParams.length;
         }
 
         public TestParams testParamsAtIndex(int index) {
-            return testParams[index];
+            return _testParams[index];
         }
 
         public void logHeader() {
-            _statsLogger.logHeader(testHeader() + TestParams.header(), NO_BUCKETS);
+            _statsLogger.logHeader(headerPrefix() + TestParams.header(), NO_BUCKETS);
         }
 
         public void logRow(Histogram h, int paramsIdx, String obj, ObjPriority pri, int tstCnt) {
@@ -269,59 +320,52 @@ public class MadBurst {
             } else {
                 params = warmupParamsAtIndex(- paramsIdx - 1);
             }
-            _statsLogger.logRow(h, testRow(obj, pri, tstCnt) + params.row(), NO_BUCKETS);
+            _statsLogger.logRow(h, rowPrefix(obj, pri, tstCnt) + params.row(), NO_BUCKETS);
         }
 
-
-
-
-        private String testHeader() {
+        private String headerPrefix() {
             return "host" + TAB + "obj" + TAB + "pri " + TAB + "tstCnt" + TAB;
         }
-        private String testRow(String obj, ObjPriority pri, int tstCnt) {
+        private String rowPrefix(String obj, ObjPriority pri, int tstCnt) {
             return _localhost + TAB + obj + TAB + pri + TAB + tstCnt + TAB;
         }
-
-        private final TestParams[] warmupParams =
-                new TestParams[] {
-                        new TestParams(10, 10, 100, 1)
-                };
-
-        private final TestParams[] testParams =
-                new TestParams[] {
-                        new TestParams(10, 10, 10, 1),
-                        new TestParams(10, 10, 10, 10),
-                        new TestParams(10, 10, 10, 100),
-                        new TestParams(10, 10, 100, 1),
-                        new TestParams(10, 10, 100, 10),
-                        new TestParams(10, 10, 100, 100),
-                        new TestParams(100, 100, 10, 1),
-                        new TestParams(100, 100, 10, 10),
-                        new TestParams(100, 100, 10, 100),
-                        new TestParams(100, 100, 100, 1),
-                        new TestParams(100, 100, 100, 10),
-                        new TestParams(100, 100, 100, 100),
-                };
     }
 
     public static class TestParams {
+        private final int _sectionsPerBatch;
         private final int _pricesPerSection;
         private final int _uniquePrices;
-        private final int _sectionsPerBatch;
+        private final int _publicationIntervalMicros;
         private final int _processingTimeMicros;
 
-        TestParams(int pricesPerSection, int uniquePrices, int sectionsPerBatch, int processingTimeMicros) {
+        public TestParams(int sectionsPerBatch, int pricesPerSection, int uniquePrices) {
+            _sectionsPerBatch = sectionsPerBatch;
             _pricesPerSection = pricesPerSection;
             _uniquePrices = uniquePrices;
+            _publicationIntervalMicros = 0;
+            _processingTimeMicros = 0;
+        }
+        public TestParams(TestParams seed, int pubTm, int procInt) {
+            _sectionsPerBatch = seed._sectionsPerBatch;
+            _pricesPerSection = seed._pricesPerSection;
+            _uniquePrices = seed._uniquePrices;
+            _publicationIntervalMicros = pubTm;
+            _processingTimeMicros = procInt;
+        }
+
+        TestParams(int sectionsPerBatch, int pricesPerSection, int uniquePrices, int publicationIntervalMicros, int processingTimeMicros) {
             _sectionsPerBatch = sectionsPerBatch;
+            _pricesPerSection = pricesPerSection;
+            _uniquePrices = uniquePrices;
+            _publicationIntervalMicros = publicationIntervalMicros;
             _processingTimeMicros = processingTimeMicros;
         }
 
         public static String header() {
-            return "spb"+TAB+"pps"+TAB+"up"+TAB+"ptm"+TAB;
+            return "ord"+TAB+"pri"+TAB+"unq"+TAB+"pubInt"+TAB+"procTm"+TAB;
         }
         public String row() {
-            return _sectionsPerBatch+TAB+_pricesPerSection+TAB+_uniquePrices+TAB+_processingTimeMicros+TAB;
+            return _sectionsPerBatch +TAB+_pricesPerSection+TAB+_uniquePrices+TAB+_publicationIntervalMicros+TAB+_processingTimeMicros+TAB;
         }
     }
 }

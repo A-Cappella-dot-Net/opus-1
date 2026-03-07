@@ -45,14 +45,14 @@ public class SimpleHistogram {
         if (_size <= 20) {
             return "max="+_max+" "+Arrays.toString(_h);
         } else {
-            StringBuilder sb = new StringBuilder("max=").append(_max).append(" [ ");
+            StringBuilder sb = new StringBuilder("max=").append(_max).append(" snippets@msgPerSnippet: [ ");
             for (int i = 1, j = 0; i <= _size; i++) {
                 int hi = _h[i];
                 if (hi > 0) {
                     sb.append(hi).append("@").append(i).append(" ");
                     j++;
                 }
-                if (j > 20) {
+                if (j > 30) {
                     sb.append("...");
                     break;
                 }

@@ -11,5 +11,7 @@
 
 	<bean name="burstPing" class="net.a_cappella.test.aeron.madrigal.MadBurst" init-method="start">
 		<constructor-arg index="0" ref="client" />
+
+		<property name="pinToCpu" value="${pin.to.cpu}"/>
 	</bean>
 </beans>
