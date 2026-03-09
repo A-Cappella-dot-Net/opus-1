@@ -67,14 +67,19 @@ public class SessionHandler implements WebSocketListener {
     public String _remote = "unknown";
     private Gson _gsonOut = new GsonBuilder()
             .registerTypeAdapter(Double.class, (JsonSerializer<Double>) (src, typeOfSrc, context) -> {
-                if (src.isNaN()) return new JsonPrimitive("NaN");
+                if (src.isNaN()) return new JsonPrimitive("");
                 if (src.isInfinite()) return new JsonPrimitive(src > 0 ? "Inf" : "-Inf");
                 return new JsonPrimitive(src);
             })
             .registerTypeAdapter(Float.class, (JsonSerializer<Float>) (src, typeOfSrc, context) -> {
-                if (src.isNaN()) return new JsonPrimitive("NaN");
+                if (src.isNaN()) return new JsonPrimitive("");
                 if (src.isInfinite()) return new JsonPrimitive(src > 0 ? "Inf" : "-Inf");
                 return new JsonPrimitive(src);
+            })
+            .registerTypeHierarchyAdapter(Enum.class, (JsonSerializer<Enum>) (src, typeOfSrc, context) -> {
+                String enumName = src.name();
+                if ("NULL_VAL".equals(enumName)) return new JsonPrimitive("");
+                return new JsonPrimitive(src.name());
             })
             .registerTypeAdapter(PTimestamp.class, new PTimestampSerializer())
             .registerTypeAdapter(PTime.class, new PTimeSerializer())

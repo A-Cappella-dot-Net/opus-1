@@ -96,7 +96,7 @@ public class BaseClientPipe {
                 _outBuf.compact();
             } while (_outBuf.position()!=0);
         }
-        if (log.isInfoEnabled()) log.info("{}sent    {} bytes to {}", _cmId, len, this);
+        if (log.isDebugEnabled()) log.debug("{}sent    {} bytes to {}", _cmId, len, this);
     }
 
     public void sendMsg(Msg[] msgs) throws IOException { // TODO non synchronized version

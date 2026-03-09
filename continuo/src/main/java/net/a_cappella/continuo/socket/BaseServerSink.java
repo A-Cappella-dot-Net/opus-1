@@ -80,7 +80,7 @@ public class BaseServerSink {
                     _outBuf.compact();
                 } while (_outBuf.position()!=0); // make sure to write the entire buffer
             }
-            if (log.isInfoEnabled()) log.info("{}sent    {} bytes to {}", _cmId, len, keyHash(key));
+            if (log.isDebugEnabled()) log.debug("{}sent    {} bytes to {}", _cmId, len, keyHash(key));
             ((LongHolder) key.attachment()).incrementValue();
         } catch (IOException x) {
             log.info("{}{} Could not send to {} : {}", _cmId, x.getClass().getName(), keyHash(key), msg);
@@ -201,7 +201,7 @@ public class BaseServerSink {
                                 int no = client.read(_inBuf);
                                 if (no<0) throw new IOException("reached end-of-stream");
                                 if (no>0) {
-                                    if (log.isInfoEnabled()) log.info("{}read {} bytes from {}", _cmId, no, keyHash(key));
+                                    if (log.isDebugEnabled()) log.debug("{}read {} bytes from {}", _cmId, no, keyHash(key));
                                 }
                             } catch (IOException x) {
                                 log.info("{}exception for key {}: {}", _cmId, keyHash(key), x.getMessage());
