@@ -220,7 +220,7 @@ public abstract class CollectiveTestBase {
         }
 
         public boolean iAmCore(boolean expected) {
-            return _collectiveMember.iAmCore(expected);
+            return _collectiveMember.iAmCore() == expected;
         }
 
         public boolean iAmPrimary(boolean expected, MemberStatusEnum[] statuses) {

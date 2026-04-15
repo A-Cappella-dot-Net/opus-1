@@ -197,10 +197,10 @@ public class ObjectManager {
     }
 
     public void forEachPool(Consumer<Pool<?>> consumer) {
-        for (int i = 0; i < _poolsByObjType.size(); i++) {
-            Pool<?> pool = _poolsByObjType.get(i);
+        _poolsByObjType.forEachEntry((objType, pool) -> {
             consumer.accept(pool);
-        }
+            return true;
+        });
     }
 
     public ObjMetaInfo getSubjectMetaInfo(String subject) {

@@ -294,9 +294,6 @@ public class CollectiveMember {
                 break;
             }
         }
-        for (ClientPipe pipe : pipes) {
-            pipe._iAmCore = iAmCore;
-        }
         _iAmCore = iAmCore;
     }
 
@@ -372,11 +369,6 @@ public class CollectiveMember {
     }
 
 
-
-    @VisibleForTesting
-    public boolean iAmCore(boolean expected) {
-        return _iAmCore == expected;
-    }
 
     @VisibleForTesting
     public boolean verifyStatuses(MemberStatusEnum[] statuses) throws RuntimeException {
@@ -480,7 +472,6 @@ public class CollectiveMember {
         private final boolean _myPipe;
         private MemberStatus _memberStatus = new MemberStatus();
         private boolean _primary = false;
-        private boolean _iAmCore = false;
 
         public ClientPipe(MsgCoder coder, AppInfo myInfo, ConnInfo myConnInfo, AppInfo appInfo, ConnInfo connInfo, String cmId) {
             super(coder, myInfo, connInfo, cmId, "CollectiveMember");
@@ -576,7 +567,7 @@ public class CollectiveMember {
             return _memberStatus.getPipeConnectionStatus();
         }
         public MemberStatusEnum getStatus() {
-            return _memberStatus.getStatus(_iAmCore);
+            return _memberStatus.getStatus(CollectiveMember.this._iAmCore);
         }
 
         public String toString() {
