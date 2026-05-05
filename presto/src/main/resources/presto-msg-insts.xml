@@ -30,6 +30,9 @@
     <bean name="presto.registration.response" class="net.a_cappella.continuo.managed.MsgInstantiator">
         <constructor-arg name="className" value="net.a_cappella.continuo.msg.RegistrationResponse" />
     </bean>
+    <bean name="presto.ft.vote.msg" class="net.a_cappella.continuo.managed.MsgInstantiator">
+        <constructor-arg name="className" value="net.a_cappella.presto.msg.VoteMsg" />
+    </bean>
     <bean name="presto.ft.member.msg" class="net.a_cappella.continuo.managed.MsgInstantiator">
         <constructor-arg name="className" value="net.a_cappella.presto.msg.FtMemberMsg" />
     </bean>

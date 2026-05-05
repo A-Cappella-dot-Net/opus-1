@@ -80,10 +80,10 @@
         <level value="INFO" />
     </logger>
 
-    <logger name="net.a_cappella.presto.socket.BaseClientPipe">
+    <logger name="net.a_cappella.continuo.socket.BaseClientPipe">
         <level value="INFO" />
     </logger>
-    <logger name="net.a_cappella.presto.socket.BaseServerSink">
+    <logger name="net.a_cappella.continuo.socket.BaseServerSink">
         <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.presto.ft.collective.CollectiveMember">
@@ -92,10 +92,10 @@
     <logger name="net.a_cappella.presto.ft.collective.CollectiveClient">
         <level value="DEBUG" />
     </logger>
-    <logger name="net.a_cappella.presto.ft.FtManager">
+    <logger name="net.a_cappella.presto.ft.collective.FtManager">
         <level value="DEBUG" />
     </logger>
-    <logger name="net.a_cappella.presto.collective.UpgradeManager">
+    <logger name="net.a_cappella.presto.ft.upgrade.UpgradeManager">
         <level value="DEBUG" />
     </logger>
     <logger name="net.a_cappella.presto.utils.conflator.BaseConflator">
@@ -109,7 +109,7 @@
         <level value="DEBUG" />
     </logger>
 
-    <logger name="net.a_cappella.presto.managed.ObjectManager">
+    <logger name="net.a_cappella.continuo.managed.ObjectManager">
         <level value="INFO" />
     </logger>
 

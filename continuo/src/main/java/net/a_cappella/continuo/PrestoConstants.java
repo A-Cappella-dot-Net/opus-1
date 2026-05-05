@@ -23,11 +23,12 @@ public interface PrestoConstants {
     int VERSIONED_STRING_MSG  = 1;
     int REGISTRATION_REQUEST  = 2;
     int REGISTRATION_RESPONSE = 3;
-    int FT_MEMBER             = 4;
-    int FT_MONITOR            = 5;
-    int SOURCES_PORTS         = 6;
-    int PATHS_SUBJECTS        = 7;
-    int TEST_MSG              = 8;
+    int VOTE_MSG              = 4;
+    int FT_MEMBER             = 5;
+    int FT_MONITOR            = 6;
+    int SOURCES_PORTS         = 7;
+    int PATHS_SUBJECTS        = 8;
+    int TEST_MSG              = 9;
 
     // the below types must match the ones in presto-aeron/src/main/resources/schema.xml
     int TYPE_FT_MEMBER   = 101;

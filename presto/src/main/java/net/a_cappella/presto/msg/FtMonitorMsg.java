@@ -60,6 +60,11 @@ public class FtMonitorMsg extends FtMsg {
         return this;
     }
 
+    public void set(FtMsgType type, FtMsgOp op, char fromApp, int actives) {
+        super.set(type, op, fromApp);
+        _actives = actives;
+    }
+
     @Override
     public void reset() {
         super.reset();

@@ -48,6 +48,7 @@ import static net.a_cappella.presto.ft.constants.FtMsgType.RESPONSE;
 public class CollectiveClient implements IFtMemberClient, IFtMonitorClient, IFtMsgListenerNotifier {
     private static final Logger log = LoggerFactory.getLogger(CollectiveClient.class);
 
+    public static final short DK    = -1;
     public static final short NONE  = 0;
     public static final short ZERO  = 1 << 0;
     public static final short ONE   = 1 << 1;
@@ -243,6 +244,7 @@ public class CollectiveClient implements IFtMemberClient, IFtMonitorClient, IFtM
     }
     public void setConnectionTimeoutMicros(String connectionTimeoutMicros) {
         _connectionTimeoutMicros = Utils.parseAsInt("connectionTimeoutMicros", connectionTimeoutMicros, _connectionTimeoutMicros);
+        _pipe.setConnectionTimeoutMicros(_connectionTimeoutMicros);
     }
     @Override
     public void registerFtMemberListener(IFtMemberListener listener) {
@@ -283,7 +285,7 @@ public class CollectiveClient implements IFtMemberClient, IFtMonitorClient, IFtM
 
     public class ClientPipe extends BaseClientPipe {
         public ClientPipe(String cmId, MsgCoder coder, AppInfo myInfo, ConnInfo connInfo) {
-            super(coder, myInfo, connInfo, cmId, "CollectiveClient");
+            super(coder, myInfo, connInfo, cmId, connInfo.getPort()+"");
             setConnectionTimeoutMicros(CollectiveClient.this._connectionTimeoutMicros);
             setReconnectInterval(CollectiveClient.this._reconnectIntervalMillis);
         }

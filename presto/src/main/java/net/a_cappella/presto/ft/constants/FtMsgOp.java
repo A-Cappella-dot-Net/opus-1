@@ -18,8 +18,10 @@ package net.a_cappella.presto.ft.constants;
 
 public enum FtMsgOp {
     NONE,
-    REGISTER, UNREGISTER,                         // REQUESTs
-    ACTIVATE, DEACTIVATE, DISCONNECT, DUPLICATE,  // RESPONSEs
+    // REQUESTs
+    REGISTER, UNREGISTER,
+    // RESPONSEs
+    ACTIVATE, DEACTIVATE, DISCONNECT, DUPLICATE, NO_PRIMARY,
     ;
 
     public static char toChar(FtMsgOp msgOp) {
@@ -36,6 +38,8 @@ public enum FtMsgOp {
                 return 'C';
             case DUPLICATE:
                 return 'P';
+            case NO_PRIMARY:
+                return 'N';
             default:
                 return '-';
         }
@@ -55,6 +59,8 @@ public enum FtMsgOp {
                 return DISCONNECT;
             case 'P':
                 return DUPLICATE;
+            case 'N':
+                return NO_PRIMARY;
             default:
                 return NONE;
         }

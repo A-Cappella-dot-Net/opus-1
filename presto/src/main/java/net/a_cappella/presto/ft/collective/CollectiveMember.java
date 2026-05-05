@@ -32,6 +32,7 @@ import net.a_cappella.presto.ft.upgrade.VersionedParamsCache;
 import net.a_cappella.presto.msg.FtMemberMsg;
 import net.a_cappella.presto.msg.FtMonitorMsg;
 import net.a_cappella.presto.msg.VersionedStringMsg;
+import net.a_cappella.presto.msg.VoteMsg;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,11 +43,28 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static net.a_cappella.continuo.utils.Utils.keyHash;
+import static net.a_cappella.presto.ft.collective.CollectiveMember.PrimaryCalculationResult.DONT_CARE;
+import static net.a_cappella.presto.ft.collective.CollectiveMember.PrimaryCalculationResult.I_BECAME_PRIMARY;
+import static net.a_cappella.presto.ft.collective.CollectiveMember.PrimaryCalculationResult.NO_PRIMARY;
 
 public class CollectiveMember {
     private static final Logger log = LoggerFactory.getLogger(CollectiveMember.class);
 
     public static final String VSM_NAME = "collective.cores.list";
+
+    // the CollectiveMember can be configured to use either Fault Tolerance Pairs or Consensus
+    private static volatile boolean _useConsensus = false;
+    public static void setUseConsensus(boolean useConsensus) {
+        _useConsensus = useConsensus;
+        log.info("useConsensus = {}", _useConsensus);
+    }
+    public static boolean isUseConsensus() {
+        return _useConsensus;
+    }
+    public void setUseConsensusStr(String useConsensus) {
+        _useConsensus = net.a_cappella.continuo.utils.Utils.parseAsBoolean("useConsensus", useConsensus, _useConsensus);
+        log.info("useConsensus = {}", _useConsensus);
+    }
 
     // logging
     private String _cmId;
@@ -64,7 +82,11 @@ public class CollectiveMember {
 
     // self aware
     private volatile boolean _iAmCore;
+    private ClientPipe _myPipe = null;
     private volatile boolean _iAmPrimary = false;
+    private int _quorum;
+    private ClientPipe _primary = null;
+    private ClientPipe _myVote = null;
 
     // graceful shutdown
     private volatile boolean _stop = false;
@@ -111,7 +133,11 @@ public class CollectiveMember {
         // wait until all pipes are started
         while (!allPipesStarted()) Utils.sleep(20);
 
-        calculatePrimary();
+        if (_useConsensus) {
+            calculateVotes();
+        } else {
+            calculatePrimary();
+        }
     }
 
     public ClientPipe createAndStartPipe(String infoStr) {
@@ -132,12 +158,16 @@ public class CollectiveMember {
         log.info("{}Stopping CollectiveMember", _cmId);
         _stop = true;
         _sink.stopSink();
-        _sinkToPipeLinkage.removeAllLinkages();
+//        _sinkToPipeLinkage.removeAllLinkages();
 
         for (ClientPipe pipe : _pipes.get()) {
             if (!pipe._myPipe) {
                 pipe.stopPipe();
             }
+        }
+
+        synchronized (this) {
+            _sinkToPipeLinkage.removeAllLinkages();
         }
     }
 
@@ -214,7 +244,7 @@ public class CollectiveMember {
     }
 
     public void sendMsgToAllMembers(Msg msg) {
-        _sink.sendMsgToAllDaemons(msg);
+        _sink.sendMsgToAllMembers(msg);
     }
 
     public boolean sendMsgToOtherCores(Msg msg) {
@@ -280,7 +310,11 @@ public class CollectiveMember {
             _upgradeMgr.upgrade(vsm);
             log.info("{}   ... to {}core CollectiveMember. All v.{} core members are {}", _cmId, !_iAmCore?"non-":"", _upgradeMgr.getVersion(), _pipes);
 
-            calculatePrimary();
+            if (_useConsensus) {
+                calculateVotes();
+            } else {
+                calculatePrimary();
+            }
             // wait until all pipes are started
             while (!allPipesStarted()) Utils.sleep(20);
         }
@@ -288,54 +322,62 @@ public class CollectiveMember {
 
     public void calculateIAmCore(List<ClientPipe> pipes) {
         boolean iAmCore = false;
+        ClientPipe myPipe = null;
         for (ClientPipe pipe : pipes) {
             if (pipe._myPipe) {
                 iAmCore = true;
+                myPipe = pipe;
                 break;
             }
         }
         _iAmCore = iAmCore;
+        _myPipe = myPipe;
+        _quorum = (int) Math.floor(pipes.size() / 2) + 1;
+        log.info("{} quorum={}", _cmId, _quorum);
     }
 
-    private boolean calculatePrimary() {
+    public enum PrimaryCalculationResult {NO_PRIMARY, I_BECAME_PRIMARY, DONT_CARE}
+
+    private synchronized PrimaryCalculationResult calculatePrimary() {
         List<ClientPipe> pipes = _pipes.get();
         if (_stop) {
             log.info("{}calculatePrimary already stopped => not primary", _cmId);
             _iAmPrimary = false;
-            return false;
+            return PrimaryCalculationResult.DONT_CARE;
         }
-        for (int i=0; i<pipes.size(); i++) {
+        // checking that all pipes are up
+        for (int i = 0; i < pipes.size(); i++) {
             ClientPipe pipe = pipes.get(i);
             if (pipe.getStatus()==MemberStatusEnum.UP) break; // first UP and there have been no IDKs before
             if (pipe.getStatus()==MemberStatusEnum.IDK) {
-                log.info("{}calculatePrimary {} =>  still not certain...", _cmId, pipes);
+                log.info("{}calculatePrimary {} =>  still not certain...", _cmId, _pipes);
                 // need to wait until I am certain; otherwise there could be overlap
                 resetPrimary(pipes, 0);
                 _iAmPrimary = false;
-                return false;
+                return PrimaryCalculationResult.DONT_CARE;
             }
         }
-        for (int i=0; i<pipes.size(); i++) {
+        // calculate primary
+        for (int i = 0; i < pipes.size(); i++) {
             ClientPipe pipe = pipes.get(i);
             if (pipe.getStatus() == MemberStatusEnum.UP) {
                 if (pipe.isPrimary()) { // i is already primary
                     if (pipe._myPipe) {
                         log.info("{}calculatePrimary {} ===> I am still primary!!!", _cmId, pipes);
-                        return false;
                     } else {
                         log.info("{}calculatePrimary {} {} => {} is still primary", _cmId, _myInfo, pipes, pipe);
-                        return false;
                     }
+                    return PrimaryCalculationResult.DONT_CARE;
                 }
                 setPrimary(pipes, i);
                 if (pipe._myPipe) {
                     log.info("{}calculatePrimary {} ===> I am primary!!!", _cmId, pipes);
                     _iAmPrimary = true;
-                    return true; // just became primary
+                    return PrimaryCalculationResult.I_BECAME_PRIMARY;
                 } else {
                     log.info("{}calculatePrimary {} => {} is primary", _cmId, pipes, pipe);
                     _iAmPrimary = false;
-                    return false;
+                    return PrimaryCalculationResult.DONT_CARE;
                 }
             } else {
                 pipe.setPrimary(false);
@@ -343,7 +385,7 @@ public class CollectiveMember {
         }
         log.info("{}calculatePrimary {} => no primary is up atm...", _cmId, pipes);
         _iAmPrimary = false;
-        return false;
+        return PrimaryCalculationResult.NO_PRIMARY;
     }
 
     private void setPrimary(List<ClientPipe> pipes, int atIndex) {
@@ -359,6 +401,110 @@ public class CollectiveMember {
             ClientPipe pipe = pipes.get(i);
             pipe.setPrimary(false);
         }
+    }
+
+    private synchronized void calculateVotes() {
+        if (_stop) {
+            log.info("{}calculateVotes already stopped => not primary", _cmId);
+            _iAmPrimary = false;
+            return;
+        }
+        List<ClientPipe> pipes = _pipes.get();
+        if (_iAmCore) {
+            boolean first = true;
+            for (int i = 0; i < pipes.size(); i++) {
+                ClientPipe pipe = pipes.get(i);
+                if (pipe.getStatus() == MemberStatusEnum.UP) {
+                    // I am voting for the first member that is UP
+                    if (first) {
+                        first = false;
+                        if (_myVote != pipe) {
+                            _myVote = pipe;
+                            _myPipe._myVote = pipe;
+                            sendMsgToAllMembers(new VoteMsg(_myPipe._appInfo, pipe._appInfo));
+                        }
+                    }
+                } else {
+                    pipe._myVote = null;
+                }
+            }
+        }
+        PrimaryCalculationResult result = calculateQuorumPrimary("calculateVotes");
+        if (result == NO_PRIMARY) {
+            _iAmPrimary = false;
+        }
+        _ftManager.onPrimaryCalculationResult(result);
+    }
+
+    private synchronized void handleVoteMessage(VoteMsg vote) {
+        // cast vote
+        ClientPipe voterPipe = findPipe(vote.ofMember());
+        voterPipe._myVote = findPipe(vote.forMember());
+        // tally votes
+        PrimaryCalculationResult result = calculateQuorumPrimary("handleVoteMessage");
+        if (result == NO_PRIMARY) {
+            _iAmPrimary = false;
+        }
+        _ftManager.onPrimaryCalculationResult(result);
+    }
+
+    private PrimaryCalculationResult calculateQuorumPrimary(String method) {
+        List<ClientPipe> pipes = _pipes.get();
+        // start with blank slate
+        for (ClientPipe pipe : pipes) {
+            pipe._myVoteCnt = 0;
+        }
+        // count votes
+        for (ClientPipe pipe : pipes) {
+            ClientPipe myVote = pipe._myVote;
+            if (myVote != null) { // can be null if not connected
+                myVote._myVoteCnt++;
+            }
+        }
+        if (_myVote == null || !_iAmCore) {
+            log.info("{}{} => {}", _cmId, method, _pipes);
+        } else {
+            log.info("{}{} => I'm voting {} {}", _cmId, method, _myVote._appInfo, _pipes);
+        }
+        if (quorumPrimaryHasChanged()) {
+            if (_primary == null) {
+                log.info("{}{} ===> no primary...", _cmId, method);
+                return NO_PRIMARY;
+            } else if (_primary == _myPipe) {
+                log.info("{}{} ===> I became primary...", _cmId, method);
+                return I_BECAME_PRIMARY;
+            } else {
+                log.info("{}{} ===> {} became primary...", _cmId, method, _primary._appInfo);
+            }
+        }
+        return DONT_CARE;
+    }
+
+    private boolean quorumPrimaryHasChanged() {
+        List<ClientPipe> pipes = _pipes.get();
+        // identify winner
+        ClientPipe newPrimary = null;
+        for (ClientPipe pipe : pipes) {
+            if (pipe._myVoteCnt >= _quorum) {
+                newPrimary = pipe;
+                pipe._primary = true;
+                _iAmPrimary = pipe._myPipe;
+            } else {
+                pipe._primary = false;
+            }
+        }
+        boolean change = _primary != newPrimary;
+        _primary = newPrimary;
+        return change;
+    }
+
+    private ClientPipe findPipe(AppInfo appInfo) {
+        for (ClientPipe pipe : _pipes.get()) {
+            if (pipe._appInfo.equals(appInfo)) {
+                return pipe;
+            }
+        }
+        return null; // should not get here though
     }
 
     public void addSinkToPipeLinkage(ConnInfo connInfo, ClientPipe pipe) {
@@ -382,12 +528,20 @@ public class CollectiveMember {
         return true;
     }
 
+    public MemberStatusEnum[] getStatuses() {
+        List<ClientPipe> pipes = _pipes.get();
+        MemberStatusEnum[] statuses = new MemberStatusEnum[pipes.size()];
+        for (int i=0; i<pipes.size(); i++) {
+            statuses[i] = pipes.get(i).getStatus();
+        }
+        return statuses;
+    }
 
 
 
 
     public class ServerSink extends BaseServerSink {
-        private Set<SelectionKey> _daemonKeys = new HashSet<>();
+        private Set<SelectionKey> _memberKeys = new HashSet<>();
 
         public ServerSink(MsgCoder coder, ConnInfo connInfo) {
             super(coder, connInfo.getPort(), connInfo.getPort()+"");
@@ -398,56 +552,59 @@ public class CollectiveMember {
             synchronized (CollectiveMember.this) {
                 // send _coreMembersListMsg only to collective members (not to clients)
                 if (reg.isFromDaemon()) {
-                    _daemonKeys.add(key);
-                    log.info("{}serverSink.onClientConnect {} back to {}", _cmId, _upgradeMgr.getCoreMembersListMsg(), reg);
+                    _memberKeys.add(key);
+                    log.info("{}serverSink.onClientConnect {}({}) {} => {}", _cmId, keyHash(key), _memberKeys.size(), reg, _upgradeMgr.getCoreMembersListMsg());
                     sendMsg(key, _upgradeMgr.getCoreMembersListMsg()); // TODO replicate my core.list back to pipe
+                    if (_myVote != null) {
+                        sendMsg(key, new VoteMsg(_myPipe._appInfo, _myVote._appInfo));
+                    }
                 }
 
-                if (_sinkToPipeLinkage.addSinkToPipeLinkage(key, reg)) calculatePrimary();
+                if (_sinkToPipeLinkage.addSinkToPipeLinkage(key, reg)) {
+                    if (_useConsensus) {
+                        calculateVotes();
+                    } else {
+                        calculatePrimary();
+                    }
+                }
             }
         }
-
-//		@Override
-//		public void onClientDisconnect(SelectionKey key, RegistrationRequest reg) {
-//			log.info("{}serverSink.onClientDisconnect {} <-> {}", _cmId, keyHash(key), reg.getAppInfo());
-//			synchronized (CollectiveMember.this) {
-//				_daemonKeys.remove(key);
-//				if (_sinkToPipeLinkage.removeSinkToPipeLinkage(key)) calculatePrimary();
-//
-//				_ftManager.sinkOnPipeDisconnect(key);
-//				CollectiveMember.this.onClientDisconnect(key);
-//			}
-//		}
 
         @Override
         public void onClientDisconnect(SelectionKey key) {
             log.info("{}serverSink.onClientDisconnect {}", _cmId, keyHash(key));
+            _memberKeys.remove(key);
             synchronized (CollectiveMember.this) {
-                _daemonKeys.remove(key);
-                if (_sinkToPipeLinkage.removeSinkToPipeLinkage(key)) calculatePrimary();
+                if (_sinkToPipeLinkage.removeSinkToPipeLinkage(key)) {
+                    if (_useConsensus) {
+                        calculateVotes();
+                    } else {
+                        calculatePrimary();
+                    }
+                }
 
                 _ftManager.sinkOnPipeDisconnect(key);
                 CollectiveMember.this.onClientDisconnect(key);
             }
         }
 
+        @Override
         public void onMsg(SelectionKey key, Msg msg) {
             if (log.isDebugEnabled()) log.info("{}ServerSink received {} from {}", _cmId, msg, keyHash(key));
-            synchronized (CollectiveMember.this) { // TODO should all be synchronized?
-                if (msg instanceof FtMemberMsg) {
+            synchronized (CollectiveMember.this) {
+                if (msg instanceof FtMemberMsg) { // REQUESTS
                     _ftManager.sinkOnFtMsgFromPipe(key, new FtMemberMsg((FtMemberMsg) msg));
-                    return;
-                } else if (msg instanceof FtMonitorMsg) {
+                } else if (msg instanceof FtMonitorMsg) { // REQUESTS
                     _ftManager.sinkOnFtMsgFromPipe(key, new FtMonitorMsg((FtMonitorMsg) msg));
-                    return;
                 } else if (msg instanceof VersionedStringMsg) {
                     handleUpgradeMessage(new VersionedStringMsg((VersionedStringMsg) msg), keyHash(key));
-                    return;
+                } else {
+                    CollectiveMember.this.onMsg(key, msg);
                 }
-                CollectiveMember.this.onMsg(key, msg);
             }
         }
 
+        @Override
         public void sendMsg(SelectionKey key, Msg msg) {
             super.sendMsg(key, msg);
             if (msg instanceof FtMemberMsg || msg instanceof FtMonitorMsg) {
@@ -455,8 +612,8 @@ public class CollectiveMember {
             }
         }
 
-        public void sendMsgToAllDaemons(Msg msg) {
-            for (SelectionKey key : _daemonKeys) {
+        public void sendMsgToAllMembers(Msg msg) {
+            for (SelectionKey key : _memberKeys) {
                 try {
                     super.sendMsg(key, msg);
                 } catch (Exception x) {
@@ -472,9 +629,11 @@ public class CollectiveMember {
         private final boolean _myPipe;
         private MemberStatus _memberStatus = new MemberStatus();
         private boolean _primary = false;
+        private ClientPipe _myVote = null;
+        private int _myVoteCnt;
 
         public ClientPipe(MsgCoder coder, AppInfo myInfo, ConnInfo myConnInfo, AppInfo appInfo, ConnInfo connInfo, String cmId) {
-            super(coder, myInfo, connInfo, cmId, "CollectiveMember");
+            super(coder, myInfo, connInfo, cmId, connInfo.getPort()+"");
             setDaemonInfo(myConnInfo);
             _appInfo = appInfo;
             _connInfo = connInfo;
@@ -494,7 +653,11 @@ public class CollectiveMember {
             super.onRegistrationResponse();
             synchronized (CollectiveMember.this) {
                 setPipeConnectionStatus(MemberStatusEnum.UP);
-                calculatePrimary();
+                if (_useConsensus) {
+                    calculateVotes();
+                } else {
+                    calculatePrimary();
+                }
                 try {
                     sendMsg(_upgradeMgr.getCoreMembersListMsg()); // TODO replicate my core.list back to sink
                     CollectiveMember.this.onRegistrationResponse(ClientPipe.this);
@@ -509,8 +672,15 @@ public class CollectiveMember {
             super.onDisconnect();
             synchronized (CollectiveMember.this) {
                 setPipeConnectionStatus(MemberStatusEnum.DOWN);
-                boolean becamePrimary = calculatePrimary();
-                _ftManager.pipeOnSinkDisconnect(this, isCoreUp(), becamePrimary);
+                _myVote = null;
+                PrimaryCalculationResult result;
+                if (_useConsensus) {
+                    calculateVotes();
+                    result = calculateQuorumPrimary("ClientPipe.onDisconnect");
+                } else {
+                    result = calculatePrimary();
+                }
+                _ftManager.pipeOnSinkDisconnect(this, isCoreUp(), result);
             }
             CollectiveMember.this.onClientDisconnect(this);
         }
@@ -520,12 +690,14 @@ public class CollectiveMember {
             if (msg instanceof VersionedStringMsg) {
                 handleUpgradeMessage((VersionedStringMsg) msg, _connInfo.toString());
             } else {
-                if (log.isDebugEnabled()) log.info("{}ClientPipe received {} from {}", _cmId, msg, this);
+//                if (log.isDebugEnabled()) log.info("{}ClientPipe received {} from {}@{}", _cmId, msg, _appInfo, _connInfo.getPort());
                 synchronized (CollectiveMember.this) {
                     if (msg instanceof FtMemberMsg) {
                         _ftManager.pipeOnFtMsgFromSink(new FtMemberMsg((FtMemberMsg) msg));
                     } else if (msg instanceof FtMonitorMsg) {
                         _ftManager.pipeOnFtMsgFromSink(new FtMonitorMsg((FtMonitorMsg) msg));
+                    } else if (msg instanceof VoteMsg) {
+                        handleVoteMessage(new VoteMsg((VoteMsg) msg));
                     } else {
                         try {
                             CollectiveMember.this.onMsg(this, msg);
@@ -571,7 +743,7 @@ public class CollectiveMember {
         }
 
         public String toString() {
-            return "{"+_appInfo+"@"+_connInfo.getPort()+" "+_memberStatus+"}";
+            return "{"+((_myPipe) ? "* " : "")+_appInfo+"@"+_connInfo.getPort()+" "+_memberStatus+" "+((_myVote==null) ? null : _myVote._appInfo)+" "+_myVoteCnt+"}";
         }
     }
 

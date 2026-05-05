@@ -23,25 +23,22 @@ import net.a_cappella.continuo.msg.*;
 import net.a_cappella.presto.ft.constants.FtMsgOp;
 import net.a_cappella.presto.ft.constants.MemberStatusEnum;
 import net.a_cappella.presto.ft.upgrade.VersionedParamsCache;
-import net.a_cappella.presto.msg.FtMemberMsg;
-import net.a_cappella.presto.msg.FtMonitorMsg;
-import net.a_cappella.presto.msg.VersionedStringMsg;
+import net.a_cappella.presto.msg.*;
 import net.a_cappella.presto.obj.ObjImpl;
-import net.a_cappella.presto.msg.RtgImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-//import net.a_cappella.continuo.managed.ObjectManagerTestUtils;
-
-
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 
 import static net.a_cappella.continuo.utils.Utils.sleep;
 import static org.junit.jupiter.api.Assertions.*;
@@ -71,6 +68,8 @@ public abstract class CollectiveTestBase {
                     new MsgInstantiator(RegistrationRequest.class.getName());
             MsgInstantiator registrationResponseInstantiator =
                     new MsgInstantiator(RegistrationResponse.class.getName());
+            MsgInstantiator voteInstantiator =
+                    new MsgInstantiator(VoteMsg.class.getName());
             MsgInstantiator versionedStringInstantiator =
                     new MsgInstantiator(VersionedStringMsg.class.getName());
             MsgInstantiator ftMemberInstantiator =
@@ -82,6 +81,7 @@ public abstract class CollectiveTestBase {
                     forceDisconnectInstantiator,
                     registrationRequestInstantiator,
                     registrationResponseInstantiator,
+                    voteInstantiator,
                     versionedStringInstantiator,
                     ftMemberInstantiator,
                     ftMonitorInstantiator);
@@ -90,6 +90,7 @@ public abstract class CollectiveTestBase {
                     new Pool<Msg>(forceDisconnectInstantiator, 20, 10),
                     new Pool<Msg>(registrationRequestInstantiator, 20, 10),
                     new Pool<Msg>(registrationResponseInstantiator, 20, 10),
+                    new Pool<Msg>(voteInstantiator, 20, 10),
                     new Pool<Msg>(versionedStringInstantiator, 20, 10),
                     new Pool<Msg>(ftMemberInstantiator, 20, 10),
                     new Pool<Msg>(ftMonitorInstantiator, 20, 10));
@@ -127,7 +128,7 @@ public abstract class CollectiveTestBase {
 
 
 
-    protected void eventually(CompInfoSet cis, BooleanSupplier supplier) {
+    private void eventually(CompInfoSet cis, BooleanSupplier supplier) {
         long giveUpTime = System.currentTimeMillis() + GIVEUP_INTERVAL_MILLIS;
         while (giveUpTime >= System.currentTimeMillis()) {
             sleep(VERIFY_FREQUENCY_MILLIS);
@@ -136,11 +137,65 @@ public abstract class CollectiveTestBase {
         assertTrue(supplier.getAsBoolean(), cis.toString());
     }
 
-    protected void notWithinReasonableTimeframe(CompInfoSet cis, BooleanSupplier supplier) {
+    protected void eventually(ClientMem m, Predicate<ClientMem> predicate) {
         long giveUpTime = System.currentTimeMillis() + GIVEUP_INTERVAL_MILLIS;
         while (giveUpTime >= System.currentTimeMillis()) {
             sleep(VERIFY_FREQUENCY_MILLIS);
-            assertFalse(supplier.getAsBoolean(), cis.toString());
+            if (predicate.test(m)) return;
+        }
+        assertTrue(predicate.test(m), m._client._myInfo.getId());
+    }
+
+    protected void eventually(ClientMem m, BiPredicate<ClientMem, String> predicate) {
+        long giveUpTime = System.currentTimeMillis() + GIVEUP_INTERVAL_MILLIS;
+        while (giveUpTime >= System.currentTimeMillis()) {
+            sleep(VERIFY_FREQUENCY_MILLIS);
+            if (predicate.test(m, null)) return;
+        }
+        predicate.test(m,  m._client._myInfo.getId());
+    }
+
+    protected void eventually(ClientMon m, Predicate<ClientMon> predicate) {
+        long giveUpTime = System.currentTimeMillis() + GIVEUP_INTERVAL_MILLIS;
+        while (giveUpTime >= System.currentTimeMillis()) {
+            sleep(VERIFY_FREQUENCY_MILLIS);
+            if (predicate.test(m)) return;
+        }
+        assertTrue(predicate.test(m), m._monitor._myInfo.getId());
+    }
+
+    protected void eventually(ClientMon m, BiPredicate<ClientMon, String> predicate) {
+        long giveUpTime = System.currentTimeMillis() + GIVEUP_INTERVAL_MILLIS;
+        while (giveUpTime >= System.currentTimeMillis()) {
+            sleep(VERIFY_FREQUENCY_MILLIS);
+            if (predicate.test(m, null)) return;
+        }
+        predicate.test(m, m._monitor._myInfo.getId());
+    }
+
+    protected void eventually(Daemon d, Predicate<Daemon> predicate) {
+        long giveUpTime = System.currentTimeMillis() + GIVEUP_INTERVAL_MILLIS;
+        while (giveUpTime >= System.currentTimeMillis()) {
+            sleep(VERIFY_FREQUENCY_MILLIS);
+            if (predicate.test(d)) return;
+        }
+        assertTrue(predicate.test(d), d._myInfoStr);
+    }
+
+    protected void eventually(Daemon d, BiPredicate<Daemon, String> predicate) {
+        long giveUpTime = System.currentTimeMillis() + GIVEUP_INTERVAL_MILLIS;
+        while (giveUpTime >= System.currentTimeMillis()) {
+            sleep(VERIFY_FREQUENCY_MILLIS);
+            if (predicate.test(d, null)) return;
+        }
+        predicate.test(d, d._myInfoStr);
+    }
+
+    protected void notWithinReasonableTimeframe(ClientMon m, BiConsumer<ClientMon, String> consumer) {
+        long giveUpTime = System.currentTimeMillis() + GIVEUP_INTERVAL_MILLIS;
+        while (giveUpTime >= System.currentTimeMillis()) {
+            sleep(VERIFY_FREQUENCY_MILLIS);
+            consumer.accept(m, m._monitor._myInfo.getId());
         }
     }
 
@@ -153,14 +208,15 @@ public abstract class CollectiveTestBase {
         private VersionedParamsCache _versionedParamsCache;
         private CollectiveMember _collectiveMember;
 
-        public Daemon(String myInfoStr, String collectiveCores, int collectiveCoresVersion, String upgradedFilePathName) {
-            _myInfoStr = myInfoStr;
-            _collectiveCores = collectiveCores;
-            _collectiveCoresVersion = collectiveCoresVersion;
-            _upgradedFilePathName = upgradedFilePathName;
+        public Daemon(CompInfoSet cis, int instance, int[] cores, int version) {
+            _myInfoStr = cis.getDInfo(instance);
+            _collectiveCores = cis.getDCores(cores);
+            _collectiveCoresVersion = version;
+            _upgradedFilePathName = cis.getDUpgrade(instance);
 
-            init(collectiveCoresVersion, collectiveCores);
+            init(_collectiveCoresVersion, _collectiveCores);
         }
+
         private void init(int collectiveCoresVersion, String collectiveCores) {
             _versionedParamsCache = new VersionedParamsCache(_upgradedFilePathName);
             _versionedParamsCache.start();
@@ -176,14 +232,6 @@ public abstract class CollectiveTestBase {
             _collectiveMember.setReconnectIntervalMillis(RECONNECT_INTERVAL_MILLIS);
         }
 
-        public Daemon(String myInfo, String collectiveCores, int collectiveCoresVersion, String upgradedFilePathName,
-                      String connectionTimeoutMicros, String reconnectIntervalMillis) {
-            this(myInfo, collectiveCores, collectiveCoresVersion, upgradedFilePathName);
-            _collectiveMember.setConnectionTimeoutMicros(connectionTimeoutMicros);
-            _collectiveMember.setReconnectIntervalMillis(reconnectIntervalMillis);
-
-        }
-
         public void start() {
             _collectiveMember.start();
         }
@@ -196,24 +244,20 @@ public abstract class CollectiveTestBase {
             }
         }
 
-        public void restart(CompInfoSet cis, BooleanSupplier... suppliers) {
+        public void restart(CompInfoSet cis) {
             _collectiveMember.stop();
-
-            eventually(cis, () -> isStopped(true));
-            for (BooleanSupplier supplier : suppliers) {
-                eventually(cis, supplier);
-            }
+            eventually(cis, () -> isStopped());
 
             init(_collectiveCoresVersion, _collectiveCores);
             _collectiveMember.start();
         }
 
-        public void restart(CompInfoSet cis, String collectiveCores, int collectiveCoresVersion) {
+        public void restart(CompInfoSet cis, int[] cores, int version) {
             _collectiveMember.stop();
+            eventually(cis, () -> isStopped());
 
-            eventually(cis, () -> isStopped(true));
-            _collectiveCores = collectiveCores;
-            _collectiveCoresVersion = collectiveCoresVersion;
+            _collectiveCores = cis.getDCores(cores);
+            _collectiveCoresVersion = version;
 
             init(_collectiveCoresVersion, _collectiveCores);
             _collectiveMember.start();
@@ -223,8 +267,14 @@ public abstract class CollectiveTestBase {
             return _collectiveMember.iAmCore() == expected;
         }
 
-        public boolean iAmPrimary(boolean expected, MemberStatusEnum[] statuses) {
-            return _collectiveMember.iAmPrimary() == expected && _collectiveMember.verifyStatuses(statuses);
+        public boolean iAmPrimary(String ctx, boolean expected, MemberStatusEnum[] statuses) {
+            if (ctx == null) {
+                return _collectiveMember.iAmPrimary() == expected && _collectiveMember.verifyStatuses(statuses);
+            } else {
+                assertEquals(Arrays.asList(statuses), Arrays.asList(_collectiveMember.getStatuses()), ctx + " statuses");
+                assertEquals(expected, _collectiveMember.iAmPrimary(), ctx + " is primary");
+                return true;
+            }
         }
 
         public boolean isStarted(boolean expected) {
@@ -235,8 +285,8 @@ public abstract class CollectiveTestBase {
             return _collectiveMember.isUpgraded(version);
         }
 
-        public boolean isStopped(boolean expected) {
-            return _collectiveMember.isStopped() == expected;
+        public boolean isStopped() {
+            return _collectiveMember.isStopped() == true;
         }
     }
 
@@ -251,12 +301,6 @@ public abstract class CollectiveTestBase {
             _client.registerFtMemberListener(this);
             _client.setConnectionTimeoutMicros(CONNECTION_TIMEOUT_MICROS);
             _client.setReconnectIntervalMillis(RECONNECT_INTERVAL_MILLIS);
-        }
-
-        public ClientMem(MsgCoder coder, String clInfo, String connectionTimeoutMicros, String reconnectIntervalMillis) {
-            this(coder, clInfo);
-            _client.setConnectionTimeoutMicros(connectionTimeoutMicros);
-            _client.setReconnectIntervalMillis(reconnectIntervalMillis);
         }
 
         public void start() {
@@ -275,12 +319,20 @@ public abstract class CollectiveTestBase {
             _client.unregisterFtMember(groupName, instance);
         }
 
-        public boolean isMemResult(FtMsgOp op) {
-            return isMemResult(op, 0, (op==FtMsgOp.ACTIVATE)?1:0);
+        public boolean isMemResult(String ctx, FtMsgOp op) {
+            if (ctx == null) {
+                return _op == op && _sliceNo == 0 && _ofSlices == ((op == FtMsgOp.ACTIVATE) ? 1 : 0);
+            }
+            assertEquals(String.format("(%s, %d, %d)", op, 0, 0), String.format("(%s, %d, %d)", _op, _sliceNo, _ofSlices), ctx);
+            return true;
         }
 
-        public boolean isMemResult(FtMsgOp op, int sliceNo, int ofSlices) {
-            return _op == op && _sliceNo == sliceNo && _ofSlices == ofSlices;
+        public boolean isMemResult(String ctx, FtMsgOp op, int sliceNo, int ofSlices) {
+            if (ctx == null) {
+                return _op == op && _sliceNo == sliceNo && _ofSlices == ofSlices;
+            }
+            assertEquals(String.format("(%s, %d, %d)", op, sliceNo, ofSlices), String.format("(%s, %d, %d)", _op, _sliceNo, _ofSlices), ctx);
+            return true;
         }
 
         @Override
@@ -301,7 +353,7 @@ public abstract class CollectiveTestBase {
 
     protected static class ClientMon implements IFtMonitorListener {
         private final CollectiveClient _monitor;
-        private int _actives = -1;
+        public int _actives = -1;
 
         public ClientMon(MsgCoder coder, String mInfo) {
             _monitor = new CollectiveClient(coder, mInfo, MON_CONF_INTERVAL_MILLIS, MEM_CONF_INTERVAL_MILLIS);
@@ -324,8 +376,18 @@ public abstract class CollectiveTestBase {
             _monitor.unregisterFtMonitor(groupName);
         }
 
-        public boolean isActivesBitMask(int expected) {
-            return _actives == expected;
+        public void failIfBitIsSet(String ctx, int bitMask) {
+            if ((_actives & bitMask) != 0) {
+                fail(String.format("%s bit=0x%08X not expected to be set in actives=0x%08X", ctx, bitMask, _actives));
+            }
+        }
+
+        public boolean isActivesBitMask(String ctx, int expected) {
+            if (ctx == null) {
+                return _actives == expected;
+            }
+            assertEquals(expected, _actives, ctx + " actives bit mask");
+            return true;
         }
 
         @Override
@@ -358,32 +420,12 @@ public abstract class CollectiveTestBase {
             }
 
         }
-        public String cc01() {
-            return getDInfo(0)+","+getDInfo(1);
-        }
-        public String cc02() {
-            return getDInfo(0)+","+getDInfo(2);
-        }
-        public String cc20() {
-            return getDInfo(2)+","+getDInfo(0);
-        }
-        public String cc12() {
-            return getDInfo(1)+","+getDInfo(2);
-        }
-        public String cc23() {
-            return getDInfo(2)+","+getDInfo(3);
-        }
-        public String cc012() {
-            return getDInfo(0)+","+getDInfo(1)+","+getDInfo(2);
-        }
-        public String cc210() {
-            return getDInfo(2)+","+getDInfo(1)+","+getDInfo(0);
-        }
-        public String cc123() {
-            return getDInfo(1)+","+getDInfo(2)+","+getDInfo(3);
-        }
-        public String cc321() {
-            return getDInfo(3)+","+getDInfo(2)+","+getDInfo(1);
+        public String getDCores(int[] coreIndices) {
+            String result = getDInfo(coreIndices[0]);
+            for (int i = 1; i < coreIndices.length; i++) {
+                result += "," + getDInfo(coreIndices[i]);
+            }
+            return result;
         }
         public String getDInfo(int instance) {
             return getDInfo(instance, instance);

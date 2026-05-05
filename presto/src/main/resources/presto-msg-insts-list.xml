@@ -15,6 +15,7 @@
                 <ref bean="presto.force.disconnect"/>
                 <ref bean="presto.registration.request"/>
                 <ref bean="presto.registration.response"/>
+                <ref bean="presto.ft.vote.msg"/>
                 <ref bean="presto.ft.member.msg"/>
                 <ref bean="presto.ft.monitor.msg"/>
                 <ref bean="presto.source.ports"/>

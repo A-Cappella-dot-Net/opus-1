@@ -78,7 +78,7 @@ public class BaseClientPipe {
         _sinkInfo = sinkInfo;
         _cmId = (cmId==null) ? "" : (cmId+" ");
         _reg = new RegistrationRequest(_myInfo, 0L);
-        _creatorName= creatorName;
+        _creatorName = creatorName;
     }
 
     public void startPipe() {
@@ -88,7 +88,7 @@ public class BaseClientPipe {
         if (_outBuf == null) _outBuf = ByteBuffer.allocate(_outBufferSize);
         _inBuf.clear();
         _outBuf.clear();
-        _pipeThread.setName(_creatorName + "PipeThread");
+        _pipeThread.setName(_creatorName + " PipeThread");
         _pipeThread.setCaller(caller);
         _pipeThread.start();
     }
@@ -172,7 +172,7 @@ public class BaseClientPipe {
         return _sinkInfo.getConn()+" - "+(x.getMessage()==null ? x.getClass().getCanonicalName() : x.getMessage());
     }
     private String getConnectionSummary(SocketAddress localAddress) {
-        return this+((localAddress==null)?"":(" on "+localAddress));
+        return _sinkInfo.getConn()+((localAddress==null)?"":(" on "+localAddress));
     }
 
 
@@ -257,7 +257,7 @@ public class BaseClientPipe {
                 if (_stop) break;
                 try {Thread.sleep(_reconnectIntervalMillis);} catch (InterruptedException x) {}
             }
-            log.info("{}ClientPipe Stopped {} {}", _cmId, BaseClientPipe.this, _caller);
+            log.info("{}ClientPipe Stopped {} {}", _cmId, getConnectionSummary(null), _caller);
             _pipeStatus = PipeStatus.STOPPED;
             onStopped();
         }

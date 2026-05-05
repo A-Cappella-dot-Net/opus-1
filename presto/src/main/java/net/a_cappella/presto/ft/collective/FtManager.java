@@ -78,8 +78,6 @@ public class FtManager {
             FtMsgOp op = msg._op;
             if (op == REGISTER) {
                 if (registerRequest(key, msg) == DUPLICATE) {
-                    msg.set(RESPONSE, DUPLICATE, NO);
-                    _member.sendMsg(key, msg);
                     return;
                 }
             } else if (op == UNREGISTER) {
@@ -154,7 +152,7 @@ public class FtManager {
         }
 
         for (String groupName : affectedGroups) {
-            evalMembership(groupName);
+            evalMembership(groupName, false);
         }
 
         if (log.isTraceEnabled()) log.trace("{}{}", _cmId, memberStructsToString());
@@ -215,27 +213,12 @@ public class FtManager {
         if (log.isTraceEnabled()) log.trace("{}{}", _cmId, memberStructsToString());
     }
 
-    public void pipeOnSinkDisconnect(ClientPipe pipe, boolean isCoreUp, boolean iBecamePrimary) {
-        if (log.isDebugEnabled()) log.info("{}pipeOnSinkDisconnect {} isCoreUp={} iBecamePrimary={}", _cmId, pipe, isCoreUp, iBecamePrimary);
+    public void pipeOnSinkDisconnect(ClientPipe pipe, boolean isCoreUp, CollectiveMember.PrimaryCalculationResult result) {
+        if (log.isDebugEnabled()) log.info("{}pipeOnSinkDisconnect {} isCoreUp={} result={}", _cmId, pipe, isCoreUp, result);
 
         if (isCoreUp) {
-            if (iBecamePrimary) { // only the primary needs to handle the disconnect...
-
-                // mem
-                Set<String> affectedGroups = new HashSet<>();
-                for (GroupAndInstance gi : _activeMemRequests.keySet()) {
-                    affectedGroups.add(gi._groupName);
-                }
-                for (String groupName : affectedGroups) {
-                    evalMembership(groupName, iBecamePrimary);
-                }
-
-                // mon - re-send reply to all sources
-                for (String groupName : _activeMonRequests.keySet()) {
-                    notifyFtMonitors(groupName, true);
-                }
-            }
-        } else { // I am a pass thru and the core is not up; send DISCONNECT to the app
+            onPrimaryCalculationResult(result);
+        } else { // I am a pass thru and the core is not up; send DISCONNECT to the clients
             // mem - disconnect all clients
             List<MemAndKey> list = new ArrayList<>(_activeMemRequests.values());
             for (int i=0; i<list.size(); i++) {
@@ -260,7 +243,53 @@ public class FtManager {
         if (log.isTraceEnabled()) log.trace("{}{}", _cmId, memberStructsToString());
     }
 
+    public void onPrimaryCalculationResult(CollectiveMember.PrimaryCalculationResult result) {
+        if (result == CollectiveMember.PrimaryCalculationResult.I_BECAME_PRIMARY) { // only the primary needs to handle the disconnect...
+            onBecomingPrimary();
+        } else if (result == CollectiveMember.PrimaryCalculationResult.NO_PRIMARY) {
+            onNoPrimary();
+        }
+    }
 
+    public void onBecomingPrimary() {
+        // mem
+        Set<String> affectedGroups = new HashSet<>();
+        for (GroupAndInstance gi : _activeMemRequests.keySet()) {
+            affectedGroups.add(gi._groupName);
+        }
+        for (String groupName : affectedGroups) {
+            evalMembership(groupName, true);
+        }
+
+        // mon - re-send reply to all sources
+        for (String groupName : _activeMonRequests.keySet()) {
+            notifyFtMonitors(groupName, true);
+        }
+    }
+
+    public void onNoPrimary() {
+        for (MonAndKeys mks : _activeMonRequests.values()) {
+            FtMonitorMsg mon = mks._mon;
+            mon.set(RESPONSE, NO_PRIMARY, NO, -1);
+            for (Map.Entry<SelectionKey, Character> entry : mks._keys.entrySet()) {
+                Character ch = entry.getValue();
+                if (ch.charValue() == YES) { // send only to clients
+                    SelectionKey key = entry.getKey();
+                    _member.sendMsg(key, mon);
+                }
+            }
+        }
+
+        for (MemAndKey mk : _activeMemRequests.values()) {
+            FtMemberMsg mem = mk._mem;
+            Character ch = mk._fromApp;
+            if (ch.charValue() == YES) { // send only to clients
+                mem.set(RESPONSE, NO_PRIMARY, NO, 0, 0);
+                SelectionKey key = mk._key;
+                _member.sendMsg(key, mem);
+            }
+        }
+    }
 
 
 
@@ -292,12 +321,14 @@ public class FtManager {
                 mk._key = key;
                 mk._fromApp = msg._fromApp;
             } else if (!mk._key.equals(key)) {
+                msg.set(RESPONSE, DUPLICATE, NO);
+                _member.sendMsg(key, msg);
                 return DUPLICATE;
             } // else same key
 
             if (_member.iAmCore()) {
                 addStruct(key, mem);
-                evalMembership(mem._groupName);
+                evalMembership(mem._groupName, false);
             } else if (!_member.isCoreUp()) {
                 mem.set(RESPONSE, DISCONNECT, NO, 0, 0);
                 _member.sendMsg(key, mem);
@@ -332,16 +363,16 @@ public class FtManager {
             }
 
             removeStruct(key, mem);
-            evalMembership(mem._groupName);
+            evalMembership(mem._groupName, false);
         }
     }
 
-    private void notifyFtMonitors(String groupName, boolean iBecamePrimary) {
+    private void notifyFtMonitors(String groupName, boolean forceNotify) {
         int actives = getActivesAsBitMask(groupName);
         MonAndKeys mk = _activeMonRequests.get(groupName);
         if (mk != null) {
             FtMonitorMsg msg = mk._mon;
-            if (actives!=msg._actives || iBecamePrimary) {
+            if (actives!=msg._actives || forceNotify) {
                 msg._actives = actives;
                 msg._type = RESPONSE;
                 msg._fromApp = NO;
@@ -440,9 +471,6 @@ public class FtManager {
         }
     }
 
-    private void evalMembership(String groupName) {
-        evalMembership(groupName, false);
-    }
     private void evalMembership(String groupName, boolean iBecamePrimary) {
         List<InstanceStatus> structsForGroup = _statusesByGroup.get(groupName);
         if (structsForGroup==null || structsForGroup.isEmpty()) {
@@ -459,10 +487,11 @@ public class FtManager {
         log.info("{}evalMembership {} {}", _cmId, groupName, structsForGroup);
         notifyFtMonitors(groupName, false);
     }
-    private void inactivateTail(String groupName, List<InstanceStatus> list, int goal, boolean iBecamePrimary) {
+
+    private void inactivateTail(String groupName, List<InstanceStatus> list, int goal, boolean forceDeactivate) {
         for (int i=goal; i<list.size(); i++) {
             InstanceStatus is = list.get(i);
-            if (is.getStatus()!=INACTIVE || iBecamePrimary) {
+            if (is.getStatus()!=INACTIVE || forceDeactivate) {
                 is.set(INACTIVE, 0, 0);
                 GroupAndInstance gi = new GroupAndInstance(groupName, is.getInstance());
                 MemAndKey mk = _activeMemRequests.get(gi);
@@ -475,11 +504,12 @@ public class FtManager {
             }
         }
     }
-    private void activateHead(String groupName, List<InstanceStatus> list, int goal, boolean iBecamePrimary) {
+
+    private void activateHead(String groupName, List<InstanceStatus> list, int goal, boolean forceActivate) {
         int maxActives = Math.min(list.size(), goal);
         for (int i=0; i<maxActives; i++) {
             InstanceStatus is = list.get(i);
-            if (!is.already(ACTIVE, i, maxActives) || iBecamePrimary) {
+            if (!is.already(ACTIVE, i, maxActives) || forceActivate) {
                 is.set(ACTIVE, i, maxActives);
                 GroupAndInstance gi = new GroupAndInstance(groupName, is.getInstance());
                 MemAndKey mk = _activeMemRequests.get(gi);

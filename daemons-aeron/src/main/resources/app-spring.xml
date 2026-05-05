@@ -29,6 +29,7 @@
         <property name="threadingMode" value="${threading.mode}"/>
 
         <property name="pinToCpu" value="${pin.driver.to.cpu}"/>
+        <property name="useConsensusStr" value="${use.consensus}"/>
 
         <constructor-arg index="0" ref="msgCoder" />
         <constructor-arg index="1" value="${collective.cores.list.version}" />

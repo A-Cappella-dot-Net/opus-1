@@ -17,6 +17,8 @@
 package net.a_cappella.presto.ft.collective;
 
 import net.a_cappella.presto.ft.constants.MemberStatusEnum;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,164 +29,187 @@ import static net.a_cappella.presto.ft.constants.FtMsgOp.DEACTIVATE;
 import static net.a_cappella.presto.ft.constants.MemberStatusEnum.DOWN;
 import static net.a_cappella.presto.ft.constants.MemberStatusEnum.UP;
 
-public class CollectiveUpgradeWithClientAndMonitorTest extends CollectiveTestBase {
+public class CollectiveUpgradeWithClientAndMonitorTest {
 
-    private static final AtomicInteger _port = new AtomicInteger(20430);
-    protected AtomicInteger getPort() {
-        return _port;
+    private static final AtomicInteger _port = new AtomicInteger(21430);
+
+    @Nested class WithConsensusTrueTests extends Tests {
+        @BeforeEach void useConsensus() { CollectiveMember.setUseConsensus(true); }
     }
 
-    @Test
-    public void testUpgradeCoresOrder() {
-        CompInfoSet cis = new CompInfoSet();
-
-        Daemon d0 = new Daemon(cis.getDInfo(0), cis.cc012(), 0, cis.getDUpgrade(0));
-        d0.start();
-        eventually(cis, () -> d0.iAmCore(true));
-        eventually(cis, () -> d0.isStarted(true));
-        eventually(cis, () -> d0.iAmPrimary(true, new MemberStatusEnum[] {UP, DOWN, DOWN}));
-
-        Daemon d1 = new Daemon(cis.getDInfo(1), cis.cc012(), 0, cis.getDUpgrade(1));
-        d1.start();
-        eventually(cis, () -> d1.iAmCore(true));
-        eventually(cis, () -> d1.isStarted(true));
-        eventually(cis, () -> d1.iAmPrimary(false, new MemberStatusEnum[] {UP, UP, DOWN}));
-
-        Daemon d2 = new Daemon(cis.getDInfo(2), cis.cc012(), 0, cis.getDUpgrade(2));
-        d2.start();
-        eventually(cis, () -> d2.iAmCore(true));
-        eventually(cis, () -> d2.isStarted(true));
-        eventually(cis, () -> d2.iAmPrimary(false, new MemberStatusEnum[] {UP, UP, UP}));
-
-        ClientMem mem0 = new ClientMem(_coder, cis.getMemInfo(0));
-        mem0.start();
-        eventually(cis, () -> mem0.isConnected(true));
-
-        ClientMon mon2 = new ClientMon(_coder, cis.getMonInfo(2));
-        mon2.start();
-        eventually(cis, () -> mon2.isConnected(true));
-
-        mem0.registerFtMember(FT_GROUP, 0, 1);
-        eventually(cis, () -> mem0.isMemResult(ACTIVATE));
-
-        mon2.registerFtMonitor(FT_GROUP);
-        eventually(cis, () -> mon2.isActivesBitMask(ZERO));
-
-        ClientMem mem1 = new ClientMem(_coder, cis.getMemInfo(1));
-        mem1.start();
-        eventually(cis, () -> mem1.isConnected(true));
-
-        mem1.registerFtMember(FT_GROUP, 1, 1);
-        eventually(cis, () -> mem1.isMemResult(DEACTIVATE));
-
-        d2.restart(cis, cis.cc210(), 1);
-        eventually(cis, () -> d2.isStarted(true));
-        eventually(cis, () -> d2.iAmPrimary(true, new MemberStatusEnum[] {UP, UP, UP}));
-
-        eventually(cis, () -> d0.iAmPrimary(false, new MemberStatusEnum[] {UP, UP, UP}));
-        eventually(cis, () -> d1.iAmPrimary(false, new MemberStatusEnum[] {UP, UP, UP}));
-
-        notWithinReasonableTimeframe(cis, () -> mon2.isActivesBitMask(ONE));
-        eventually(cis, () -> mon2.isActivesBitMask(ZERO));
-        eventually(cis, () -> mem0.isMemResult(ACTIVATE));
-        eventually(cis, () -> mem1.isMemResult(DEACTIVATE));
-
-        // TODO separate unit test for this behavior
-        d0.restart(cis);
-        eventually(cis, () -> d0.isStarted(true));
-
-        eventually(cis, () -> mem0.isMemResult(ACTIVATE));
-        eventually(cis, () -> mem1.isMemResult(DEACTIVATE));
-        eventually(cis, () -> mon2.isActivesBitMask(ZERO));
-
-        mem0.stop();
-        eventually(cis, () -> mem0.isStopped(true));
-
-        eventually(cis, () -> mem1.isMemResult(ACTIVATE));
-
-        mem1.stop();
-        eventually(cis, () -> mem1.isStopped(true));
-
-        eventually(cis, () -> mon2.isActivesBitMask(NONE));
-
-        mon2.stop();
-        eventually(cis, () -> mon2.isStopped(true));
-
-        d0.stop();
-        eventually(cis, () -> d0.isStopped(true));
-
-        d1.stop();
-        eventually(cis, () -> d1.isStopped(true));
-
-        tearDown(cis);
+    @Nested class WithConsensusFalseTests extends Tests {
+        @BeforeEach void useConsensus() { CollectiveMember.setUseConsensus(false); }
     }
 
-    @Test
-    public void testUpgradeAddPrimary() {
-        CompInfoSet cis = new CompInfoSet();
+    abstract static class Tests extends CollectiveTestBase {
+        @Override protected AtomicInteger getPort() { return _port; }
 
-        Daemon d0 = new Daemon(cis.getDInfo(0), cis.cc01(), 0, cis.getDUpgrade(0));
-        d0.start();
-        eventually(cis, () -> d0.iAmCore(true));
-        eventually(cis, () -> d0.isStarted(true));
-        eventually(cis, () -> d0.iAmPrimary(true, new MemberStatusEnum[] {UP, DOWN}));
+        @Test
+        public void testUpgradeCoresOrder() {
+            CompInfoSet cis = new CompInfoSet();
 
-        Daemon d3 = new Daemon(cis.getDInfo(3), cis.cc01(), 0, cis.getDUpgrade(3));
-        d3.start();
-        eventually(cis, () -> d3.iAmCore(false));
-        eventually(cis, () -> d3.isStarted(true));
-        eventually(cis, () -> d3.iAmPrimary(false, new MemberStatusEnum[] {UP, DOWN}));
+            Daemon d0 = new Daemon(cis, 0, new int[] {0, 1, 2}, 0);
+            d0.start();
+            eventually(d0, (d) -> d.iAmCore(true));
+            eventually(d0, (d) -> d.isStarted(true));
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
 
-        ClientMem mem31 = new ClientMem(_coder, cis.getMemInfo(1, 3));
-        mem31.start();
-        eventually(cis, () -> mem31.isConnected(true));
+            Daemon d1 = new Daemon(cis, 1, new int[] {0, 1, 2}, 0);
+            d1.start();
+            eventually(d1, (d) -> d.iAmCore(true));
+            eventually(d1, (d) -> d.isStarted(true));
+            eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, DOWN}));
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, UP, DOWN}));
 
-        ClientMon mon3 = new ClientMon(_coder, cis.getMonInfo(3));
-        mon3.start();
-        eventually(cis, () -> mon3.isConnected(true));
+            Daemon d2 = new Daemon(cis, 2, new int[] {0, 1, 2}, 0);
+            d2.start();
+            eventually(d2, (d) -> d.iAmCore(true));
+            eventually(d2, (d) -> d.isStarted(true));
+            eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
 
-        mem31.registerFtMember(FT_GROUP, 1, 1);
-        eventually(cis, () -> mem31.isMemResult(ACTIVATE));
+            ClientMem mem0 = new ClientMem(_coder, cis.getMemInfo(0));
+            mem0.start();
+            eventually(mem0, (m) -> m.isConnected(true));
 
-        mon3.registerFtMonitor(FT_GROUP);
-        eventually(cis, () -> mon3.isActivesBitMask(ONE));
+            ClientMon mon2 = new ClientMon(_coder, cis.getMonInfo(2));
+            mon2.start();
+            eventually(mon2, (m) -> m.isConnected(true));
 
-        Daemon d2 = new Daemon(cis.getDInfo(2), cis.cc20(), 1, cis.getDUpgrade(2));
-        d2.start();
-        eventually(cis, () -> d2.iAmCore(true));
-        eventually(cis, () -> d2.isStarted(true));
-        eventually(cis, () -> d2.iAmPrimary(true, new MemberStatusEnum[] {UP, UP}));
-        eventually(cis, () -> d0.iAmPrimary(false, new MemberStatusEnum[] {UP, UP}));
+            mem0.registerFtMember(FT_GROUP, 0, 1);
+            eventually(mem0, (m, ctx) -> m.isMemResult(ctx, ACTIVATE));
 
-        ClientMem mem30 = new ClientMem(_coder, cis.getMemInfo(0, 3));
-        mem30.start();
-        eventually(cis, () -> mem30.isConnected(true));
+            mon2.registerFtMonitor(FT_GROUP);
+            eventually(mon2, (m, ctx) -> m.isActivesBitMask(ctx, ZERO));
 
-        mem30.registerFtMember(FT_GROUP, 0, 1);
-        eventually(cis, () -> mem30.isMemResult(ACTIVATE));
-        eventually(cis, () -> mem31.isMemResult(DEACTIVATE));
+            ClientMem mem1 = new ClientMem(_coder, cis.getMemInfo(1));
+            mem1.start();
+            eventually(mem1, (m) -> m.isConnected(true));
+
+            mem1.registerFtMember(FT_GROUP, 1, 1);
+            eventually(mem1, (m, ctx) -> m.isMemResult(ctx, DEACTIVATE));
+
+            d2.restart(cis, new int[] {2, 1, 0}, 1);
+            eventually(d2, (d) -> d.isStarted(true));
+            eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, UP, UP}));
+
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+            eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+
+            // only bit ZERO is set as mem1 is DEACTIVATEd
+            notWithinReasonableTimeframe(mon2, (m, ctx) -> m.failIfBitIsSet(ctx, ONE));
+            eventually(mon2, (m, ctx) -> m.isActivesBitMask(ctx, ZERO));
+            eventually(mem0, (m, ctx) -> m.isMemResult(ctx, ACTIVATE));
+            eventually(mem1, (m, ctx) -> m.isMemResult(ctx, DEACTIVATE));
+
+            // TODO separate unit test for this behavior
+            d0.restart(cis);
+            eventually(d0, (d) -> d.isStarted(true));
+
+            eventually(mem0, (m, ctx) -> m.isMemResult(ctx, ACTIVATE));
+            eventually(mem1, (m, ctx) -> m.isMemResult(ctx, DEACTIVATE));
+            eventually(mon2, (m, ctx) -> m.isActivesBitMask(ctx, ZERO));
+
+            mem0.stop();
+            eventually(mem0, (m) -> m.isStopped(true));
+
+            eventually(mem1, (m, ctx) -> m.isMemResult(ctx, ACTIVATE));
+
+            mem1.stop();
+            eventually(mem1, (m) -> m.isStopped(true));
+
+            eventually(mon2, (m, ctx) -> m.isActivesBitMask(ctx, NONE));
+
+            mon2.stop();
+            eventually(mon2, (m) -> m.isStopped(true));
+
+            d0.stop();
+            eventually(d0, (d) -> d.isStopped());
+
+            d1.stop();
+            eventually(d1, (d) -> d.isStopped());
+
+            d2.stop();
+            eventually(d2, (d) -> d.isStopped());
+
+            tearDown(cis);
+        }
+
+        @Test
+        public void testUpgradeAddPrimary() {
+            CompInfoSet cis = new CompInfoSet();
+
+            Daemon d0 = new Daemon(cis, 0, new int[] {0, 1}, 0);
+            d0.start();
+            eventually(d0, (d) -> d.iAmCore(true));
+            eventually(d0, (d) -> d.isStarted(true));
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {UP, DOWN}));
+
+            Daemon d1 = new Daemon(cis, 1, new int[] {0, 1}, 0);
+            d1.start();
+            eventually(d1, (d) -> d.iAmCore(true));
+            eventually(d1, (d) -> d.isStarted(true));
+            eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP}));
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, UP}));
+
+            Daemon d3 = new Daemon(cis, 3, new int[] {0, 1}, 0);
+            d3.start();
+            eventually(d3, (d) -> d.iAmCore(false));
+            eventually(d3, (d) -> d.isStarted(true));
+            eventually(d3, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP}));
+
+            ClientMem mem31 = new ClientMem(_coder, cis.getMemInfo(1, 3));
+            mem31.start();
+            eventually(mem31, (m) -> m.isConnected(true));
+
+            ClientMon mon3 = new ClientMon(_coder, cis.getMonInfo(3));
+            mon3.start();
+            eventually(mon3, (m) -> m.isConnected(true));
+
+            mem31.registerFtMember(FT_GROUP, 1, 1);
+            eventually(mem31, (m, ctx) -> m.isMemResult(ctx, ACTIVATE));
+
+            mon3.registerFtMonitor(FT_GROUP);
+            eventually(mon3, (m, ctx) -> m.isActivesBitMask(ctx, ONE));
+
+            Daemon d2 = new Daemon(cis, 2, new int[] {2, 0}, 1);
+            d2.start();
+            eventually(d2, (d) -> d.iAmCore(true));
+            eventually(d2, (d) -> d.isStarted(true));
+            eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, UP}));
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP}));
+
+            ClientMem mem30 = new ClientMem(_coder, cis.getMemInfo(0, 3));
+            mem30.start();
+            eventually(mem30, (m) -> m.isConnected(true));
+
+            mem30.registerFtMember(FT_GROUP, 0, 1);
+            eventually(mem30, (m, ctx) -> m.isMemResult(ctx, ACTIVATE));
+            eventually(mem31, (m, ctx) -> m.isMemResult(ctx, DEACTIVATE));
 
 
 
-        mem31.stop();
-        eventually(cis, () -> mem31.isStopped(true));
+            mem31.stop();
+            eventually(mem31, (m) -> m.isStopped(true));
 
-        mem30.stop();
-        eventually(cis, () -> mem30.isStopped(true));
+            mem30.stop();
+            eventually(mem30, (m) -> m.isStopped(true));
 
-        mon3.stop();
-        eventually(cis, () -> mon3.isStopped(true));
+            mon3.stop();
+            eventually(mon3, (m) -> m.isStopped(true));
 
-        d0.stop();
-        eventually(cis, () -> d0.isStopped(true));
+            d0.stop();
+            eventually(d0, (d) -> d.isStopped());
 
-        d3.stop();
-        eventually(cis, () -> d3.isStopped(true));
+            d3.stop();
+            eventually(d3, (d) -> d.isStopped());
 
-        d2.stop();
-        eventually(cis, () -> d2.isStopped(true));
+            d2.stop();
+            eventually(d2, (d) -> d.isStopped());
 
-        tearDown(cis);
+            d1.stop();
+            eventually(d1, (d) -> d.isStopped());
+
+            tearDown(cis);
+        }
     }
-
 }

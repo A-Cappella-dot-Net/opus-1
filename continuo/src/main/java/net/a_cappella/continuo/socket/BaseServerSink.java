@@ -133,7 +133,7 @@ public class BaseServerSink {
         _outBuf = ByteBuffer.allocate(_outBufSize);
         log.info("{}Server starting", _cmId);
         _conMap.logConnectionsMaps();
-        _sinkThread.setName(_cmId+"serverSink");
+        _sinkThread.setName(_cmId+"SinkThread");
         _sinkThread.start();
     }
 
@@ -376,7 +376,7 @@ public class BaseServerSink {
                 try {
                     sendMsg(key, _forceDisconnectMsg);
                 } catch (Exception x) {
-                    log.info("{}Could not send disconnect message to {}", _cmId, keyHash(key), x);
+                    log.info("{}Could not send disconnect message to {} {}", _cmId, keyHash(key), x.getMessage());
                 }
             }
         }

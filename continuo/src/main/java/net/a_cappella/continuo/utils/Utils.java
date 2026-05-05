@@ -145,6 +145,13 @@ public class Utils {
         return cmp(a, b);
     }
 
+    public static boolean parseAsBoolean(String name, String valStr, boolean defaultVal) {
+        if (valStr.startsWith("${")) {
+            log.warn("Invalid {} value {}. Defaulting to {}", name, valStr, defaultVal);
+            return defaultVal;
+        }
+        return Boolean.parseBoolean(valStr);
+    }
     public static int parseAsInt(String name, String valStr, int defaultVal) {
         int val = defaultVal;
         try {
