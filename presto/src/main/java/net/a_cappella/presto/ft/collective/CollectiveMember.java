@@ -339,12 +339,12 @@ public class CollectiveMember {
     public enum PrimaryCalculationResult {NO_PRIMARY, I_BECAME_PRIMARY, DONT_CARE}
 
     private synchronized PrimaryCalculationResult calculatePrimary() {
-        List<ClientPipe> pipes = _pipes.get();
         if (_stop) {
             log.info("{}calculatePrimary already stopped => not primary", _cmId);
             _iAmPrimary = false;
-            return PrimaryCalculationResult.DONT_CARE;
+            return DONT_CARE;
         }
+        List<ClientPipe> pipes = _pipes.get();
         // checking that all pipes are up
         for (int i = 0; i < pipes.size(); i++) {
             ClientPipe pipe = pipes.get(i);
@@ -354,7 +354,7 @@ public class CollectiveMember {
                 // need to wait until I am certain; otherwise there could be overlap
                 resetPrimary(pipes, 0);
                 _iAmPrimary = false;
-                return PrimaryCalculationResult.DONT_CARE;
+                return DONT_CARE;
             }
         }
         // calculate primary
@@ -367,17 +367,17 @@ public class CollectiveMember {
                     } else {
                         log.info("{}calculatePrimary {} {} => {} is still primary", _cmId, _myInfo, pipes, pipe);
                     }
-                    return PrimaryCalculationResult.DONT_CARE;
+                    return DONT_CARE;
                 }
                 setPrimary(pipes, i);
                 if (pipe._myPipe) {
                     log.info("{}calculatePrimary {} ===> I am primary!!!", _cmId, pipes);
                     _iAmPrimary = true;
-                    return PrimaryCalculationResult.I_BECAME_PRIMARY;
+                    return I_BECAME_PRIMARY;
                 } else {
                     log.info("{}calculatePrimary {} => {} is primary", _cmId, pipes, pipe);
                     _iAmPrimary = false;
-                    return PrimaryCalculationResult.DONT_CARE;
+                    return DONT_CARE;
                 }
             } else {
                 pipe.setPrimary(false);
@@ -385,7 +385,7 @@ public class CollectiveMember {
         }
         log.info("{}calculatePrimary {} => no primary is up atm...", _cmId, pipes);
         _iAmPrimary = false;
-        return PrimaryCalculationResult.NO_PRIMARY;
+        return NO_PRIMARY;
     }
 
     private void setPrimary(List<ClientPipe> pipes, int atIndex) {
@@ -690,14 +690,14 @@ public class CollectiveMember {
             if (msg instanceof VersionedStringMsg) {
                 handleUpgradeMessage((VersionedStringMsg) msg, _connInfo.toString());
             } else {
-//                if (log.isDebugEnabled()) log.info("{}ClientPipe received {} from {}@{}", _cmId, msg, _appInfo, _connInfo.getPort());
+                if (log.isDebugEnabled()) log.info("{}ClientPipe received {} from {}@{}", _cmId, msg, _appInfo, _connInfo.getPort());
                 synchronized (CollectiveMember.this) {
                     if (msg instanceof FtMemberMsg) {
                         _ftManager.pipeOnFtMsgFromSink(new FtMemberMsg((FtMemberMsg) msg));
                     } else if (msg instanceof FtMonitorMsg) {
                         _ftManager.pipeOnFtMsgFromSink(new FtMonitorMsg((FtMonitorMsg) msg));
                     } else if (msg instanceof VoteMsg) {
-                        handleVoteMessage(new VoteMsg((VoteMsg) msg));
+                        handleVoteMessage((VoteMsg) msg);
                     } else {
                         try {
                             CollectiveMember.this.onMsg(this, msg);
