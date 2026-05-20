@@ -48,6 +48,11 @@ public class FtMemberMsg extends FtMsg {
     }
 
     @Override
+    public FtMemberMsg clone() {
+        return new FtMemberMsg(this);
+    }
+
+    @Override
     public int getMsgType() {
         return FT_MEMBER;
     }

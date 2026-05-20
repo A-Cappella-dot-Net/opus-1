@@ -17,6 +17,7 @@ dependencies {
     implementation(libs.guava)
 
     implementation(libs.trove)
+    implementation(libs.jctools)
 
     testImplementation(libs.hdrhistogram)
 

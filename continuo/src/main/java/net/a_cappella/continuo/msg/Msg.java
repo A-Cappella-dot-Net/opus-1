@@ -36,6 +36,10 @@ public abstract class Msg extends Poolable implements ITypedMsg, Serializable {
 
     public Msg() {}
 
+    public Msg clone() {
+        throw new RuntimeException("'clone' not implemented " + getClass().getName());
+    }
+
     @Override
     public int getMsgType() {
         return SERIAL;

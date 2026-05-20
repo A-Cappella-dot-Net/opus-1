@@ -53,6 +53,11 @@ public class VersionedStringMsg extends Msg {
     }
 
     @Override
+    public VersionedStringMsg clone() {
+        return new VersionedStringMsg(this);
+    }
+
+    @Override
     public int getMsgType() {
         return VERSIONED_STRING_MSG;
     }

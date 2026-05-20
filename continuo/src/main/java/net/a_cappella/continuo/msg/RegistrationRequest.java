@@ -45,6 +45,12 @@ public class RegistrationRequest extends Msg {
         _myConnInfo = null;
     }
 
+    @Override
+    public RegistrationRequest clone() {
+        return new RegistrationRequest(this);
+    }
+
+
     public void setStartTime() {
         _startTime = System.currentTimeMillis();
     }

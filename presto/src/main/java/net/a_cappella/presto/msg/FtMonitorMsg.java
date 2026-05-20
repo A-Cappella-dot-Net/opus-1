@@ -43,6 +43,11 @@ public class FtMonitorMsg extends FtMsg {
     }
 
     @Override
+    public FtMonitorMsg clone() {
+        return new FtMonitorMsg(this);
+    }
+
+    @Override
     public int getMsgType() {
         return FT_MONITOR;
     }

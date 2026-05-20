@@ -39,8 +39,13 @@ public class VoteMsg extends Msg {
     }
 
     public VoteMsg(VoteMsg other) {
-        _ofMember = other._ofMember;
-        _forMember = other._forMember;
+        _ofMember = new AppInfo(other._ofMember);
+        _forMember = new AppInfo(other._forMember);
+    }
+
+    @Override
+    public VoteMsg clone() {
+        return new VoteMsg(this);
     }
 
     @Override

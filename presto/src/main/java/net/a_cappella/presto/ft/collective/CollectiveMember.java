@@ -26,6 +26,7 @@ import net.a_cappella.continuo.socket.BaseClientPipe;
 import net.a_cappella.continuo.socket.BaseServerSink;
 import net.a_cappella.continuo.utils.Utils;
 import net.a_cappella.presto.ft.beans.MemberStatus;
+import net.a_cappella.presto.ft.collective.events.*;
 import net.a_cappella.presto.ft.constants.MemberStatusEnum;
 import net.a_cappella.presto.ft.upgrade.UpgradeManager;
 import net.a_cappella.presto.ft.upgrade.VersionedParamsCache;
@@ -33,6 +34,7 @@ import net.a_cappella.presto.msg.FtMemberMsg;
 import net.a_cappella.presto.msg.FtMonitorMsg;
 import net.a_cappella.presto.msg.VersionedStringMsg;
 import net.a_cappella.presto.msg.VoteMsg;
+import org.jctools.queues.MpscLinkedQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,15 +105,30 @@ public class CollectiveMember {
 
     private final SinkToPipeLinkage _sinkToPipeLinkage = new SinkToPipeLinkage();
 
+    private final Queue<FtEvent> _eventQueue = new MpscLinkedQueue();
+
     public CollectiveMember(MsgCoder coder, int version, String coreList) {
         _coder = coder;
 
         _upgradeMgr = new UpgradeManager(this, version, coreList);
     }
 
-    public synchronized void start() {
+    public void start() {
         _stop = false;
 
+        _eventQueue.add(new MemberStartEvent(this));
+
+        new Thread(() -> {
+            while (!_stop) {
+                FtEvent e;
+                while ((e = _eventQueue.poll()) != null) {
+                    e.apply();
+                }
+            }
+        }).start();
+    }
+
+    public void handleStartEvent() {
         _sink = new ServerSink(_coder, _myConnInfo);
         _sink.startSink();
 
@@ -155,19 +172,17 @@ public class CollectiveMember {
     }
 
     public void stop() {
+        _eventQueue.add(new MemberStopEvent(this));
+    }
+    public void handleStopEvent() {
         log.info("{}Stopping CollectiveMember", _cmId);
         _stop = true;
         _sink.stopSink();
-//        _sinkToPipeLinkage.removeAllLinkages();
-
+        _sinkToPipeLinkage.removeAllLinkages();
         for (ClientPipe pipe : _pipes.get()) {
             if (!pipe._myPipe) {
                 pipe.stopPipe();
             }
-        }
-
-        synchronized (this) {
-            _sinkToPipeLinkage.removeAllLinkages();
         }
     }
 
@@ -301,7 +316,7 @@ public class CollectiveMember {
         return result;
     }
 
-    private synchronized void handleUpgradeMessage(VersionedStringMsg vsm, String source) {
+    private void handleUpgradeMessage(VersionedStringMsg vsm, String source) {
         if (VSM_NAME.equals(vsm._name) && vsm._version>_upgradeMgr.getVersion()) {
             log.info("{}Got UPGRADE message {} from {}", _cmId, vsm, source);
             sendMsgToAllMembers(vsm); // send the upgrade message to all connected members (core or non core)
@@ -338,7 +353,7 @@ public class CollectiveMember {
 
     public enum PrimaryCalculationResult {NO_PRIMARY, I_BECAME_PRIMARY, DONT_CARE}
 
-    private synchronized PrimaryCalculationResult calculatePrimary() {
+    private PrimaryCalculationResult calculatePrimary() {
         if (_stop) {
             log.info("{}calculatePrimary already stopped => not primary", _cmId);
             _iAmPrimary = false;
@@ -403,7 +418,7 @@ public class CollectiveMember {
         }
     }
 
-    private synchronized void calculateVotes() {
+    private void calculateVotes() {
         if (_stop) {
             log.info("{}calculateVotes already stopped => not primary", _cmId);
             _iAmPrimary = false;
@@ -436,7 +451,7 @@ public class CollectiveMember {
         _ftManager.onPrimaryCalculationResult(result);
     }
 
-    private synchronized void handleVoteMessage(VoteMsg vote) {
+    private void handleVoteMessage(VoteMsg vote) {
         // cast vote
         ClientPipe voterPipe = findPipe(vote.ofMember());
         voterPipe._myVote = findPipe(vote.forMember());
@@ -549,58 +564,62 @@ public class CollectiveMember {
 
         @Override
         public void onClientConnect(SelectionKey key, RegistrationRequest reg) {
-            synchronized (CollectiveMember.this) {
-                // send _coreMembersListMsg only to collective members (not to clients)
-                if (reg.isFromDaemon()) {
-                    _memberKeys.add(key);
-                    log.info("{}serverSink.onClientConnect {}({}) {} => {}", _cmId, keyHash(key), _memberKeys.size(), reg, _upgradeMgr.getCoreMembersListMsg());
-                    sendMsg(key, _upgradeMgr.getCoreMembersListMsg()); // TODO replicate my core.list back to pipe
-                    if (_myVote != null) {
-                        sendMsg(key, new VoteMsg(_myPipe._appInfo, _myVote._appInfo));
-                    }
+            _eventQueue.add(new SinkConnectEvent(this, key, reg.clone()));
+        }
+        public void handleClientConnect(SelectionKey key, RegistrationRequest reg) {
+            // send _coreMembersListMsg only to collective members (not to clients)
+            if (reg.isFromDaemon()) {
+                _memberKeys.add(key);
+                log.info("{}serverSink.onClientConnect {}({}) {} => {}", _cmId, keyHash(key), _memberKeys.size(), reg, _upgradeMgr.getCoreMembersListMsg());
+                sendMsg(key, _upgradeMgr.getCoreMembersListMsg()); // TODO replicate my core.list back to pipe
+                if (_myVote != null) {
+                    sendMsg(key, new VoteMsg(_myPipe._appInfo, _myVote._appInfo));
                 }
+            }
 
-                if (_sinkToPipeLinkage.addSinkToPipeLinkage(key, reg)) {
-                    if (_useConsensus) {
-                        calculateVotes();
-                    } else {
-                        calculatePrimary();
-                    }
+            if (_sinkToPipeLinkage.addSinkToPipeLinkage(key, reg)) {
+                if (_useConsensus) {
+                    calculateVotes();
+                } else {
+                    calculatePrimary();
                 }
             }
         }
 
         @Override
         public void onClientDisconnect(SelectionKey key) {
+            _eventQueue.add(new SinkDisconnectEvent(this, key));
+        }
+        public void handleClientDisconnect(SelectionKey key) {
             log.info("{}serverSink.onClientDisconnect {}", _cmId, keyHash(key));
             _memberKeys.remove(key);
-            synchronized (CollectiveMember.this) {
-                if (_sinkToPipeLinkage.removeSinkToPipeLinkage(key)) {
-                    if (_useConsensus) {
-                        calculateVotes();
-                    } else {
-                        calculatePrimary();
-                    }
-                }
 
-                _ftManager.sinkOnPipeDisconnect(key);
-                CollectiveMember.this.onClientDisconnect(key);
+            if (_sinkToPipeLinkage.removeSinkToPipeLinkage(key)) {
+                if (_useConsensus) {
+                    calculateVotes();
+                } else {
+                    calculatePrimary();
+                }
             }
+
+            _ftManager.sinkOnPipeDisconnect(key);
+            CollectiveMember.this.onClientDisconnect(key);
         }
 
         @Override
         public void onMsg(SelectionKey key, Msg msg) {
+            _eventQueue.add(new SinkMsgEvent(this, key, msg.clone()));
+        }
+        public void handleMsg(SelectionKey key, Msg msg) {
             if (log.isDebugEnabled()) log.info("{}ServerSink received {} from {}", _cmId, msg, keyHash(key));
-            synchronized (CollectiveMember.this) {
-                if (msg instanceof FtMemberMsg) { // REQUESTS
-                    _ftManager.sinkOnFtMsgFromPipe(key, new FtMemberMsg((FtMemberMsg) msg));
-                } else if (msg instanceof FtMonitorMsg) { // REQUESTS
-                    _ftManager.sinkOnFtMsgFromPipe(key, new FtMonitorMsg((FtMonitorMsg) msg));
-                } else if (msg instanceof VersionedStringMsg) {
-                    handleUpgradeMessage(new VersionedStringMsg((VersionedStringMsg) msg), keyHash(key));
-                } else {
-                    CollectiveMember.this.onMsg(key, msg);
-                }
+            if (msg instanceof FtMemberMsg) { // REQUESTS
+                _ftManager.sinkOnFtMsgFromPipe(key, (FtMemberMsg) msg);
+            } else if (msg instanceof FtMonitorMsg) { // REQUESTS
+                _ftManager.sinkOnFtMsgFromPipe(key, (FtMonitorMsg) msg);
+            } else if (msg instanceof VersionedStringMsg) {
+                handleUpgradeMessage((VersionedStringMsg) msg, keyHash(key));
+            } else {
+                CollectiveMember.this.onMsg(key, msg);
             }
         }
 
@@ -651,63 +670,69 @@ public class CollectiveMember {
         @Override
         public void onRegistrationResponse() {
             super.onRegistrationResponse();
-            synchronized (CollectiveMember.this) {
-                setPipeConnectionStatus(MemberStatusEnum.UP);
-                if (_useConsensus) {
-                    calculateVotes();
-                } else {
-                    calculatePrimary();
-                }
-                try {
-                    sendMsg(_upgradeMgr.getCoreMembersListMsg()); // TODO replicate my core.list back to sink
-                    CollectiveMember.this.onRegistrationResponse(ClientPipe.this);
-                } catch (Exception e) {
-                    log.error(_cmId, e);
-                }
-                _ftManager.pipeOnSinkConnect(this);
-            }
+            _eventQueue.add(new PipeConnectEvent(this));
         }
+        public void handleRegistrationResponse() {
+            setPipeConnectionStatus(MemberStatusEnum.UP);
+            if (_useConsensus) {
+                calculateVotes();
+            } else {
+                calculatePrimary();
+            }
+            try {
+                sendMsg(_upgradeMgr.getCoreMembersListMsg()); // TODO replicate my core.list back to sink
+                CollectiveMember.this.onRegistrationResponse(ClientPipe.this);
+            } catch (Exception e) {
+                log.error(_cmId, e);
+            }
+            _ftManager.pipeOnSinkConnect(this);
+        }
+
         @Override
         public void onDisconnect() {
             super.onDisconnect();
-            synchronized (CollectiveMember.this) {
-                setPipeConnectionStatus(MemberStatusEnum.DOWN);
-                _myVote = null;
-                PrimaryCalculationResult result;
-                if (_useConsensus) {
-                    calculateVotes();
-                    result = calculateQuorumPrimary("ClientPipe.onDisconnect");
-                } else {
-                    result = calculatePrimary();
-                }
-                _ftManager.pipeOnSinkDisconnect(this, isCoreUp(), result);
+            _eventQueue.add(new PipeDisconnectEvent(this));
+        }
+        public void handleDisconnect() {
+            setPipeConnectionStatus(MemberStatusEnum.DOWN);
+            _myVote = null;
+            PrimaryCalculationResult result;
+            if (_useConsensus) {
+                calculateVotes();
+                result = calculateQuorumPrimary("ClientPipe.onDisconnect");
+            } else {
+                result = calculatePrimary();
             }
+            _ftManager.pipeOnSinkDisconnect(this, isCoreUp(), result);
             CollectiveMember.this.onClientDisconnect(this);
         }
+
         @Override
         public void onMsg(Msg msg) {
             super.onMsg(msg);
+            _eventQueue.add(new PipeMsgEvent(this, msg.clone()));
+        }
+        public void handleMsg(Msg msg) {
             if (msg instanceof VersionedStringMsg) {
                 handleUpgradeMessage((VersionedStringMsg) msg, _connInfo.toString());
             } else {
                 if (log.isDebugEnabled()) log.info("{}ClientPipe received {} from {}@{}", _cmId, msg, _appInfo, _connInfo.getPort());
-                synchronized (CollectiveMember.this) {
-                    if (msg instanceof FtMemberMsg) {
-                        _ftManager.pipeOnFtMsgFromSink(new FtMemberMsg((FtMemberMsg) msg));
-                    } else if (msg instanceof FtMonitorMsg) {
-                        _ftManager.pipeOnFtMsgFromSink(new FtMonitorMsg((FtMonitorMsg) msg));
-                    } else if (msg instanceof VoteMsg) {
-                        handleVoteMessage((VoteMsg) msg);
-                    } else {
-                        try {
-                            CollectiveMember.this.onMsg(this, msg);
-                        } catch (Exception e) {
-                            log.error(_cmId+"onMsg("+msg+")", e);
-                        }
+                if (msg instanceof FtMemberMsg) {
+                    _ftManager.pipeOnFtMsgFromSink((FtMemberMsg) msg);
+                } else if (msg instanceof FtMonitorMsg) {
+                    _ftManager.pipeOnFtMsgFromSink((FtMonitorMsg) msg);
+                } else if (msg instanceof VoteMsg) {
+                    handleVoteMessage((VoteMsg) msg);
+                } else {
+                    try {
+                        CollectiveMember.this.onMsg(this, msg);
+                    } catch (Exception e) {
+                        log.error(_cmId+"onMsg("+msg+")", e);
                     }
                 }
             }
         }
+
         @Override
         public void sendMsg(Msg msg) throws IOException {
             if (msg instanceof FtMemberMsg) {
