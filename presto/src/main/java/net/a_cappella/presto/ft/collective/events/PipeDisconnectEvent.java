@@ -27,6 +27,6 @@ public class PipeDisconnectEvent implements FtEvent {
 
     @Override
     public void apply() {
-        _pipe.handleDisconnect();
+        _pipe.handleSinkDisconnect();
     }
 }

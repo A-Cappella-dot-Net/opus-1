@@ -30,6 +30,6 @@ public class PipeMsgEvent implements FtEvent {
 
     @Override
     public void apply() {
-        _pipe.handleMsg(_msg);
+        _pipe.handleSinkMsg(_msg);
     }
 }

@@ -34,6 +34,6 @@ public class SinkMsgEvent implements FtEvent {
 
     @Override
     public void apply() {
-        _sink.handleMsg(_key, _msg);
+        _sink.handlePipeMsg(_key, _msg);
     }
 }

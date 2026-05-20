@@ -566,7 +566,7 @@ public class CollectiveMember {
         public void onClientConnect(SelectionKey key, RegistrationRequest reg) {
             _eventQueue.add(new SinkConnectEvent(this, key, reg.clone()));
         }
-        public void handleClientConnect(SelectionKey key, RegistrationRequest reg) {
+        public void handlePipeConnect(SelectionKey key, RegistrationRequest reg) {
             // send _coreMembersListMsg only to collective members (not to clients)
             if (reg.isFromDaemon()) {
                 _memberKeys.add(key);
@@ -590,7 +590,7 @@ public class CollectiveMember {
         public void onClientDisconnect(SelectionKey key) {
             _eventQueue.add(new SinkDisconnectEvent(this, key));
         }
-        public void handleClientDisconnect(SelectionKey key) {
+        public void handlePipeDisconnect(SelectionKey key) {
             log.info("{}serverSink.onClientDisconnect {}", _cmId, keyHash(key));
             _memberKeys.remove(key);
 
@@ -610,7 +610,7 @@ public class CollectiveMember {
         public void onMsg(SelectionKey key, Msg msg) {
             _eventQueue.add(new SinkMsgEvent(this, key, msg.clone()));
         }
-        public void handleMsg(SelectionKey key, Msg msg) {
+        public void handlePipeMsg(SelectionKey key, Msg msg) {
             if (log.isDebugEnabled()) log.info("{}ServerSink received {} from {}", _cmId, msg, keyHash(key));
             if (msg instanceof FtMemberMsg) { // REQUESTS
                 _ftManager.sinkOnFtMsgFromPipe(key, (FtMemberMsg) msg);
@@ -672,7 +672,7 @@ public class CollectiveMember {
             super.onRegistrationResponse();
             _eventQueue.add(new PipeConnectEvent(this));
         }
-        public void handleRegistrationResponse() {
+        public void handleSinkConnect() {
             setPipeConnectionStatus(MemberStatusEnum.UP);
             if (_useConsensus) {
                 calculateVotes();
@@ -693,7 +693,7 @@ public class CollectiveMember {
             super.onDisconnect();
             _eventQueue.add(new PipeDisconnectEvent(this));
         }
-        public void handleDisconnect() {
+        public void handleSinkDisconnect() {
             setPipeConnectionStatus(MemberStatusEnum.DOWN);
             _myVote = null;
             PrimaryCalculationResult result;
@@ -712,7 +712,7 @@ public class CollectiveMember {
             super.onMsg(msg);
             _eventQueue.add(new PipeMsgEvent(this, msg.clone()));
         }
-        public void handleMsg(Msg msg) {
+        public void handleSinkMsg(Msg msg) {
             if (msg instanceof VersionedStringMsg) {
                 handleUpgradeMessage((VersionedStringMsg) msg, _connInfo.toString());
             } else {

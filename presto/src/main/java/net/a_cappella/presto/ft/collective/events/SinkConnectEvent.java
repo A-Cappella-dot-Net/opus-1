@@ -34,6 +34,6 @@ public class SinkConnectEvent implements FtEvent {
 
     @Override
     public void apply() {
-        _sink.handleClientConnect(_key, _reg);
+        _sink.handlePipeConnect(_key, _reg);
     }
 }

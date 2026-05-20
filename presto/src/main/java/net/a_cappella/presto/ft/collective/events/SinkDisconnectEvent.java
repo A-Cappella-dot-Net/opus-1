@@ -31,6 +31,6 @@ public class SinkDisconnectEvent implements FtEvent {
 
     @Override
     public void apply() {
-        _sink.handleClientDisconnect(_key);
+        _sink.handlePipeDisconnect(_key);
     }
 }

@@ -27,6 +27,6 @@ public class PipeConnectEvent implements FtEvent {
 
     @Override
     public void apply() {
-        _pipe.handleRegistrationResponse();
+        _pipe.handleSinkConnect();
     }
 }
