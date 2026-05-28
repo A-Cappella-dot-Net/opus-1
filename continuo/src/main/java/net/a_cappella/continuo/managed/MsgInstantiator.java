@@ -51,13 +51,14 @@ public class MsgInstantiator {
     }
 
     public <T> T newInstance() {
-        if (!_allGood) return null;
+        if (!_allGood) throw new RuntimeException("Error creating new instance of type " + _objType + " and className " + _className);
         try {
             return (T) ((_args==null)?_ctor.newInstance():_ctor.newInstance(_args));
         } catch (Exception e) {
-            log.error("", e);
+            String msg = "Error creating new instance of type " + _objType + " and className " + _className;
+            log.error(msg, e);
             _allGood = false;
-            return null;
+            throw new RuntimeException(msg, e);
         }
     }
 

@@ -33,7 +33,6 @@ public class UpgradeManager {
     private String _cmId;
 
     private final CollectiveMember _member;
-    private AtomicReference<List<ClientPipe>> _pipes;
 
     private int _version;
     private String _coreList;
@@ -48,8 +47,8 @@ public class UpgradeManager {
 
     public void init() {
         _cmId = _member.getCmId();
-        _pipes = _member.getPipes();
         _coreMembersListMsg = new VersionedStringMsg(CollectiveMember.VSM_NAME, _version, _coreList);
+        log.info("{}Initial core list is {}", _cmId, _coreMembersListMsg);
     }
 
     public String getCoreList() {
@@ -71,6 +70,7 @@ public class UpgradeManager {
 
 
     public void upgrade(VersionedStringMsg vsm) {
+        log.info("{}Upgrading {}core CollectiveMember. All v.{} core members are {}", _cmId, _member.iAmCore()?"":"non-", getVersion(), _member.getPipes());
         // save the new version details in the 'upgrade' file
         vsm = new VersionedStringMsg(vsm);
         if (_versionedParamsCache!=null) {
@@ -83,9 +83,10 @@ public class UpgradeManager {
         upgrade(getCoreList().split(","));
 
         _version = vsm._version;
+        log.info("{}   ... to {}core CollectiveMember. All v.{} core members are {}", _cmId, _member.iAmCore()?"":"non-", getVersion(), _member.getPipes());
     }
     private void upgrade(String[] newComps) {
-        List<ClientPipe> oldPipes = _pipes.get();
+        List<ClientPipe> oldPipes = _member.getPipes();
         List<ClientPipe> newPipes = new ArrayList<>();
         List<ConnInfo> newConnInfos = new ArrayList<>();
         for (String compInfoStr : newComps) {
@@ -110,7 +111,7 @@ public class UpgradeManager {
             }
         }
         _member.calculateIAmCore(newPipes);
-        _pipes.set(newPipes);
+        _member.setPipes(newPipes);
     }
     private ClientPipe getPipeForInfo(List<ClientPipe> pipes, ConnInfo connInfo) {
         for (ClientPipe pipe : pipes) {

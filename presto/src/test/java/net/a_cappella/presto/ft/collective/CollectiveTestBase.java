@@ -106,7 +106,7 @@ public abstract class CollectiveTestBase {
 
     protected abstract AtomicInteger getPort();
 
-    protected MsgCoder _coder = new MsgCoder();
+    protected static MsgCoder _coder = new MsgCoder();
 
     private TestInfo _testInfo;
 
@@ -296,8 +296,8 @@ public abstract class CollectiveTestBase {
         private int _sliceNo;
         private int _ofSlices;
 
-        public ClientMem(MsgCoder coder, String clInfo) {
-            _client = new CollectiveClient(coder, clInfo, MON_CONF_INTERVAL_MILLIS, MEM_CONF_INTERVAL_MILLIS);
+        public ClientMem(CompInfoSet cis, int instance, int port) {
+            _client = new CollectiveClient(_coder, cis.getMemInfo(instance, port), MON_CONF_INTERVAL_MILLIS, MEM_CONF_INTERVAL_MILLIS);
             _client.registerFtMemberListener(this);
             _client.setConnectionTimeoutMicros(CONNECTION_TIMEOUT_MICROS);
             _client.setReconnectIntervalMillis(RECONNECT_INTERVAL_MILLIS);
@@ -355,8 +355,8 @@ public abstract class CollectiveTestBase {
         private final CollectiveClient _monitor;
         public int _actives = -1;
 
-        public ClientMon(MsgCoder coder, String mInfo) {
-            _monitor = new CollectiveClient(coder, mInfo, MON_CONF_INTERVAL_MILLIS, MEM_CONF_INTERVAL_MILLIS);
+        public ClientMon(CompInfoSet cis, int instance, int port) {
+            _monitor = new CollectiveClient(_coder, cis.getMonInfo(instance, port), MON_CONF_INTERVAL_MILLIS, MEM_CONF_INTERVAL_MILLIS);
             _monitor.registerFtMonitorListener(this);
         }
 

@@ -34,6 +34,8 @@ import net.a_cappella.presto.msg.FtMemberMsg;
 import net.a_cappella.presto.msg.FtMonitorMsg;
 import net.a_cappella.presto.msg.VersionedStringMsg;
 import net.a_cappella.presto.msg.VoteMsg;
+import org.agrona.concurrent.BackoffIdleStrategy;
+import org.agrona.concurrent.IdleStrategy;
 import org.jctools.queues.MpscLinkedQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +44,6 @@ import java.io.IOException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SelectionKey;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static net.a_cappella.continuo.utils.Utils.keyHash;
 import static net.a_cappella.presto.ft.collective.CollectiveMember.PrimaryCalculationResult.DONT_CARE;
@@ -54,18 +55,19 @@ public class CollectiveMember {
 
     public static final String VSM_NAME = "collective.cores.list";
 
-    // the CollectiveMember can be configured to use either Fault Tolerance Pairs or Consensus
-    private static volatile boolean _useConsensus = false;
-    public static void setUseConsensus(boolean useConsensus) {
-        _useConsensus = useConsensus;
-        log.info("useConsensus = {}", _useConsensus);
+    public enum PrimaryCalculationResult {NO_PRIMARY, I_BECAME_PRIMARY, DONT_CARE}
+
+    // the CollectiveMember can be configured to use either First Alive or Voted Quorum leader election rules
+    private static volatile boolean _useVotedQuorum = false;
+    public static void setUseVotedQuorum(boolean useVotedQuorum) {
+        _useVotedQuorum = useVotedQuorum;
+        log.info("Using the {} leader election rule", _useVotedQuorum ? "Voted Quorum" : "First Alive");
     }
-    public static boolean isUseConsensus() {
-        return _useConsensus;
+    public static boolean isUseVotedQuorum() {
+        return _useVotedQuorum;
     }
-    public void setUseConsensusStr(String useConsensus) {
-        _useConsensus = net.a_cappella.continuo.utils.Utils.parseAsBoolean("useConsensus", useConsensus, _useConsensus);
-        log.info("useConsensus = {}", _useConsensus);
+    public void setUseVotedQuorumStr(String useVotedQuorum) {
+        setUseVotedQuorum(net.a_cappella.continuo.utils.Utils.parseAsBoolean("useVotedQuorum", useVotedQuorum, _useVotedQuorum));
     }
 
     // logging
@@ -95,7 +97,7 @@ public class CollectiveMember {
 
     // sink and pipes
     private ServerSink _sink;
-    private final AtomicReference<List<ClientPipe>> _pipes = new AtomicReference<>();
+    private List<ClientPipe> _pipes;
 
     // upgrade logic
     private final UpgradeManager _upgradeMgr;
@@ -118,43 +120,42 @@ public class CollectiveMember {
 
         _eventQueue.add(new MemberStartEvent(this));
 
-        new Thread(() -> {
+        Thread eventThread = new Thread(() -> {
+            IdleStrategy idleStrategy = new BackoffIdleStrategy();
             while (!_stop) {
                 FtEvent e;
+                int workCount = 0;
                 while ((e = _eventQueue.poll()) != null) {
                     e.apply();
+                    workCount++;
                 }
+                idleStrategy.idle(workCount);
             }
-        }).start();
+        });
+        eventThread.setName(_cmId + "EventThread");
+        eventThread.start();
     }
 
     public void handleStartEvent() {
+        _upgradeMgr.init();
+        _ftManager = new FtManager(this);
+
         _sink = new ServerSink(_coder, _myConnInfo);
         _sink.startSink();
 
-        List<ClientPipe> pipes = new ArrayList<>();
+        _pipes = new ArrayList<>();
         for (String infoStr : _upgradeMgr.getCoreList().split(",")) {
             ClientPipe pipe = createAndStartPipe(infoStr.trim());
-            pipes.add(pipe);
+            _pipes.add(pipe);
         }
-        calculateIAmCore(pipes);
-        _pipes.set(pipes);
+        calculateIAmCore(_pipes);
 
-        _upgradeMgr.init();
-
-        log.info("{}Starting {}core CollectiveMember. All core members are {}", _cmId, !_iAmCore?"non-":"", _pipes);
-        log.info("{}Initial core list is {}", _cmId, _upgradeMgr.getCoreMembersListMsg());
-
-        _ftManager = new FtManager(this);
+        log.info("{}Starting {}core CollectiveMember. All core members are {}", _cmId, _iAmCore?"":"non-", _pipes);
 
         // wait until all pipes are started
         while (!allPipesStarted()) Utils.sleep(20);
 
-        if (_useConsensus) {
-            calculateVotes();
-        } else {
-            calculatePrimary();
-        }
+        evalLeader();
     }
 
     public ClientPipe createAndStartPipe(String infoStr) {
@@ -179,7 +180,7 @@ public class CollectiveMember {
         _stop = true;
         _sink.stopSink();
         _sinkToPipeLinkage.removeAllLinkages();
-        for (ClientPipe pipe : _pipes.get()) {
+        for (ClientPipe pipe : _pipes) {
             if (!pipe._myPipe) {
                 pipe.stopPipe();
             }
@@ -214,8 +215,12 @@ public class CollectiveMember {
         return _sink;
     }
 
-    public AtomicReference<List<ClientPipe>> getPipes() {
+    public List<ClientPipe> getPipes() {
         return _pipes;
+    }
+
+    public void setPipes(List<ClientPipe> pipes) {
+        _pipes = pipes;
     }
 
     public void setMyInfo(String myInfoStr) {
@@ -244,9 +249,8 @@ public class CollectiveMember {
     }
 
     public boolean isCoreUp() {
-        List<ClientPipe> pipes = _pipes.get();
-        for (int i=0; i<pipes.size(); i++) {
-            ClientPipe pipe = pipes.get(i);
+        for (int i = 0; i < _pipes.size(); i++) {
+            ClientPipe pipe = _pipes.get(i);
             if (pipe.getStatus()==MemberStatusEnum.UP) {
                 return true;
             }
@@ -264,7 +268,7 @@ public class CollectiveMember {
 
     public boolean sendMsgToOtherCores(Msg msg) {
         boolean sent = false;
-        for (ClientPipe pipe : _pipes.get()) {
+        for (ClientPipe pipe : _pipes) {
             if (!pipe._myPipe) {
                 sent |= sendMsgToCore(msg, pipe);
             }
@@ -298,7 +302,7 @@ public class CollectiveMember {
 
     private boolean allPipesStarted() {
         boolean result = true;
-        for (ClientPipe pipe : _pipes.get()) {
+        for (ClientPipe pipe : _pipes) {
             if (!pipe._myPipe) {
                 result &= (pipe.isStarted() || pipe.isConnected() || pipe.isDisconnected());
             }
@@ -308,7 +312,7 @@ public class CollectiveMember {
 
     private boolean allPipesStopped() {
         boolean result = true;
-        for (ClientPipe pipe : _pipes.get()) {
+        for (ClientPipe pipe : _pipes) {
             if (!pipe._myPipe) {
                 result &= pipe.isStopped();
             }
@@ -321,15 +325,9 @@ public class CollectiveMember {
             log.info("{}Got UPGRADE message {} from {}", _cmId, vsm, source);
             sendMsgToAllMembers(vsm); // send the upgrade message to all connected members (core or non core)
 
-            log.info("{}Upgrading {}core CollectiveMember. All v.{} core members are {}", _cmId, !_iAmCore?"non-":"", _upgradeMgr.getVersion(), _pipes);
             _upgradeMgr.upgrade(vsm);
-            log.info("{}   ... to {}core CollectiveMember. All v.{} core members are {}", _cmId, !_iAmCore?"non-":"", _upgradeMgr.getVersion(), _pipes);
 
-            if (_useConsensus) {
-                calculateVotes();
-            } else {
-                calculatePrimary();
-            }
+            evalLeader();
             // wait until all pipes are started
             while (!allPipesStarted()) Utils.sleep(20);
         }
@@ -351,7 +349,13 @@ public class CollectiveMember {
         log.info("{} quorum={}", _cmId, _quorum);
     }
 
-    public enum PrimaryCalculationResult {NO_PRIMARY, I_BECAME_PRIMARY, DONT_CARE}
+    private PrimaryCalculationResult evalLeader() {
+        if (_useVotedQuorum) {
+            return calculateVotes();
+        } else {
+            return calculatePrimary();
+        }
+    }
 
     private PrimaryCalculationResult calculatePrimary() {
         if (_stop) {
@@ -359,7 +363,7 @@ public class CollectiveMember {
             _iAmPrimary = false;
             return DONT_CARE;
         }
-        List<ClientPipe> pipes = _pipes.get();
+        List<ClientPipe> pipes = _pipes;
         // checking that all pipes are up
         for (int i = 0; i < pipes.size(); i++) {
             ClientPipe pipe = pipes.get(i);
@@ -418,17 +422,16 @@ public class CollectiveMember {
         }
     }
 
-    private void calculateVotes() {
+    private PrimaryCalculationResult calculateVotes() {
         if (_stop) {
             log.info("{}calculateVotes already stopped => not primary", _cmId);
             _iAmPrimary = false;
-            return;
+            return DONT_CARE;
         }
-        List<ClientPipe> pipes = _pipes.get();
         if (_iAmCore) {
             boolean first = true;
-            for (int i = 0; i < pipes.size(); i++) {
-                ClientPipe pipe = pipes.get(i);
+            for (int i = 0; i < _pipes.size(); i++) {
+                ClientPipe pipe = _pipes.get(i);
                 if (pipe.getStatus() == MemberStatusEnum.UP) {
                     // I am voting for the first member that is UP
                     if (first) {
@@ -449,6 +452,7 @@ public class CollectiveMember {
             _iAmPrimary = false;
         }
         _ftManager.onPrimaryCalculationResult(result);
+        return result;
     }
 
     private void handleVoteMessage(VoteMsg vote) {
@@ -464,13 +468,12 @@ public class CollectiveMember {
     }
 
     private PrimaryCalculationResult calculateQuorumPrimary(String method) {
-        List<ClientPipe> pipes = _pipes.get();
         // start with blank slate
-        for (ClientPipe pipe : pipes) {
+        for (ClientPipe pipe : _pipes) {
             pipe._myVoteCnt = 0;
         }
         // count votes
-        for (ClientPipe pipe : pipes) {
+        for (ClientPipe pipe : _pipes) {
             ClientPipe myVote = pipe._myVote;
             if (myVote != null) { // can be null if not connected
                 myVote._myVoteCnt++;
@@ -496,10 +499,9 @@ public class CollectiveMember {
     }
 
     private boolean quorumPrimaryHasChanged() {
-        List<ClientPipe> pipes = _pipes.get();
         // identify winner
         ClientPipe newPrimary = null;
-        for (ClientPipe pipe : pipes) {
+        for (ClientPipe pipe : _pipes) {
             if (pipe._myVoteCnt >= _quorum) {
                 newPrimary = pipe;
                 pipe._primary = true;
@@ -514,7 +516,7 @@ public class CollectiveMember {
     }
 
     private ClientPipe findPipe(AppInfo appInfo) {
-        for (ClientPipe pipe : _pipes.get()) {
+        for (ClientPipe pipe : _pipes) {
             if (pipe._appInfo.equals(appInfo)) {
                 return pipe;
             }
@@ -533,21 +535,19 @@ public class CollectiveMember {
 
     @VisibleForTesting
     public boolean verifyStatuses(MemberStatusEnum[] statuses) throws RuntimeException {
-        List<ClientPipe> pipes = _pipes.get();
-        if (statuses.length != pipes.size()) {
+        if (statuses.length != _pipes.size()) {
             return false;
         }
-        for (int i=0; i<pipes.size(); i++) {
-            if (pipes.get(i).getStatus() != statuses[i]) return false;
+        for (int i = 0; i < _pipes.size(); i++) {
+            if (_pipes.get(i).getStatus() != statuses[i]) return false;
         }
         return true;
     }
 
     public MemberStatusEnum[] getStatuses() {
-        List<ClientPipe> pipes = _pipes.get();
-        MemberStatusEnum[] statuses = new MemberStatusEnum[pipes.size()];
-        for (int i=0; i<pipes.size(); i++) {
-            statuses[i] = pipes.get(i).getStatus();
+        MemberStatusEnum[] statuses = new MemberStatusEnum[_pipes.size()];
+        for (int i = 0; i < _pipes.size(); i++) {
+            statuses[i] = _pipes.get(i).getStatus();
         }
         return statuses;
     }
@@ -578,11 +578,7 @@ public class CollectiveMember {
             }
 
             if (_sinkToPipeLinkage.addSinkToPipeLinkage(key, reg)) {
-                if (_useConsensus) {
-                    calculateVotes();
-                } else {
-                    calculatePrimary();
-                }
+                evalLeader();
             }
         }
 
@@ -595,11 +591,7 @@ public class CollectiveMember {
             _memberKeys.remove(key);
 
             if (_sinkToPipeLinkage.removeSinkToPipeLinkage(key)) {
-                if (_useConsensus) {
-                    calculateVotes();
-                } else {
-                    calculatePrimary();
-                }
+                evalLeader();
             }
 
             _ftManager.sinkOnPipeDisconnect(key);
@@ -674,11 +666,7 @@ public class CollectiveMember {
         }
         public void handleSinkConnect() {
             setPipeConnectionStatus(MemberStatusEnum.UP);
-            if (_useConsensus) {
-                calculateVotes();
-            } else {
-                calculatePrimary();
-            }
+            evalLeader();
             try {
                 sendMsg(_upgradeMgr.getCoreMembersListMsg()); // TODO replicate my core.list back to sink
                 CollectiveMember.this.onRegistrationResponse(ClientPipe.this);
@@ -696,13 +684,7 @@ public class CollectiveMember {
         public void handleSinkDisconnect() {
             setPipeConnectionStatus(MemberStatusEnum.DOWN);
             _myVote = null;
-            PrimaryCalculationResult result;
-            if (_useConsensus) {
-                calculateVotes();
-                result = calculateQuorumPrimary("ClientPipe.onDisconnect");
-            } else {
-                result = calculatePrimary();
-            }
+            PrimaryCalculationResult result = evalLeader();
             _ftManager.pipeOnSinkDisconnect(this, isCoreUp(), result);
             CollectiveMember.this.onClientDisconnect(this);
         }
@@ -789,7 +771,7 @@ public class CollectiveMember {
         private boolean addSinkToPipeLinkage(SelectionKey key, RegistrationRequest reg) {
             log.info(_cmId+keyHash(key)+" <=> "+reg.getKey());
 
-            for (ClientPipe pipe : _pipes.get()) {
+            for (ClientPipe pipe : _pipes) {
                 if (pipe._connInfo.equals(reg.getMyConnInfo())) {
                     pipe.setSinkConnectionStatus(MemberStatusEnum.UP);
                     _sinkToPipeMap.put(key, pipe);

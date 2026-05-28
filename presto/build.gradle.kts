@@ -15,6 +15,7 @@ dependencies {
     implementation(libs.log4j) // why exclude and then include back???
 
     implementation(libs.guava)
+    implementation(libs.agrona)
 
     implementation(libs.trove)
     implementation(libs.jctools)

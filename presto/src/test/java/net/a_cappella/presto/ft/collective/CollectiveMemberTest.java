@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static net.a_cappella.presto.ft.collective.CollectiveMember.isUseConsensus;
+import static net.a_cappella.presto.ft.collective.CollectiveMember.isUseVotedQuorum;
 import static net.a_cappella.presto.ft.constants.MemberStatusEnum.DOWN;
 import static net.a_cappella.presto.ft.constants.MemberStatusEnum.UP;
 
@@ -31,12 +31,12 @@ public class CollectiveMemberTest {
 
     private static final AtomicInteger _port = new AtomicInteger(17430);
 
-    @Nested class WithConsensusTrueTests extends Tests {
-        @BeforeEach void useConsensus() { CollectiveMember.setUseConsensus(true); }
+    @Nested class WithVotedQuorumTests extends Tests {
+        @BeforeEach void useVotedQuorum() { CollectiveMember.setUseVotedQuorum(true); }
     }
 
-    @Nested class WithConsensusFalseTests extends Tests {
-        @BeforeEach void useConsensus() { CollectiveMember.setUseConsensus(false); }
+    @Nested class WithFirstAliveTests extends Tests {
+        @BeforeEach void useFirstAlive() { CollectiveMember.setUseVotedQuorum(false); }
     }
 
     abstract static class Tests extends CollectiveTestBase {
@@ -64,7 +64,7 @@ public class CollectiveMemberTest {
             d0.start();
             eventually(d0, (d) -> d.iAmCore(true));
             eventually(d0, (d) -> d.isStarted(true));
-            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseVotedQuorum(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
 
             d0.stop();
             eventually(d0, (d) -> d.isStopped());
@@ -79,7 +79,7 @@ public class CollectiveMemberTest {
             d1.start();
             eventually(d1, (d) -> d.iAmCore(true));
             eventually(d1, (d) -> d.isStarted(true));
-            eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {DOWN, UP, DOWN}));
+            eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseVotedQuorum(), new MemberStatusEnum[] {DOWN, UP, DOWN}));
 
             d1.stop();
             eventually(d1, (d) -> d.isStopped());
@@ -94,7 +94,7 @@ public class CollectiveMemberTest {
             d2.start();
             eventually(d2, (d) -> d.iAmCore(true));
             eventually(d2, (d) -> d.isStarted(true));
-            eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {DOWN, DOWN, UP}));
+            eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseVotedQuorum(), new MemberStatusEnum[] {DOWN, DOWN, UP}));
 
             d2.stop();
             eventually(d2, (d) -> d.isStopped());
@@ -109,7 +109,7 @@ public class CollectiveMemberTest {
             d0.start();
             eventually(d0, (d) -> d.iAmCore(true));
             eventually(d0, (d) -> d.isStarted(true));
-            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseVotedQuorum(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
 
             Daemon d1 = new Daemon(cis, 1, new int[] {0, 1, 2}, 0);
             d1.start();
@@ -131,7 +131,7 @@ public class CollectiveMemberTest {
             eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, DOWN}));
 
             d1.stop();
-            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !isUseConsensus(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !isUseVotedQuorum(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
 
             d0.stop();
 
@@ -145,7 +145,7 @@ public class CollectiveMemberTest {
             d2.start();
             eventually(d2, (d) -> d.iAmCore(true));
             eventually(d2, (d) -> d.isStarted(true));
-            eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {DOWN, DOWN, UP}));
+            eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseVotedQuorum(), new MemberStatusEnum[] {DOWN, DOWN, UP}));
 
             Daemon d1 = new Daemon(cis, 1, new int[] {0, 1, 2}, 0);
             d1.start();
@@ -167,7 +167,7 @@ public class CollectiveMemberTest {
             eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, UP, UP}));
 
             d1.stop();
-            eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {DOWN, DOWN, UP}));
+            eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseVotedQuorum(), new MemberStatusEnum[] {DOWN, DOWN, UP}));
 
             d2.stop();
 
@@ -219,7 +219,7 @@ public class CollectiveMemberTest {
             d0.start();
             eventually(d0, (d) -> d.iAmCore(true));
             eventually(d0, (d) -> d.isStarted(true));
-            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseVotedQuorum(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
 
             Daemon d3 = new Daemon(cis, 3, new int[] {0, 1, 2}, 0);
             d3.start();
@@ -244,7 +244,7 @@ public class CollectiveMemberTest {
             d2.start();
             eventually(d2, (d) -> d.iAmCore(true));
             eventually(d2, (d) -> d.isStarted(true));
-            eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {DOWN, DOWN, UP}));
+            eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseVotedQuorum(), new MemberStatusEnum[] {DOWN, DOWN, UP}));
 
             Daemon d1 = new Daemon(cis, 1, new int[] {0, 1, 2}, 0);
             d1.start();

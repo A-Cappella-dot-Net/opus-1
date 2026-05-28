@@ -33,12 +33,12 @@ public class CollectiveClientTest {
 
     private static final AtomicInteger _port = new AtomicInteger(18430);
 
-    @Nested class WithConsensusTrueTests extends Tests {
-        @BeforeEach void useConsensus() { CollectiveMember.setUseConsensus(true); }
+    @Nested class WithVotedQuorumTests extends Tests {
+        @BeforeEach void useVotedQuorum() { CollectiveMember.setUseVotedQuorum(true); }
     }
 
-    @Nested class WithConsensusFalseTests extends Tests {
-        @BeforeEach void useConsensus() { CollectiveMember.setUseConsensus(false); }
+    @Nested class WithFirstAliveTests extends Tests {
+        @BeforeEach void useFirstAlive() { CollectiveMember.setUseVotedQuorum(false); }
     }
 
     abstract static class Tests extends CollectiveTestBase {
@@ -51,7 +51,7 @@ public class CollectiveClientTest {
             d0.start();
             eventually(d0, (d) -> d.iAmCore(true));
             eventually(d0, (d) -> d.isStarted(true));
-            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseVotedQuorum(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
 
             Daemon d1 = new Daemon(cis, 1, new int[] {0, 1, 2}, 0);
             d1.start();
@@ -60,7 +60,7 @@ public class CollectiveClientTest {
             eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, DOWN}));
             eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, UP, DOWN}));
 
-            ClientMem mem0 = new ClientMem(_coder, cis.getMemInfo(0));
+            ClientMem mem0 = new ClientMem(cis, 0, 0);
             mem0.start();
             eventually(mem0, (m) -> m.isConnected(true));
 
@@ -86,7 +86,7 @@ public class CollectiveClientTest {
             d0.start();
             eventually(d0, (d) -> d.iAmCore(true));
             eventually(d0, (d) -> d.isStarted(true));
-            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseVotedQuorum(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
 
             Daemon d1 = new Daemon(cis, 1, new int[] {0, 1, 2}, 0);
             d1.start();
@@ -95,7 +95,7 @@ public class CollectiveClientTest {
             eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, DOWN}));
             eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, UP, DOWN}));
 
-            ClientMem mem0 = new ClientMem(_coder, cis.getMemInfo(0));
+            ClientMem mem0 = new ClientMem(cis, 0, 0);
             mem0.start();
             eventually(mem0, (m) -> m.isConnected(true));
 
@@ -109,7 +109,6 @@ public class CollectiveClientTest {
             mem0.stop();
             eventually(mem0, (m) -> m.isStopped(true));
 
-            d0.stop();
             d1.stop();
 
             tearDown(cis);
@@ -122,7 +121,7 @@ public class CollectiveClientTest {
             d0.start();
             eventually(d0, (d) -> d.iAmCore(true));
             eventually(d0, (d) -> d.isStarted(true));
-            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseVotedQuorum(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
 
             Daemon d1 = new Daemon(cis, 1, new int[] {0, 1, 2}, 0);
             d1.start();
@@ -131,23 +130,22 @@ public class CollectiveClientTest {
             eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, DOWN}));
             eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, UP, DOWN}));
 
-            ClientMon mon0 = new ClientMon(_coder, cis.getMonInfo(0));
+            ClientMon mon0 = new ClientMon(cis, 0, 0);
             mon0.start();
             eventually(mon0, (m) -> m.isConnected(true));
 
-            ClientMem mem0d0 = new ClientMem(_coder, cis.getMemInfo(0));
+            ClientMem mem0d0 = new ClientMem(cis, 0, 0);
             mem0d0.start();
             eventually(mem0d0, (m) -> m.isConnected(true));
 
             mon0.registerFtMonitor(FT_GROUP);
-//        eventually(mon0, (m, ctx) -> m.isActivesBitMask(ctx, NONE));
             eventually(mon0, (m, ctx) -> m.isActivesBitMask(ctx, NONE));
 
             mem0d0.registerFtMember(FT_GROUP, 0, 1);
             eventually(mem0d0, (m, ctx) -> m.isMemResult(ctx, ACTIVATE));
             eventually(mon0, (m, ctx) -> m.isActivesBitMask(ctx, ZERO));
 
-            ClientMem mem1d0 = new ClientMem(_coder, cis.getMemInfo(1, 0));
+            ClientMem mem1d0 = new ClientMem(cis, 1, 0);
             mem1d0.start();
             eventually(mem1d0, (m) -> m.isConnected(true));
 
@@ -179,7 +177,7 @@ public class CollectiveClientTest {
         public void testTwoClientsConnectingToCoreMember2() {
             CompInfoSet cis = new CompInfoSet();
 
-            ClientMon mon0d0 = new ClientMon(_coder, cis.getMonInfo(0));
+            ClientMon mon0d0 = new ClientMon(cis, 0, 0);
             mon0d0.start();
             mon0d0.registerFtMonitor(FT_GROUP);
             eventually(mon0d0, (m, ctx) -> m.isActivesBitMask(ctx, NONE));
@@ -188,7 +186,7 @@ public class CollectiveClientTest {
             d0.start();
             eventually(d0, (d) -> d.iAmCore(true));
             eventually(d0, (d) -> d.isStarted(true));
-            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseVotedQuorum(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
 
             Daemon d1 = new Daemon(cis, 1, new int[] {0, 1, 2}, 0);
             d1.start();
@@ -200,7 +198,7 @@ public class CollectiveClientTest {
             eventually(mon0d0, (m) -> m.isConnected(true));
             eventually(mon0d0, (m, ctx) -> m.isActivesBitMask(ctx, NONE));
 
-            ClientMem mem0d0 = new ClientMem(_coder, cis.getMemInfo(0));
+            ClientMem mem0d0 = new ClientMem(cis, 0, 0);
             mem0d0.start();
             eventually(mem0d0, (m) -> m.isConnected(true));
 
@@ -208,11 +206,11 @@ public class CollectiveClientTest {
             eventually(mem0d0, (m, ctx) -> m.isMemResult(ctx, ACTIVATE));
             eventually(mon0d0, (m, ctx) -> m.isActivesBitMask(ctx, ZERO));
 
-            ClientMem mem1d0 = new ClientMem(_coder, cis.getMemInfo(1, 0));
+            ClientMem mem1d0 = new ClientMem(cis, 1, 0);
             mem1d0.start();
             eventually(mem1d0, (m) -> m.isConnected(true));
 
-            ClientMon mon1d0 = new ClientMon(_coder, cis.getMonInfo(1, 0));
+            ClientMon mon1d0 = new ClientMon(cis, 1, 0);
             mon1d0.start();
             mon1d0.registerFtMonitor(FT_GROUP);
             eventually(mon1d0, (m, ctx) -> m.isActivesBitMask(ctx, ZERO));
@@ -250,7 +248,7 @@ public class CollectiveClientTest {
             d0.start();
             eventually(d0, (d) -> d.iAmCore(true));
             eventually(d0, (d) -> d.isStarted(true));
-            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseVotedQuorum(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
 
             Daemon d1 = new Daemon(cis, 1, new int[] {0, 1, 2}, 0);
             d1.start();
@@ -265,14 +263,14 @@ public class CollectiveClientTest {
             eventually(d3, (d) -> d.isStarted(true));
             eventually(d3, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, DOWN}));
 
-            ClientMem mem0d3 = new ClientMem(_coder, cis.getMemInfo(0, 3));
+            ClientMem mem0d3 = new ClientMem(cis, 0, 3);
             mem0d3.start();
             eventually(mem0d3, (m) -> m.isConnected(true));
 
             mem0d3.registerFtMember(FT_GROUP, 0, 1);
             eventually(mem0d3, (m, ctx) -> m.isMemResult(ctx, ACTIVATE));
 
-            ClientMem mem1d3 = new ClientMem(_coder, cis.getMemInfo(1, 3));
+            ClientMem mem1d3 = new ClientMem(cis, 1, 3);
             mem1d3.start();
             eventually(mem1d3, (m) -> m.isConnected(true));
 
@@ -303,7 +301,7 @@ public class CollectiveClientTest {
             d0.start();
             eventually(d0, (d) -> d.iAmCore(true));
             eventually(d0, (d) -> d.isStarted(true));
-            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseVotedQuorum(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
 
             Daemon d1 = new Daemon(cis, 1, new int[] {0, 1, 2}, 0);
             d1.start();
@@ -318,14 +316,14 @@ public class CollectiveClientTest {
             eventually(d3, (d) -> d.isStarted(true));
             eventually(d3, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, DOWN}));
 
-            ClientMem mem0d3 = new ClientMem(_coder, cis.getMemInfo(0, 3));
+            ClientMem mem0d3 = new ClientMem(cis, 0, 3);
             mem0d3.start();
             eventually(mem0d3, (m) -> m.isConnected(true));
 
             mem0d3.registerFtMember(FT_GROUP, 0, 1);
             eventually(mem0d3, (m, ctx) -> m.isMemResult(ctx, ACTIVATE));
 
-            ClientMem mem1d3 = new ClientMem(_coder, cis.getMemInfo(1, 3));
+            ClientMem mem1d3 = new ClientMem(cis, 1, 3);
             mem1d3.start();
             eventually(mem1d3, (m) -> m.isConnected(true));
 
@@ -358,7 +356,7 @@ public class CollectiveClientTest {
             eventually(d3, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, DOWN, DOWN}));
 
             // client connects to d3
-            ClientMem mem3 = new ClientMem(_coder, cis.getMemInfo(3));
+            ClientMem mem3 = new ClientMem(cis, 3, 3);
             mem3.start();
             eventually(mem3, (m) -> m.isConnected(true));
 
@@ -382,7 +380,7 @@ public class CollectiveClientTest {
             d0.start();
             eventually(d0, (d) -> d.iAmCore(true));
             eventually(d0, (d) -> d.isStarted(true));
-            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseVotedQuorum(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
 
             Daemon d1 = new Daemon(cis, 1, new int[] {0, 1, 2}, 0);
             d1.start();
@@ -398,7 +396,7 @@ public class CollectiveClientTest {
             eventually(d3, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, DOWN}));
 
             // client connects to d3
-            ClientMem mem3 = new ClientMem(_coder, cis.getMemInfo(3));
+            ClientMem mem3 = new ClientMem(cis, 3, 3);
             mem3.start();
             eventually(mem3, (m) -> m.isConnected(true));
 
@@ -422,7 +420,7 @@ public class CollectiveClientTest {
             CompInfoSet cis = new CompInfoSet();
 
             // client connects to d3
-            ClientMem mem3 = new ClientMem(_coder, cis.getMemInfo(3));
+            ClientMem mem3 = new ClientMem(cis, 3, 3);
             mem3.start();
             eventually(mem3, (m) -> m.isConnected(false));
 
@@ -442,7 +440,7 @@ public class CollectiveClientTest {
             d2.start();
             eventually(d2, (d) -> d.iAmCore(true));
             eventually(d2, (d) -> d.isStarted(true));
-            eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {DOWN, DOWN, UP}));
+            eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseVotedQuorum(), new MemberStatusEnum[] {DOWN, DOWN, UP}));
 
             Daemon d0 = new Daemon(cis, 0, new int[] {0, 1, 2}, 0);
             d0.start();
@@ -458,7 +456,7 @@ public class CollectiveClientTest {
             eventually(d0, (d) -> d.isStopped());
 
             eventually(d3a, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, DOWN, UP}));
-            if (CollectiveMember.isUseConsensus()) {
+            if (CollectiveMember.isUseVotedQuorum()) {
                 eventually(mem3, (m, ctx) -> m.isMemResult(ctx, NO_PRIMARY));
             } else {
                 eventually(mem3, (m, ctx) -> m.isMemResult(ctx, ACTIVATE));

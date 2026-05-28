@@ -33,12 +33,12 @@ public class CollectiveUpgradeWithClientAndMonitorTest {
 
     private static final AtomicInteger _port = new AtomicInteger(21430);
 
-    @Nested class WithConsensusTrueTests extends Tests {
-        @BeforeEach void useConsensus() { CollectiveMember.setUseConsensus(true); }
+    @Nested class WithVotedQuorumTests extends Tests {
+        @BeforeEach void useVotedQuorum() { CollectiveMember.setUseVotedQuorum(true); }
     }
 
-    @Nested class WithConsensusFalseTests extends Tests {
-        @BeforeEach void useConsensus() { CollectiveMember.setUseConsensus(false); }
+    @Nested class WithFirstAliveTests extends Tests {
+        @BeforeEach void useFirstAlive() { CollectiveMember.setUseVotedQuorum(false); }
     }
 
     abstract static class Tests extends CollectiveTestBase {
@@ -52,7 +52,7 @@ public class CollectiveUpgradeWithClientAndMonitorTest {
             d0.start();
             eventually(d0, (d) -> d.iAmCore(true));
             eventually(d0, (d) -> d.isStarted(true));
-            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseVotedQuorum(), new MemberStatusEnum[] {UP, DOWN, DOWN}));
 
             Daemon d1 = new Daemon(cis, 1, new int[] {0, 1, 2}, 0);
             d1.start();
@@ -67,11 +67,11 @@ public class CollectiveUpgradeWithClientAndMonitorTest {
             eventually(d2, (d) -> d.isStarted(true));
             eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
 
-            ClientMem mem0 = new ClientMem(_coder, cis.getMemInfo(0));
+            ClientMem mem0 = new ClientMem(cis, 0, 0);
             mem0.start();
             eventually(mem0, (m) -> m.isConnected(true));
 
-            ClientMon mon2 = new ClientMon(_coder, cis.getMonInfo(2));
+            ClientMon mon2 = new ClientMon(cis, 2, 2);
             mon2.start();
             eventually(mon2, (m) -> m.isConnected(true));
 
@@ -81,7 +81,7 @@ public class CollectiveUpgradeWithClientAndMonitorTest {
             mon2.registerFtMonitor(FT_GROUP);
             eventually(mon2, (m, ctx) -> m.isActivesBitMask(ctx, ZERO));
 
-            ClientMem mem1 = new ClientMem(_coder, cis.getMemInfo(1));
+            ClientMem mem1 = new ClientMem(cis, 1, 1);
             mem1.start();
             eventually(mem1, (m) -> m.isConnected(true));
 
@@ -142,7 +142,7 @@ public class CollectiveUpgradeWithClientAndMonitorTest {
             d0.start();
             eventually(d0, (d) -> d.iAmCore(true));
             eventually(d0, (d) -> d.isStarted(true));
-            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseConsensus(), new MemberStatusEnum[] {UP, DOWN}));
+            eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, !CollectiveMember.isUseVotedQuorum(), new MemberStatusEnum[] {UP, DOWN}));
 
             Daemon d1 = new Daemon(cis, 1, new int[] {0, 1}, 0);
             d1.start();
@@ -157,11 +157,11 @@ public class CollectiveUpgradeWithClientAndMonitorTest {
             eventually(d3, (d) -> d.isStarted(true));
             eventually(d3, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP}));
 
-            ClientMem mem31 = new ClientMem(_coder, cis.getMemInfo(1, 3));
+            ClientMem mem31 = new ClientMem(cis, 1, 3);
             mem31.start();
             eventually(mem31, (m) -> m.isConnected(true));
 
-            ClientMon mon3 = new ClientMon(_coder, cis.getMonInfo(3));
+            ClientMon mon3 = new ClientMon(cis, 3, 3);
             mon3.start();
             eventually(mon3, (m) -> m.isConnected(true));
 
@@ -178,7 +178,7 @@ public class CollectiveUpgradeWithClientAndMonitorTest {
             eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, UP}));
             eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP}));
 
-            ClientMem mem30 = new ClientMem(_coder, cis.getMemInfo(0, 3));
+            ClientMem mem30 = new ClientMem(cis, 0, 3);
             mem30.start();
             eventually(mem30, (m) -> m.isConnected(true));
 
