@@ -39,7 +39,7 @@
         <property name="pubStream" value="${pub.stream}"/>
         <property name="subStream" value="${sub.stream}"/>
         <property name="reconnectIntervalMillis" value="${reconnect.interval.millis}"/>
-        <property name="connectionTimeoutMicros" value="${connection.timeout.micros}"/>
+        <property name="connectionTimeoutMillis" value="${connection.timeout.millis}"/>
     </bean>
 
 </beans>

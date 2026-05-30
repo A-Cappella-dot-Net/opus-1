@@ -163,7 +163,7 @@
         <constructor-arg index="3" ref="traderManager" />
         <constructor-arg index="4" ref="internalTimer" />
 		<property name="dictionary" ref="dictionary"/>
-		<property name="connectionTimeoutMicros" value="${connection.timeout.micros}"/>
+		<property name="connectionTimeoutMillis" value="${connection.timeout.millis}"/>
     </bean>
 
     <!-- bean name="incrementalIdGenerator" class="common.utils.IncrementalIdGenerator">

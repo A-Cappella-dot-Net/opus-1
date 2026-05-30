@@ -55,8 +55,9 @@ public class BaseClientPipe {
     private final RegistrationRequest _reg;
 
     private int _reconnectIntervalMillis = 200;
-    private int _connectionTimeoutNanos = 200 * 1_000; // 200 micros
-    private IdleStrategy _idleStrategy = Utils.BACKOFF_IDLE_STRATEGY;
+    private long _connectionTimeoutNanos = 200L * 1_000_000L; // 200 millis
+    private long _registrationTimeoutNanos = 500L * 1_000_000L; // 500 millis
+    private IdleStrategy _idleStrategy = Utils.getIdleStrategy("backoff");
 
     private volatile PipeStatus _pipeStatus = PipeStatus.INITIALIZED;
 
@@ -157,8 +158,11 @@ public class BaseClientPipe {
     public void setReconnectInterval(int reconnectIntervalMillis) {
         _reconnectIntervalMillis = reconnectIntervalMillis;
     }
-    public void setConnectionTimeoutMicros(int connectionTimeoutMicros) {
-        _connectionTimeoutNanos = connectionTimeoutMicros * 1000;
+    public void setConnectionTimeoutMillis(int connectionTimeoutMillis) {
+        _connectionTimeoutNanos = connectionTimeoutMillis * 1_000_000L;
+    }
+    public void setRegistrationTimeoutMillis(int registrationTimeoutMillis) {
+        _registrationTimeoutNanos = registrationTimeoutMillis * 1_000_000L;
     }
     public void setIdleStrategy(Object idleStrategyObj) {
         _idleStrategy = Utils.getIdleStrategy(idleStrategyObj, "backoff");
@@ -280,7 +284,7 @@ public class BaseClientPipe {
         private void sendRegistrationRequest() {
             _reg.setStartTime();
             try {
-                log.info("{}Sending reg request {}", _cmId, _reg);
+                log.info("{}Sending reg request {} to {}", _cmId, _reg, _sinkInfo);
                 sendMsg(_reg);
             } catch (IOException x) {
                 String info = "Could not send registration request. Exiting...";
@@ -295,11 +299,13 @@ public class BaseClientPipe {
         private SocketAddress connectNonBlocking(SocketAddress socketAddress) throws IOException {
             boolean connected = _channel.connect(socketAddress);
             long nanoStart = System.nanoTime();
+            _idleStrategy.reset();
             while (!connected) {
+                _idleStrategy.idle();
                 // If this channel is in non-blocking mode then this method will return false
                 connected = _channel.finishConnect();
                 if (!connected && (nanoStart+_connectionTimeoutNanos < System.nanoTime())) {
-                    throw new IOException("Non blocking connect failed. Is connectionTimeoutMicros (" + (_connectionTimeoutNanos / 1_000) + ") sufficient?");
+                    throw new IOException("Non blocking connect failed. Is connectionTimeoutMillis (" + (_connectionTimeoutNanos / 1_000_000) + ") sufficient?");
                 }
             }
             return _channel.getLocalAddress();
@@ -307,6 +313,7 @@ public class BaseClientPipe {
 
         private void readAndProcessMessagesLoop() {
             int workCount;
+            long registrationDeadlineNanos = System.nanoTime() + _registrationTimeoutNanos;
             while (!_stop) {
                 workCount = -1;
                 try {
@@ -317,6 +324,10 @@ public class BaseClientPipe {
                     log.error("{}Read loop {}", _cmId, getExceptionSummary(e), e);
                 }
                 if (workCount<0) break;
+                if (_pipeStatus != PipeStatus.CONNECTED && System.nanoTime() > registrationDeadlineNanos) {
+                    log.info("{}No registration response within {} micros from sink {}", _cmId, _registrationTimeoutNanos / 1_000, _sinkInfo);
+                    break;
+                }
                 _idleStrategy.idle(workCount);
             }
         }

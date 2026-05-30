@@ -15,8 +15,6 @@
             </builds>
           </compositeBuild>
         </compositeConfiguration>
-        <option name="delegatedBuild" value="false" />
-        <option name="testRunner" value="PLATFORM" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="gradleHome" value="C:\Gradle\gradle-8.14.2" />
         <option name="gradleJvm" value="#JAVA_HOME" />
@@ -41,6 +39,8 @@
             <option value="$PROJECT_DIR$/mid-feed" />
             <option value="$PROJECT_DIR$/presto" />
             <option value="$PROJECT_DIR$/presto-aeron" />
+            <option value="$PROJECT_DIR$/presto-test-agent" />
+            <option value="$PROJECT_DIR$/presto-test-agent-rt" />
             <option value="$PROJECT_DIR$/serializer" />
             <option value="$PROJECT_DIR$/sys" />
             <option value="$PROJECT_DIR$/test-aeron" />

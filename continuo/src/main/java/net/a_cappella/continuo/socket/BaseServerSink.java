@@ -185,7 +185,7 @@ public class BaseServerSink {
                 SelectionKey serverKey = _server.register(_selector, SelectionKey.OP_ACCEPT);
 
                 while (!_stop) {
-                    _selector.select(); // blocks until a message is received or the selector is waken up by 'signalStop'
+                    _selector.select(); // blocks until a message is received or the selector is woken up by 'signalStop'
                     if (!_selector.isOpen()) {
                         break;
                     }
@@ -297,7 +297,7 @@ public class BaseServerSink {
                     sendMsg(key, resp);
                     _conMap.disconnect(key);
                 }
-                log.info("{}Sent: {}", _cmId, resp);
+                log.info("{}Sent: {} to {}", _cmId, resp, req.getMyConnInfo());
             } catch (Exception x) {
                 _conMap.disconnect(key);
                 throw x;

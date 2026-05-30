@@ -45,7 +45,7 @@ public class AeronDaemon extends CollectiveMember {
         _mediaDriverProps = mediaDriverProps;
     }
 
-    private IdleStrategy _conductorIdleStrategy = net.a_cappella.continuo.utils.Utils.BACKOFF_IDLE_STRATEGY;
+    private IdleStrategy _conductorIdleStrategy = net.a_cappella.continuo.utils.Utils.getIdleStrategy("backoff");
     public void setConductorIdleStrategy(Object conductorIdleStrategy) {
         _conductorIdleStrategy = net.a_cappella.continuo.utils.Utils.getIdleStrategy(conductorIdleStrategy, "backoff");
     }

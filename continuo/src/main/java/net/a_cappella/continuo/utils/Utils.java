@@ -376,8 +376,6 @@ public class Utils {
 
     public static final IdleStrategy NO_OP_IDLE_STRATEGY = new NoOpIdleStrategy();
     public static final BusySpinIdleStrategy BUSY_SPIN_IDLE_STRATEGY = new BusySpinIdleStrategy();
-    public static final IdleStrategy BACKOFF_IDLE_STRATEGY =
-            new BackoffIdleStrategy(100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
 
     public static IdleStrategy getIdleStrategy(Object idleStrategyObj) {
         IdleStrategy idleStrategy = null;
@@ -387,7 +385,7 @@ public class Utils {
             String idleStrategyStr = ((String) idleStrategyObj).toLowerCase();
             switch (idleStrategyStr) {
                 case "backoff":
-                    idleStrategy = BACKOFF_IDLE_STRATEGY;
+                    idleStrategy = new BackoffIdleStrategy(100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
                     break;
                 case "nop":
                     idleStrategy = NO_OP_IDLE_STRATEGY;

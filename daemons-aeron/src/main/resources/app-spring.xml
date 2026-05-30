@@ -21,7 +21,7 @@
         <property name="myInfo" value="${daemon.collective.myInfo}" />
         <property name="versionedParamsCache" ref="versionedParamsCache" />
         <property name="reconnectIntervalMillis" value="${reconnect.interval.millis}"/>
-        <property name="connectionTimeoutMicros" value="${connection.timeout.micros}"/>
+        <property name="connectionTimeoutMillis" value="${connection.timeout.millis}"/>
 
         <property name="conductorIdleStrategy" value="${conductor.idle.strategy}"/>
         <property name="receiverIdleStrategy" value="${receiver.idle.strategy}"/>

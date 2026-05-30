@@ -117,9 +117,9 @@ public class ExchangeClient {
     protected MsgCoder _coder;
     protected ClientPipe _pipe;
 
-    private int _connectionTimeoutMicros = 200;
-    public void setConnectionTimeoutMicros(String connectionTimeoutMicros) {
-        _connectionTimeoutMicros = Utils.parseAsInt("connectionTimeoutMicros", connectionTimeoutMicros, _connectionTimeoutMicros);
+    private int _connectionTimeoutMillis = 200;
+    public void setConnectionTimeoutMillis(String connectionTimeoutMillis) {
+        _connectionTimeoutMillis = Utils.parseAsInt("connectionTimeoutMillis", connectionTimeoutMillis, _connectionTimeoutMillis);
     }
 
     private int _inBufferSize = 4096;
@@ -159,7 +159,7 @@ public class ExchangeClient {
 
     public void start() {
         _pipe = new ClientPipe(_coder, _myInfo, _sinkInfo, _inBufferSize, _outBufferSize);
-        _pipe.setConnectionTimeoutMicros(_connectionTimeoutMicros);
+        _pipe.setConnectionTimeoutMillis(_connectionTimeoutMillis);
         _pipe.startPipe();
         ShutdownHook.registerShutdownAction(() -> stop());
     }

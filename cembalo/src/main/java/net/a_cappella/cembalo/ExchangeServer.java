@@ -105,9 +105,9 @@ import gnu.trove.map.hash.TObjectIntHashMap;
 public class ExchangeServer implements ITimerEventListener, IExchangeServer {
     private static final Logger log = LoggerFactory.getLogger(ExchangeServer.class);
 
-    private int _connectionTimeoutMicros = 200;
-    public void setConnectionTimeoutMicros(String connectionTimeoutMicros) {
-        _connectionTimeoutMicros = Utils.parseAsInt("connectionTimeoutMicros", connectionTimeoutMicros, _connectionTimeoutMicros);
+    private int _connectionTimeoutMillis = 200;
+    public void setConnectionTimeoutMillis(String connectionTimeoutMillis) {
+        _connectionTimeoutMillis = Utils.parseAsInt("connectionTimeoutMillis", connectionTimeoutMillis, _connectionTimeoutMillis);
     }
 
     private int _inBufferSize = 4096;
@@ -190,7 +190,7 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
 
         _sink.startSink();
 
-        _pipe.setConnectionTimeoutMicros(_connectionTimeoutMicros);
+        _pipe.setConnectionTimeoutMillis(_connectionTimeoutMillis);
         _pipe.startPipe();
         while (!_pipe.isConnected()) Utils.sleep(100);
 

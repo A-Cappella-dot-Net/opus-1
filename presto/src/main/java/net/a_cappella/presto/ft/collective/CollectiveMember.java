@@ -78,7 +78,8 @@ public class CollectiveMember {
 
     // socket parameters
     private int _reconnectIntervalMillis = 200;
-    private int _connectionTimeoutMicros = 200;
+    private int _connectionTimeoutMillis = 200;
+    private int _registrationTimeoutMillis = 500;
 
     // component info
     protected AppInfo _myInfo;
@@ -162,8 +163,9 @@ public class CollectiveMember {
         AppInfo appInfo = new AppInfo(infoStr);
         ConnInfo connInfo = new ConnInfo(infoStr);
         ClientPipe pipe = new ClientPipe(_coder, _myInfo, _myConnInfo, appInfo, connInfo, _cmId);
-        pipe.setConnectionTimeoutMicros(_connectionTimeoutMicros);
+        pipe.setConnectionTimeoutMillis(_connectionTimeoutMillis);
         pipe.setReconnectInterval(_reconnectIntervalMillis);
+        pipe.setRegistrationTimeoutMillis(_registrationTimeoutMillis);
         if (!pipe._myPipe) {
             pipe.startPipe();
         } else { // that's me and I am up
@@ -236,11 +238,18 @@ public class CollectiveMember {
             log.warn("Invalid reconnectIntervalMillis value {}. Defaulting to {}", reconnectIntervalMillis, _reconnectIntervalMillis);
         }
     }
-    public void setConnectionTimeoutMicros(String connectionTimeoutMicros) {
+    public void setConnectionTimeoutMillis(String connectionTimeoutMillis) {
         try {
-            _connectionTimeoutMicros = Integer.parseInt(connectionTimeoutMicros);
+            _connectionTimeoutMillis = Integer.parseInt(connectionTimeoutMillis);
         } catch (NumberFormatException x) {
-            log.warn("Invalid connectionTimeoutMicros value {}. Defaulting to {}", connectionTimeoutMicros, _connectionTimeoutMicros);
+            log.warn("Invalid connectionTimeoutMillis value {}. Defaulting to {}", connectionTimeoutMillis, _connectionTimeoutMillis);
+        }
+    }
+    public void setRegistrationTimeoutMillis(String registrationTimeoutMillis) {
+        try {
+            _registrationTimeoutMillis = Integer.parseInt(registrationTimeoutMillis);
+        } catch (NumberFormatException x) {
+            log.warn("Invalid registrationTimeoutMillis value {}. Defaulting to {}", registrationTimeoutMillis, _registrationTimeoutMillis);
         }
     }
 

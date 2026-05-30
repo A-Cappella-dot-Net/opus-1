@@ -41,7 +41,7 @@
         <property name="marketDataService" ref="marketDataService" />
         <property name="ecnUserManager" ref="ecnUserManager" />
         <property name="orderManagerService" ref="orderManagerService" />
-        <property name="connectionTimeoutMicros" value="${connection.timeout.micros}"/>
+        <property name="connectionTimeoutMillis" value="${connection.timeout.millis}"/>
     </bean>
 
     <bean name="marketDataService" class="net.a_cappella.madrigal.MarketDataService" init-method="init">

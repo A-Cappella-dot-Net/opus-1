@@ -38,7 +38,7 @@ public class TightLoopThread {
     private final List<TightLoopSnippet> _snippetsToBeAddedL = (LOCK_FREE) ? null : new ArrayList<>();
     private final ManyToOneConcurrentArrayQueue<TightLoopSnippet> _snippetsToBeAddedQ = (LOCK_FREE) ? new ManyToOneConcurrentArrayQueue<>(QUEUE_LEN) : null;
 
-    private IdleStrategy _idleStrategy = Utils.BACKOFF_IDLE_STRATEGY;
+    private IdleStrategy _idleStrategy = Utils.getIdleStrategy("backoff");
     public void setIdleStrategy(Object idleStrategyObj) {
         _idleStrategy = Utils.getIdleStrategy(idleStrategyObj, "backoff");
     }

@@ -61,7 +61,8 @@ public class CollectiveClient implements IFtMemberClient, IFtMonitorClient, IFtM
 
     private final ClientPipe _pipe;
     private int _reconnectIntervalMillis = 200;
-    private int _connectionTimeoutMicros = 200;
+    private int _connectionTimeoutMillis = 200;
+    private int _registrationTimeoutMillis = 500;
 
     private final Map<GroupAndInstance, FtMemberMsg> _activeMemRequests = new HashMap<>();
     private final Map<String, FtMonitorMsg> _activeMonRequests = new HashMap<>();
@@ -242,9 +243,13 @@ public class CollectiveClient implements IFtMemberClient, IFtMonitorClient, IFtM
     public void setReconnectIntervalMillis(String reconnectIntervalMillis) {
         _reconnectIntervalMillis = Utils.parseAsInt("reconnectIntervalMillis", reconnectIntervalMillis, _reconnectIntervalMillis);
     }
-    public void setConnectionTimeoutMicros(String connectionTimeoutMicros) {
-        _connectionTimeoutMicros = Utils.parseAsInt("connectionTimeoutMicros", connectionTimeoutMicros, _connectionTimeoutMicros);
-        _pipe.setConnectionTimeoutMicros(_connectionTimeoutMicros);
+    public void setConnectionTimeoutMillis(String connectionTimeoutMillis) {
+        _connectionTimeoutMillis = Utils.parseAsInt("connectionTimeoutMillis", connectionTimeoutMillis, _connectionTimeoutMillis);
+        _pipe.setConnectionTimeoutMillis(_connectionTimeoutMillis);
+    }
+    public void setRegistrationTimeoutMillis(String registrationTimeoutMillis) {
+        _registrationTimeoutMillis = Utils.parseAsInt("registrationTimeoutMillis", registrationTimeoutMillis, _registrationTimeoutMillis);
+        _pipe.setRegistrationTimeoutMillis(_registrationTimeoutMillis);
     }
     @Override
     public void registerFtMemberListener(IFtMemberListener listener) {
@@ -286,8 +291,9 @@ public class CollectiveClient implements IFtMemberClient, IFtMonitorClient, IFtM
     public class ClientPipe extends BaseClientPipe {
         public ClientPipe(String cmId, MsgCoder coder, AppInfo myInfo, ConnInfo connInfo) {
             super(coder, myInfo, connInfo, cmId, connInfo.getPort()+"");
-            setConnectionTimeoutMicros(CollectiveClient.this._connectionTimeoutMicros);
+            setConnectionTimeoutMillis(CollectiveClient.this._connectionTimeoutMillis);
             setReconnectInterval(CollectiveClient.this._reconnectIntervalMillis);
+            setRegistrationTimeoutMillis(CollectiveClient.this._registrationTimeoutMillis);
         }
         @Override
         public void onRegistrationResponse() {

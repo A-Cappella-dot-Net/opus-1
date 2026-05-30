@@ -19,6 +19,7 @@ cucumber-bom = "7.24.0"
 java-websocket = "1.5.3"
 jetty-server = "11.0.26"
 jetty-server-websocket = "11.0.26"
+byte-buddy = "1.15.11"
 
 [libraries]
 apache-text = { module = "org.apache.commons:commons-text", version.ref = "apache-text" }
@@ -41,3 +42,5 @@ cucumber-bom = { module = "io.cucumber:cucumber-bom", version.ref = "cucumber-bo
 java-websocket = { module = "org.java-websocket:Java-WebSocket", version.ref = "java-websocket" }
 jetty-server = { module = "org.eclipse.jetty:jetty-server", version.ref = "jetty-server" }
 jetty-server-websocket = { module = "org.eclipse.jetty.websocket:websocket-jetty-server", version.ref = "jetty-server-websocket" }
+byte-buddy = { module = "net.bytebuddy:byte-buddy", version.ref = "byte-buddy" }
+byte-buddy-agent  = { module = "net.bytebuddy:byte-buddy-agent", version.ref = "byte-buddy" }

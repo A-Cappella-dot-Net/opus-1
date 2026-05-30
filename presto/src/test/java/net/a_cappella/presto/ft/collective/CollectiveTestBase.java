@@ -52,8 +52,9 @@ public abstract class CollectiveTestBase {
     protected static final String MON_CONF_INTERVAL_MILLIS = "100";
     protected static final String MEM_CONF_INTERVAL_MILLIS = "0";
 
-    protected static final String CONNECTION_TIMEOUT_MICROS = "200";
+    protected static final String CONNECTION_TIMEOUT_MILLIS = "200";
     protected static final String RECONNECT_INTERVAL_MILLIS = "5";
+    protected static final String REGISTRATION_TIMEOUT_MILLIS = "1000";
 
     protected static final String FT_GROUP = "GRP";
 
@@ -228,8 +229,9 @@ public abstract class CollectiveTestBase {
             _collectiveMember = new CollectiveMember(_coder, collectiveCoresVersion, collectiveCores);
             _collectiveMember.setMyInfo(_myInfoStr);
             _collectiveMember.setVersionedParamsCache(_versionedParamsCache);
-            _collectiveMember.setConnectionTimeoutMicros(CONNECTION_TIMEOUT_MICROS);
+            _collectiveMember.setConnectionTimeoutMillis(CONNECTION_TIMEOUT_MILLIS);
             _collectiveMember.setReconnectIntervalMillis(RECONNECT_INTERVAL_MILLIS);
+            _collectiveMember.setRegistrationTimeoutMillis(REGISTRATION_TIMEOUT_MILLIS);
         }
 
         public void start() {
@@ -299,8 +301,9 @@ public abstract class CollectiveTestBase {
         public ClientMem(CompInfoSet cis, int instance, int port) {
             _client = new CollectiveClient(_coder, cis.getMemInfo(instance, port), MON_CONF_INTERVAL_MILLIS, MEM_CONF_INTERVAL_MILLIS);
             _client.registerFtMemberListener(this);
-            _client.setConnectionTimeoutMicros(CONNECTION_TIMEOUT_MICROS);
+            _client.setConnectionTimeoutMillis(CONNECTION_TIMEOUT_MILLIS);
             _client.setReconnectIntervalMillis(RECONNECT_INTERVAL_MILLIS);
+            _client.setRegistrationTimeoutMillis(REGISTRATION_TIMEOUT_MILLIS);
         }
 
         public void start() {
@@ -447,6 +450,9 @@ public abstract class CollectiveTestBase {
         }
         public String getMonInfo(int instance, int port) {
             return"mon_"+instance+"@:"+(_basePort+port);
+        }
+        public int getRealPort(int portOffset) {
+            return portOffset + _basePort;
         }
         public String toString() {
             return _basePort+"";
