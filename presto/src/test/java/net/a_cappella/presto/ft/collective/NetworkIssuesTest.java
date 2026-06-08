@@ -17,13 +17,13 @@
 package net.a_cappella.presto.ft.collective;
 
 import net.a_cappella.continuo.utils.Utils;
+import net.a_cappella.presto.ft.collective.proxy.NioProxy;
 import net.a_cappella.presto.ft.constants.MemberStatusEnum;
+import net.a_cappella.presto.testagent.IdFromTo;
 import net.a_cappella.presto.testagent.ProxyRouter;
 import net.a_cappella.presto.testagent.ThreadMarker;
 import org.junit.jupiter.api.*;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static net.a_cappella.presto.ft.constants.MemberStatusEnum.DOWN;
@@ -36,15 +36,15 @@ public class NetworkIssuesTest extends CollectiveTestBase {
     @Override
     protected AtomicInteger getPort() { return _port; }
 
-    private NioTcpProxy _proxy;
+    private NioProxy _proxy;
     private CompInfoSet _cis;
 
     @BeforeEach
     public void setUp(TestInfo testInfo) {
         super.setUp(testInfo);
+        ThreadMarker.setMark(null); // prevent stale marks from a prior test being inherited by daemon threads
         CollectiveMember.setUseVotedQuorum(true);
         _cis = new CompInfoSet();
-        startProxy();
     }
 
     @AfterEach
@@ -56,29 +56,227 @@ public class NetworkIssuesTest extends CollectiveTestBase {
     }
 
     @Test
+    public void testProxyStopStart() {
+        ProxyRouter.redirect(Utils._localhost, new IdFromTo[] {idFromTo("d1", 0, 100)});
+        startProxy();
+
+        Daemon d0 = new Daemon(_cis, 0, new int[] {0, 1}, 0);
+        markSpawnedThreads("d0", () -> d0.start());
+        eventually(d0, (d) -> d.iAmCore(true));
+        eventually(d0, (d) -> d.isStarted(true));
+        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, DOWN}));
+
+        Daemon d1 = new Daemon(_cis, 1, new int[] {0, 1}, 0);
+        markSpawnedThreads("d1", () -> d1.start());
+        eventually(d1, (d) -> d.iAmCore(true));
+        eventually(d1, (d) -> d.isStarted(true));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP}));
+        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, UP}));
+
+        stopProxy();
+
+        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, DOWN}));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, UP}));
+
+        startProxy();
+
+        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, UP}));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP}));
+
+        d0.stop();
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, UP}));
+
+        d1.stop();
+    }
+
+    @Test
     public void testSplitBrain() {
-        ProxyRouter.redirect("d0", redirect(_cis, 1, 101));
-        ProxyRouter.redirect("d0", redirect(_cis, 2, 102));
-        ProxyRouter.redirect("d1", redirect(_cis, 0, 100));
-        ProxyRouter.redirect("d2", redirect(_cis, 0, 100));
+        ProxyRouter.redirect(Utils._localhost,
+                new IdFromTo[] {
+                        idFromTo("d0", 1, 101),
+                        idFromTo("d0", 2, 102),
+                        idFromTo("d1", 0, 100),
+                        idFromTo("d2", 0, 100)
+                });
+        startProxy();
 
         Daemon d2 = new Daemon(_cis, 2, new int[] {0, 1, 2}, 0);
-        ThreadMarker.setMark("d2"); d2.start();
+        markSpawnedThreads("d2", () -> d2.start());
         eventually(d2, (d) -> d.iAmCore(true));
         eventually(d2, (d) -> d.isStarted(true));
         eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, DOWN, UP}));
 
         Daemon d1 = new Daemon(_cis, 1, new int[] {0, 1, 2}, 0);
-        ThreadMarker.setMark("d1"); d1.start();
+        markSpawnedThreads("d1", () -> d1.start());
         eventually(d1, (d) -> d.iAmCore(true));
         eventually(d1, (d) -> d.isStarted(true));
         eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {DOWN, UP, UP}));
         eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, UP, UP}));
 
         Daemon d0 = new Daemon(_cis, 0, new int[] {0, 1, 2}, 0);
-        ThreadMarker.setMark("d0"); d0.start();
+        markSpawnedThreads("d0", () -> d0.start());
         eventually(d0, (d) -> d.iAmCore(true));
         eventually(d0, (d) -> d.isStarted(true));
+        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, UP, UP}));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+
+        stopProxy();
+
+        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, DOWN, DOWN}));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {DOWN, UP, UP}));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, UP, UP}));
+
+        startProxy();
+
+        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, UP, UP}));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+
+        d0.stop();
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {DOWN, UP, UP}));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, UP, UP}));
+
+        d1.stop();
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, DOWN, UP}));
+
+        d2.stop();
+    }
+
+    @Test
+    public void testManInTheMiddle() {
+        ProxyRouter.redirect(Utils._localhost,
+                new IdFromTo[] {
+                        idFromTo("d0", 1, 101),
+                        idFromTo("d1", 0, 100)
+                });
+        startProxy();
+
+        Daemon d2 = new Daemon(_cis, 2, new int[] {0, 1, 2}, 0);
+        d2.start();
+        eventually(d2, (d) -> d.iAmCore(true));
+        eventually(d2, (d) -> d.isStarted(true));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, DOWN, UP}));
+
+        Daemon d1 = new Daemon(_cis, 1, new int[] {0, 1, 2}, 0);
+        markSpawnedThreads("d1", () -> d1.start());
+        eventually(d1, (d) -> d.iAmCore(true));
+        eventually(d1, (d) -> d.isStarted(true));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {DOWN, UP, UP}));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, UP, UP}));
+
+        Daemon d0 = new Daemon(_cis, 0, new int[] {0, 1, 2}, 0);
+        markSpawnedThreads("d0", () -> d0.start());
+        eventually(d0, (d) -> d.iAmCore(true));
+        eventually(d0, (d) -> d.isStarted(true));
+        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, UP, UP}));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+
+        stopProxy();
+
+        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, DOWN, UP}));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, UP, UP}));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+
+        startProxy();
+
+        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, UP, UP}));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+
+        d0.stop();
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {DOWN, UP, UP}));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, UP, UP}));
+
+        d1.stop();
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, DOWN, UP}));
+
+        d2.stop();
+    }
+
+    @Test
+    public void testAsymmetricReachability1() {
+        ProxyRouter.redirect(Utils._localhost, new IdFromTo[] { idFromTo("d0", 1, 101) });
+        startProxy();
+
+        Daemon d2 = new Daemon(_cis, 2, new int[] {0, 1, 2}, 0);
+        d2.start();
+        eventually(d2, (d) -> d.iAmCore(true));
+        eventually(d2, (d) -> d.isStarted(true));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, DOWN, UP}));
+
+        Daemon d1 = new Daemon(_cis, 1, new int[] {0, 1, 2}, 0);
+        d1.start();
+        eventually(d1, (d) -> d.iAmCore(true));
+        eventually(d1, (d) -> d.isStarted(true));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {DOWN, UP, UP}));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, UP, UP}));
+
+        Daemon d0 = new Daemon(_cis, 0, new int[] {0, 1, 2}, 0);
+        markSpawnedThreads("d0", () -> d0.start());
+        eventually(d0, (d) -> d.iAmCore(true));
+        eventually(d0, (d) -> d.isStarted(true));
+        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, UP, UP}));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+
+        stopProxy();
+
+        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, DOWN, UP}));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, UP, UP}));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+
+        startProxy();
+
+        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, UP, UP}));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+
+        d0.stop();
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {DOWN, UP, UP}));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, UP, UP}));
+
+        d1.stop();
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, DOWN, UP}));
+
+        d2.stop();
+    }
+
+    @Test
+    public void testAsymmetricReachability2() {
+        ProxyRouter.redirect(Utils._localhost, new IdFromTo[] { idFromTo("d1", 0, 100) });
+        startProxy();
+
+        Daemon d2 = new Daemon(_cis, 2, new int[] {0, 1, 2}, 0);
+        d2.start();
+        eventually(d2, (d) -> d.iAmCore(true));
+        eventually(d2, (d) -> d.isStarted(true));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, DOWN, UP}));
+
+        Daemon d1 = new Daemon(_cis, 1, new int[] {0, 1, 2}, 0);
+        markSpawnedThreads("d1", () -> d1.start());
+        eventually(d1, (d) -> d.iAmCore(true));
+        eventually(d1, (d) -> d.isStarted(true));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {DOWN, UP, UP}));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, UP, UP}));
+
+        Daemon d0 = new Daemon(_cis, 0, new int[] {0, 1, 2}, 0);
+        d0.start();
+        eventually(d0, (d) -> d.iAmCore(true));
+        eventually(d0, (d) -> d.isStarted(true));
+        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, UP, UP}));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+
+        stopProxy();
+
+        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, DOWN, UP}));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, UP, UP}));
+        eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
+
+        startProxy();
+
         eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, UP, UP}));
         eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
         eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
@@ -94,8 +292,10 @@ public class NetworkIssuesTest extends CollectiveTestBase {
     }
 
     private void startProxy() {
-        _proxy = new NioTcpProxy(forward(_cis,new int[][] {{100,0}, {101,1}, {102,2}}));
-        _proxy.start();
+        if (_proxy == null) {
+            _proxy = new NioProxy(ProxyRouter.forwards());
+            _proxy.start();
+        }
     }
 
     private void stopProxy() {
@@ -105,25 +305,12 @@ public class NetworkIssuesTest extends CollectiveTestBase {
         }
     }
 
-    private SocketAddress address(CompInfoSet cis, int port) {
-        return new InetSocketAddress(Utils._localhost, cis.getRealPort(port));
+    private IdFromTo idFromTo(String id, int fromPort, int toPort) {
+        return new IdFromTo(id, _cis.getRealPort(fromPort), _cis.getRealPort(toPort));
     }
 
-    private int[][] forward(CompInfoSet cis, int[][] fromToList) {
-        int[][] realFromToList = new int[fromToList.length][];
-        for (int i = 0; i < fromToList.length; i++) {
-            realFromToList[i] = new int[2];
-            realFromToList[i][0] = cis.getRealPort(fromToList[i][0]);
-            realFromToList[i][1] = cis.getRealPort(fromToList[i][1]);
-        }
-        return realFromToList;
-    }
-
-    private SocketAddress[] redirect(CompInfoSet cis, int fromPort, int toPort) {
-        SocketAddress[] fromTo = new SocketAddress[2];
-        fromTo[0] = address(cis, fromPort);
-        fromTo[1] = address(cis, toPort);
-        return fromTo;
+    private void markSpawnedThreads(String uniqueLabel, Runnable action) {
+        ThreadMarker.setMark(uniqueLabel); action.run(); ThreadMarker.setMark(null);
     }
 
 }

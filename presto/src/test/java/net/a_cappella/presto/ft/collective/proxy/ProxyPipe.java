@@ -14,35 +14,29 @@
  * limitations under the License.
  */
 
-package net.a_cappella.continuo.socket;
+package net.a_cappella.presto.ft.collective.proxy;
+
+import net.a_cappella.continuo.utils.Utils;
+import org.agrona.concurrent.IdleStrategy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
-import net.a_cappella.continuo.collective.AppInfo;
-import net.a_cappella.continuo.collective.ConnInfo;
-import net.a_cappella.continuo.msg.*;
-import net.a_cappella.continuo.utils.Utils;
-import org.agrona.concurrent.IdleStrategy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+public class ProxyPipe {
+    private static final Logger log = LoggerFactory.getLogger(ProxyPipe.class);
 
-public class BaseClientPipe {
-    private static final Logger log = LoggerFactory.getLogger(BaseClientPipe.class);
+    private final String _localHost = Utils._localhost;
 
+    private final SinkAndPipes _sinkAndPipes;
+    private final int _port;
     private final String _cmId;
 
-    private final MsgCoder _coder;
-    protected AppInfo _myInfo;
-    protected ConnInfo _sinkInfo;
-
-    private final String _creatorName;
     private final PipeThread _pipeThread = new PipeThread();
     private SocketChannel _channel = null;
 
@@ -50,36 +44,22 @@ public class BaseClientPipe {
     private int _outBufferSize = 512;
     private ByteBuffer _inBuf;
     private ByteBuffer _outBuf;
-    private final List<Msg> _msgs = new ArrayList<>();
 
-    private final RegistrationRequest _reg;
-
-    private int _reconnectIntervalMillis = 200;
-    private long _connectionTimeoutNanos = 200L * 1_000_000L; // 200 millis
-    private long _registrationTimeoutNanos = 500L * 1_000_000L; // 500 millis
-    private IdleStrategy _idleStrategy = Utils.getIdleStrategy("backoff");
-
+    private final CountDownLatch _stopLatch = new CountDownLatch(1);
     private volatile PipeStatus _pipeStatus = PipeStatus.INITIALIZED;
 
     private enum PipeStatus {
         INITIALIZED, STARTED, CONNECTED, DISCONNECTED, STOPPED
     }
 
+    private int _reconnectIntervalMillis = 200;
+    private long _connectionTimeoutNanos = 200L * 1_000_000L; // 200 millis
+    private IdleStrategy _idleStrategy = Utils.getIdleStrategy("backoff");
 
-
-    public BaseClientPipe(MsgCoder coder, AppInfo myInfo, ConnInfo sinkInfo, int inBufferSize, int outBufferSize, String cmId, String creatorName) {
-        this(coder, myInfo, sinkInfo, cmId, creatorName);
-        _inBufferSize = inBufferSize;
-        _outBufferSize = outBufferSize;
-    }
-
-    public BaseClientPipe(MsgCoder coder, AppInfo myInfo, ConnInfo sinkInfo, String cmId, String creatorName) {
-        _coder = coder;
-        _myInfo = myInfo;
-        _sinkInfo = sinkInfo;
-        _cmId = (cmId==null) ? "" : (cmId+" ");
-        _reg = new RegistrationRequest(_myInfo, 0L);
-        _creatorName = creatorName;
+    public ProxyPipe(SinkAndPipes sinkAndPipes, int port, String cmId) {
+        _sinkAndPipes = sinkAndPipes;
+        _port = port;
+        _cmId = cmId;
     }
 
     public void startPipe() {
@@ -89,57 +69,29 @@ public class BaseClientPipe {
         if (_outBuf == null) _outBuf = ByteBuffer.allocate(_outBufferSize);
         _inBuf.clear();
         _outBuf.clear();
-        _pipeThread.setName(_creatorName + " PipeThread");
+        _pipeThread.setName(_cmId + " PipeThread");
         _pipeThread.setCaller(caller);
         _pipeThread.start();
     }
 
     public void stopPipe() {
         _pipeThread.signalStop();
-    }
-
-    public void onConnect() {}
-    public void onDisconnect() {}
-    public void onStopped() {}
-
-    public void sendMsg(Msg msg) throws IOException { // TODO non synchronized version
-        if (log.isDebugEnabled()) log.debug("{}sending {} to {}", _cmId, msg, this);
-        int len;
-        synchronized (_outBuf) {
-            len = _coder.encode(msg, _outBuf);
-            _outBuf.flip();
-            do {
-                _channel.write(_outBuf);
-                _outBuf.compact();
-            } while (_outBuf.position()!=0);
+        try {
+            _stopLatch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
-        if (log.isDebugEnabled()) log.debug("{}sent    {} bytes to {}", _cmId, len, this);
     }
 
-    public void sendMsg(Msg[] msgs) throws IOException { // TODO non synchronized version
-        if (log.isDebugEnabled()) log.debug("{}sending {} to {}", _cmId, Arrays.toString(msgs), this);
-        int len;
-        synchronized (_outBuf) {
-            len = _coder.encode(msgs, _outBuf);
-            _outBuf.flip();
-            do {
-                _channel.write(_outBuf);
-                _outBuf.compact();
-            } while (_outBuf.position()!=0);
-        }
-        if (log.isDebugEnabled()) log.debug("{}sent    {} bytes to {}", _cmId, len, this);
-    }
-
-    public void onMsg(Msg msg) {
-        if (log.isDebugEnabled()) log.debug("{}received {}", _cmId, msg);
-    }
-
-    public void onRegistrationResponse() {
-        log.info("{}Received: Y from {}", _cmId, _sinkInfo);
-    }
-
-    public void setDaemonInfo(ConnInfo myConnInfo) {
-        _reg.setMyConnInfo(myConnInfo);
+    public void sendMsg(byte[] bytes) throws IOException {
+        if (_channel == null || !_channel.isConnected()) return;
+        if (log.isDebugEnabled()) log.debug("{}sending {} to {}", _cmId, bytes, this);
+        _outBuf = ByteBuffer.wrap(bytes);
+        do {
+            _channel.write(_outBuf);
+            _outBuf.compact();
+        } while (_outBuf.position()!=0);
+        if (log.isDebugEnabled()) log.debug("{}sent    {} bytes to {}", _cmId, bytes.length, this);
     }
 
     public boolean isStarted() {
@@ -155,34 +107,15 @@ public class BaseClientPipe {
         return _pipeStatus == PipeStatus.STOPPED;
     }
 
-    public void setReconnectInterval(int reconnectIntervalMillis) {
-        _reconnectIntervalMillis = reconnectIntervalMillis;
-    }
-    public void setConnectionTimeoutMillis(int connectionTimeoutMillis) {
-        _connectionTimeoutNanos = connectionTimeoutMillis * 1_000_000L;
-    }
-    public void setRegistrationTimeoutMillis(int registrationTimeoutMillis) {
-        _registrationTimeoutNanos = registrationTimeoutMillis * 1_000_000L;
-    }
-    public void setIdleStrategy(Object idleStrategyObj) {
-        _idleStrategy = Utils.getIdleStrategy(idleStrategyObj, "backoff");
-    }
-
-
     public String toString() {
-        return _sinkInfo.getConn();
+        return Integer.toString(_port);
     }
     private String getExceptionSummary(Exception x) {
-        return _sinkInfo.getConn()+" - "+(x.getMessage()==null ? x.getClass().getCanonicalName() : x.getMessage());
+        return _port+" - "+(x.getMessage()==null ? x.getClass().getCanonicalName() : x.getMessage());
     }
     private String getConnectionSummary(SocketAddress localAddress) {
-        return _sinkInfo.getConn()+((localAddress==null)?"":(" on "+localAddress));
+        return _port+((localAddress==null)?"":(" on "+localAddress));
     }
-
-
-
-
-
 
 
     private class PipeThread extends Thread {
@@ -194,7 +127,7 @@ public class BaseClientPipe {
         }
 
         public void signalStop() {
-            log.info("{}Stopping ClientPipe {}", _cmId, _sinkInfo);
+            log.info("{}Stopping ClientPipe {}", _cmId, _port);
             try {
                 if (_channel!=null && _channel.isConnected()) _channel.shutdownInput();
             } catch (IOException e) {
@@ -205,9 +138,9 @@ public class BaseClientPipe {
 
         @Override
         public void run() {
-            log.info("{}Starting ClientPipe {} {}", _cmId, _sinkInfo, _caller);
+            log.info("{}Starting ClientPipe {} {}", _cmId, _port, _caller);
             boolean firstAttempt = true;
-            SocketAddress socketAddress = new InetSocketAddress(_sinkInfo.getHost(), _sinkInfo.getPort());
+            SocketAddress socketAddress = new InetSocketAddress(_localHost, _port);
             _pipeStatus = PipeStatus.STARTED;
             while (!_stop) {
                 boolean connected = false;
@@ -226,8 +159,6 @@ public class BaseClientPipe {
                     log.info("{}Connected to sink {}", _cmId, getConnectionSummary(localAddress));
                     _inBuf.clear();
                     _outBuf.clear();
-
-                    sendRegistrationRequest();
 
                     safeOnConnect();
 
@@ -259,38 +190,24 @@ public class BaseClientPipe {
                 if (_stop) break;
                 try {Thread.sleep(_reconnectIntervalMillis);} catch (InterruptedException x) {}
             }
+
+            _stopLatch.countDown();
             log.info("{}ClientPipe Stopped {} {}", _cmId, getConnectionSummary(null), _caller);
             _pipeStatus = PipeStatus.STOPPED;
-            onStopped();
         }
 
         private void safeOnConnect() {
             try {
-                onConnect();
+                _sinkAndPipes.onDstConnect();
             } catch (Exception e) {
                 log.error("{}Unexpected error", _cmId, e);
             }
         }
         private void safeOnDisconnect() {
             try {
-                onDisconnect();
+                _sinkAndPipes.onDstDisconnect();
             } catch (Exception e) {
                 log.error("{}Unexpected error", _cmId, e);
-            }
-        }
-
-        private void sendRegistrationRequest() {
-            _reg.setStartTime();
-            try {
-                log.info("{}Sending reg request {} to {}", _cmId, _reg, _sinkInfo);
-                sendMsg(_reg);
-            } catch (IOException x) {
-                String info = "Could not send registration request. Exiting...";
-                System.out.println(info);
-                log.error(info, x);
-
-                try {Thread.sleep(500);} catch (InterruptedException e) {}
-                System.exit(-1);
             }
         }
 
@@ -311,7 +228,6 @@ public class BaseClientPipe {
 
         private void readAndProcessMessagesLoop() {
             int workCount;
-            long registrationDeadlineNanos = System.nanoTime() + _registrationTimeoutNanos;
             while (!_stop) {
                 workCount = -1;
                 try {
@@ -322,49 +238,24 @@ public class BaseClientPipe {
                     log.error("{}Read loop {}", _cmId, getExceptionSummary(e), e);
                 }
                 if (workCount<0) break;
-                if (_pipeStatus != PipeStatus.CONNECTED && System.nanoTime() > registrationDeadlineNanos) {
-                    log.info("{}No registration response within {} micros from sink {}", _cmId, _registrationTimeoutNanos / 1_000, _sinkInfo);
-                    break;
-                }
                 _idleStrategy.idle(workCount);
             }
         }
         private int readAndProcessMessages() throws Exception {
-            if (_channel.read(_inBuf)<0) {
-                if (log.isDebugEnabled()) log.debug("{}EOF reached {}", _cmId, BaseClientPipe.this);
+            int bytesRead = _channel.read(_inBuf);
+            if (bytesRead < 0) {
+                if (log.isDebugEnabled()) log.debug("{}EOF reached {}", _cmId, this);
                 return -1;
             }
-            int workCount = 0;
-            boolean disconnect = false;
-            _inBuf.flip();
-            _coder.decode(_inBuf, _msgs);
-            _inBuf.compact();
-            for (int i=0; i<_msgs.size(); i++) {
-                workCount++;
-                Msg msg = _msgs.get(i);
-                if (msg instanceof RegistrationResponse) {
-                    RegistrationResponse resp = (RegistrationResponse) msg;
-                    if (resp._outcome=='N') {
-                        String info = _cmId+" already connected to "+_sinkInfo.getConn()+". Exiting...";
-                        System.out.println(info);
-                        log.info(info);
-
-                        try {Thread.sleep(500);} catch (InterruptedException x) {}
-                        System.exit(1);
-                    }
-                    _pipeStatus = PipeStatus.CONNECTED;
-                    onRegistrationResponse();
-                } else if (msg instanceof ForceDisconnect) {
-                    onDisconnect();
-                    disconnect = true;
-                } else {
-                    onMsg(msg);
-                }
-                msg.stopUsing();
+            if (bytesRead == 0) {
+                return 0; // no data — let idle strategy back off
             }
-            _msgs.clear();
-            if (disconnect) return -1;
-            return workCount;
+            _inBuf.flip();
+            byte[] bytes = new byte[_inBuf.remaining()];
+            _inBuf.get(bytes);
+            _inBuf.clear();
+            _sinkAndPipes.onMsgFromDst(ProxyPipe.this, bytes);
+            return 1;
         }
     }
 }

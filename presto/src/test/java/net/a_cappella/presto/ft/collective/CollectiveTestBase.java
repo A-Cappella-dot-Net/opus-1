@@ -54,7 +54,7 @@ public abstract class CollectiveTestBase {
 
     protected static final String CONNECTION_TIMEOUT_MILLIS = "200";
     protected static final String RECONNECT_INTERVAL_MILLIS = "5";
-    protected static final String REGISTRATION_TIMEOUT_MILLIS = "1000";
+    protected static final String REGISTRATION_TIMEOUT_MILLIS = "500";
 
     protected static final String FT_GROUP = "GRP";
 

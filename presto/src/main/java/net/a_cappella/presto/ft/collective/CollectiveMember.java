@@ -108,7 +108,7 @@ public class CollectiveMember {
 
     private final SinkToPipeLinkage _sinkToPipeLinkage = new SinkToPipeLinkage();
 
-    private final Queue<FtEvent> _eventQueue = new MpscLinkedQueue();
+    private final Queue<FtEvent> _eventQueue = new MpscLinkedQueue<>();
 
     public CollectiveMember(MsgCoder coder, int version, String coreList) {
         _coder = coder;
@@ -637,7 +637,7 @@ public class CollectiveMember {
                 try {
                     super.sendMsg(key, msg);
                 } catch (Exception x) {
-                    log.error("Could not send message to "+keyHash(key), x);
+                    log.error("{}Could not send message to {} {}", _cmId, keyHash(key), x.getMessage());
                 }
             }
         }

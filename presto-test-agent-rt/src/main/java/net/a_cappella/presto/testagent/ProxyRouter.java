@@ -18,19 +18,45 @@ package net.a_cappella.presto.testagent;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public final class ProxyRouter {
     private static final ConcurrentMap<RouteKey, SocketAddress> ROUTES = new ConcurrentHashMap<>();
+    private static final Map<String, CntFromTo> PROXIES = new HashMap<>();
 
-    public static void redirect(String id, SocketAddress[] fromTo) {
-        System.out.println("ProxyRouter.redirect (" + id + ", " + fromTo[0] + ") => " + fromTo[1]);
-        ROUTES.put(new RouteKey(id, fromTo[0]), fromTo[1]);
+    public static void redirect(String localhost, IdFromTo[] idFromTos) {
+        for (int i = 0; i < idFromTos.length; i++) {
+            IdFromTo ift = idFromTos[i];
+            String id = ift._id;
+            SocketAddress from = new InetSocketAddress(localhost, ift._from);
+            SocketAddress to = new InetSocketAddress(localhost, ift._to);
+            System.out.println("ProxyRouter.redirect (" + id + ", " + from + ") => " + to);
+            ROUTES.put(new RouteKey(id, from), to);
+            String key = ift._to + ":" + ift._from;
+            CntFromTo entry = PROXIES.get(key);
+            if (entry == null) {
+                PROXIES.put(key, new CntFromTo(1, ift._to, ift._from));
+            } else {
+                entry._cnt++;
+            }
+        }
+    }
+
+    public static CntFromTo[] forwards() {
+        CntFromTo[] forwards = new CntFromTo[PROXIES.size()];
+        int i = 0;
+        for (CntFromTo entry : PROXIES.values()) {
+            forwards[i++] = entry;
+        }
+        return forwards;
     }
 
     public static void clear() {
         ROUTES.clear();
+        PROXIES.clear();
     }
 
     /** If there is a defined route from the current RouteKey then redirect to that value */
