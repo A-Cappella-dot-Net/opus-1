@@ -23,8 +23,8 @@ import static net.a_cappella.presto.ft.constants.FtStatus.UNINITIALIZED;
 public class InstanceStatus {
     private final int _instance;
     private FtStatus _ftStatus = UNINITIALIZED;
-    private int _sliceNo;
-    private int _ofSlices;
+    private int _stripeNo;
+    private int _ofStripes;
 
     public InstanceStatus(int instance) {
         _instance = instance;
@@ -34,19 +34,19 @@ public class InstanceStatus {
         return _instance;
     }
 
-    public void set(FtStatus ftStatus, int sliceNo, int ofSlices) {
+    public void set(FtStatus ftStatus, int stripeNo, int ofStripes) {
         _ftStatus = ftStatus;
-        _sliceNo = sliceNo;
-        _ofSlices = ofSlices;
+        _stripeNo = stripeNo;
+        _ofStripes = ofStripes;
     }
-    public boolean already(FtStatus ftStatus, int sliceNo, int ofSlices) {
-        return _ftStatus == ftStatus && _sliceNo == sliceNo && _ofSlices == ofSlices;
+    public boolean already(FtStatus ftStatus, int stripeNo, int ofStripes) {
+        return _ftStatus == ftStatus && _stripeNo == stripeNo && _ofStripes == ofStripes;
     }
     public FtStatus getStatus() {
         return _ftStatus;
     }
 
     public String toString() {
-        return String.format("{%s %s %d/%d}", _ftStatus, _instance, _sliceNo, _ofSlices);
+        return String.format("{%s %s %d/%d}", _ftStatus, _instance, _stripeNo, _ofStripes);
     }
 }

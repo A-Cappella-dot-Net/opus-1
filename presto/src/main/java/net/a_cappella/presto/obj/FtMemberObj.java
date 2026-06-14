@@ -61,8 +61,8 @@ public class FtMemberObj extends ObjImpl {
             ),
             Arrays.asList(
                     new FieldMetaInfo("action"),
-                    new FieldMetaInfo("sliceNo"),
-                    new FieldMetaInfo("ofSlices"),
+                    new FieldMetaInfo("stripeNo"),
+                    new FieldMetaInfo("ofStripes"),
                     new FieldMetaInfo("ts", FieldType.TIMESTAMP)
             ));
     @Override
@@ -73,8 +73,8 @@ public class FtMemberObj extends ObjImpl {
     private String _groupName;
     private int _instance;
     private FtMsgOp _action;
-    private int _sliceNo;
-    private int _ofSlices;
+    private int _stripeNo;
+    private int _ofStripes;
     private long _ts;
 
     public FtMemberObj() {}
@@ -84,16 +84,16 @@ public class FtMemberObj extends ObjImpl {
         _groupName = obj._groupName;
         _instance = obj._instance;
         _action = obj._action;
-        _sliceNo = obj._sliceNo;
-        _ofSlices = obj._ofSlices;
+        _stripeNo = obj._stripeNo;
+        _ofStripes = obj._ofStripes;
     }
 
-    public FtMemberObj set(String groupName, int instance, FtMsgOp action, int sliceNo, int ofSlices, long ts) {
+    public FtMemberObj set(String groupName, int instance, FtMsgOp action, int stripeNo, int ofStripes, long ts) {
         _groupName = groupName;
         _instance = instance;
         _action = action;
-        _sliceNo = sliceNo;
-        _ofSlices = ofSlices;
+        _stripeNo = stripeNo;
+        _ofStripes = ofStripes;
         _ts = ts;
         return this;
     }
@@ -104,8 +104,8 @@ public class FtMemberObj extends ObjImpl {
         _groupName = null;
         _instance = 0;
         _action = null;
-        _sliceNo = 0;
-        _ofSlices = 0;
+        _stripeNo = 0;
+        _ofStripes = 0;
         _ts = 0;
     }
 
@@ -127,17 +127,17 @@ public class FtMemberObj extends ObjImpl {
     public void setAction(FtMsgOp action) {
         _action = action;
     }
-    public int getSliceNo() {
-        return _sliceNo;
+    public int getStripeNo() {
+        return _stripeNo;
     }
-    public void setSliceNo(int sliceNo) {
-        _sliceNo = sliceNo;
+    public void setStripeNo(int stripeNo) {
+        _stripeNo = stripeNo;
     }
-    public int getOfSlices() {
-        return _ofSlices;
+    public int getOfStripes() {
+        return _ofStripes;
     }
-    public void setOfSlices(int ofSlices) {
-        _ofSlices = ofSlices;
+    public void setOfStripes(int ofStripes) {
+        _ofStripes = ofStripes;
     }
     public long getTs() {
         return _ts;
@@ -147,7 +147,7 @@ public class FtMemberObj extends ObjImpl {
     }
 
     public String toString() {
-        return super.toString()+" {"+_groupName+" "+_instance+" => "+_action+" "+_sliceNo+"/"+_ofSlices+" "+ Utils.formatMillis(_ts)+"} ";
+        return super.toString()+" {"+_groupName+" "+_instance+" => "+_action+" "+ _stripeNo +"/"+ _ofStripes +" "+ Utils.formatMillis(_ts)+"} ";
     }
 
     @Override
@@ -164,15 +164,15 @@ public class FtMemberObj extends ObjImpl {
     @Override
     public int getInt(String fieldName) throws Exception {
         if ("instance".equalsIgnoreCase(fieldName)) return _instance;
-        if ("sliceNo".equalsIgnoreCase(fieldName)) return _sliceNo;
-        if ("ofSlices".equalsIgnoreCase(fieldName)) return _ofSlices;
+        if ("stripeNo".equalsIgnoreCase(fieldName)) return _stripeNo;
+        if ("ofStripes".equalsIgnoreCase(fieldName)) return _ofStripes;
         return super.getInt(fieldName); // throws exception
     }
     @Override
     public void setInt(String fieldName, int value) throws Exception {
         if ("instance".equalsIgnoreCase(fieldName)) _instance = value;
-        if ("sliceNo".equalsIgnoreCase(fieldName)) _sliceNo = value;
-        if ("ofSlices".equalsIgnoreCase(fieldName)) _ofSlices = value;
+        if ("stripeNo".equalsIgnoreCase(fieldName)) _stripeNo = value;
+        if ("ofStripes".equalsIgnoreCase(fieldName)) _ofStripes = value;
         else super.setInt(fieldName, value); // throws exception
     }
 

@@ -16,21 +16,21 @@
 
 package net.a_cappella.presto.ft.collective.proxy.events;
 
-import net.a_cappella.presto.ft.collective.proxy.SinkAndPipes;
+import net.a_cappella.presto.ft.collective.proxy.SingleProxy;
 
 import java.nio.channels.SelectionKey;
 
 public class SrcDisconnectEvent implements ProxyEvent {
-    private final SinkAndPipes _sinkAndPipes;
+    private final SingleProxy _singleProxy;
     private final SelectionKey _key;
 
-    public SrcDisconnectEvent(SinkAndPipes sinkAndPipes, SelectionKey key) {
-        _sinkAndPipes = sinkAndPipes;
+    public SrcDisconnectEvent(SingleProxy singleProxy, SelectionKey key) {
+        _singleProxy = singleProxy;
         _key = key;
     }
 
     @Override
     public void apply() {
-        _sinkAndPipes.handleSrcDisconnectEvent(_key);
+        _singleProxy.handleSrcDisconnectEvent(_key);
     }
 }

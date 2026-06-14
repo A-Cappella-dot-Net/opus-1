@@ -26,8 +26,8 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.Queue;
 
-public class SinkAndPipes {
-    private static final Logger log = LoggerFactory.getLogger(SinkAndPipes.class);
+public class SingleProxy {
+    private static final Logger log = LoggerFactory.getLogger(SingleProxy.class);
 
     private final Queue<ProxyEvent> _eventQueue;
     private final int _fromPort;
@@ -40,7 +40,7 @@ public class SinkAndPipes {
 
     private BiMap<SelectionKey, ProxyPipe> _keyToPipeMap = HashBiMap.create();
 
-    public SinkAndPipes(Queue<ProxyEvent> eventQueue, int fromPort, int toPort, int pipeCnt) {
+    public SingleProxy(Queue<ProxyEvent> eventQueue, int fromPort, int toPort, int pipeCnt) {
         _eventQueue = eventQueue;
         _fromPort = fromPort;
         _toPort = toPort;
@@ -103,7 +103,7 @@ public class SinkAndPipes {
                 return;
             }
         }
-        log.error("SinkAndPipes handleSrcDisconnectEvent: oldPipe not found in _pipes[]");
+        log.error("SingleProxy handleSrcDisconnectEvent: oldPipe not found in _pipes[]");
     }
 
     public void onMsgFromSrc(SelectionKey key, byte[] bytes) {
@@ -116,7 +116,7 @@ public class SinkAndPipes {
             try {
                 pipe.sendMsg(bytes);
             } catch (IOException e) {
-                log.info("SinkAndPipes {}", e.getMessage());
+                log.info("SingleProxy {}", e.getMessage());
             }
         }
     }

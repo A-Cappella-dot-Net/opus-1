@@ -17,21 +17,21 @@
 package net.a_cappella.presto.ft.collective.proxy.events;
 
 import net.a_cappella.presto.ft.collective.proxy.ProxyPipe;
-import net.a_cappella.presto.ft.collective.proxy.SinkAndPipes;
+import net.a_cappella.presto.ft.collective.proxy.SingleProxy;
 
 public class MsgFromDstEvent implements ProxyEvent {
-    private final SinkAndPipes _sinkAndPipes;
+    private final SingleProxy _singleProxy;
     private final ProxyPipe _pipe;
     private final byte[] _bytes;
 
-    public MsgFromDstEvent(SinkAndPipes sinkAndPipes, ProxyPipe pipe, byte[] bytes) {
-        _sinkAndPipes = sinkAndPipes;
+    public MsgFromDstEvent(SingleProxy singleProxy, ProxyPipe pipe, byte[] bytes) {
+        _singleProxy = singleProxy;
         _pipe = pipe;
         _bytes = bytes;
     }
 
     @Override
     public void apply() {
-        _sinkAndPipes.handleMsgFromDstEvent(_pipe, _bytes);
+        _singleProxy.handleMsgFromDstEvent(_pipe, _bytes);
     }
 }

@@ -44,8 +44,8 @@ public class FtMemberCoder extends AeronCoderImpl<FtMemberObj> {
     public void encodeBody() {
         ENCODER
                 .action(convert(_obj.getAction()))
-                .sliceNo(_obj.getSliceNo())
-                .ofSlices(_obj.getOfSlices())
+                .stripeNo(_obj.getStripeNo())
+                .ofStripes(_obj.getOfStripes())
                 .ts(_obj.getTs())
         ;
     }
@@ -58,8 +58,8 @@ public class FtMemberCoder extends AeronCoderImpl<FtMemberObj> {
     @Override
     public void decodeBody() {
         _obj.setAction(convert(DECODER.action()));
-        _obj.setSliceNo(DECODER.sliceNo());
-        _obj.setOfSlices(DECODER.ofSlices());
+        _obj.setStripeNo(DECODER.stripeNo());
+        _obj.setOfStripes(DECODER.ofStripes());
         _obj.setTs(DECODER.ts());
     }
 

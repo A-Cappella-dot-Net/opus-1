@@ -275,7 +275,7 @@ public class UserManagerClient implements IUserManagerClient {
     }
 
 	private void onFtMemberMessage(FtMemberObj ftMem) {
-        log.info("{} onFtMemberMessage({}_{} '{}' {}/{})", _clId, ftMem.getGroupName(), ftMem.getInstance(), ftMem.getAction(), ftMem.getSliceNo(), ftMem.getOfSlices());
+        log.info("{} onFtMemberMessage({}_{} '{}' {}/{})", _clId, ftMem.getGroupName(), ftMem.getInstance(), ftMem.getAction(), ftMem.getStripeNo(), ftMem.getOfStripes());
         if (ftMem.getAction() == DISCONNECT) {
         	_userStatusByUid.forEach((uid, userStatus) -> {
         		userStatus.setStatus(MadrigalUserStatus.Off);

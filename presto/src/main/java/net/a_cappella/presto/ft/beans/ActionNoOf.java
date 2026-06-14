@@ -20,22 +20,22 @@ import net.a_cappella.presto.ft.constants.FtMsgOp;
 
 public class ActionNoOf {
     public FtMsgOp _op;
-    public int _sliceNo;
-    public int _ofSlices;
+    public int _stripeNo;
+    public int _ofStripes;
 
-    public ActionNoOf(FtMsgOp op, int sliceNo, int ofSlices) {
+    public ActionNoOf(FtMsgOp op, int stripeNo, int ofStripes) {
         _op = op;
-        _sliceNo = sliceNo;
-        _ofSlices = ofSlices;
+        _stripeNo = stripeNo;
+        _ofStripes = ofStripes;
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + _ofSlices;
+        result = prime * result + _ofStripes;
         result = prime * result + ((_op == null) ? 0 : _op.hashCode());
-        result = prime * result + _sliceNo;
+        result = prime * result + _stripeNo;
         return result;
     }
 
@@ -45,15 +45,15 @@ public class ActionNoOf {
         if (obj == null) return false;
         if (getClass() != obj.getClass()) return false;
         ActionNoOf other = (ActionNoOf) obj;
-        if (_ofSlices != other._ofSlices) return false;
+        if (_ofStripes != other._ofStripes) return false;
         if (_op != other._op) return false;
-        if (_sliceNo != other._sliceNo) return false;
+        if (_stripeNo != other._stripeNo) return false;
         return true;
     }
 
     @Override
     public String toString() {
-        return "{"+_op+" "+_sliceNo+"/"+_ofSlices+"}";
+        return "{"+_op+" "+ _stripeNo +"/"+ _ofStripes +"}";
     }
 
 }

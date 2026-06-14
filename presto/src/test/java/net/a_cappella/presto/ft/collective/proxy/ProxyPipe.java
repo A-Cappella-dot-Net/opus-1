@@ -33,7 +33,7 @@ public class ProxyPipe {
 
     private final String _localHost = Utils._localhost;
 
-    private final SinkAndPipes _sinkAndPipes;
+    private final SingleProxy _singleProxy;
     private final int _port;
     private final String _cmId;
 
@@ -56,8 +56,8 @@ public class ProxyPipe {
     private long _connectionTimeoutNanos = 200L * 1_000_000L; // 200 millis
     private IdleStrategy _idleStrategy = Utils.getIdleStrategy("backoff");
 
-    public ProxyPipe(SinkAndPipes sinkAndPipes, int port, String cmId) {
-        _sinkAndPipes = sinkAndPipes;
+    public ProxyPipe(SingleProxy singleProxy, int port, String cmId) {
+        _singleProxy = singleProxy;
         _port = port;
         _cmId = cmId;
     }
@@ -198,14 +198,14 @@ public class ProxyPipe {
 
         private void safeOnConnect() {
             try {
-                _sinkAndPipes.onDstConnect();
+                _singleProxy.onDstConnect();
             } catch (Exception e) {
                 log.error("{}Unexpected error", _cmId, e);
             }
         }
         private void safeOnDisconnect() {
             try {
-                _sinkAndPipes.onDstDisconnect();
+                _singleProxy.onDstDisconnect();
             } catch (Exception e) {
                 log.error("{}Unexpected error", _cmId, e);
             }
@@ -254,7 +254,7 @@ public class ProxyPipe {
             byte[] bytes = new byte[_inBuf.remaining()];
             _inBuf.get(bytes);
             _inBuf.clear();
-            _sinkAndPipes.onMsgFromDst(ProxyPipe.this, bytes);
+            _singleProxy.onMsgFromDst(ProxyPipe.this, bytes);
             return 1;
         }
     }

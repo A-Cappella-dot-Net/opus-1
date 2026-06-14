@@ -1196,7 +1196,7 @@ public class CollectiveMonitorTest {
             } else {
                 eventually(mem1a, (m, ctx) -> m.isMemResult(ctx, ACTIVATE, 0, 2));
                 eventually(mem3a, (m, ctx) -> m.isMemResult(ctx, ACTIVATE, 1, 2));
-                eventually(mon4, (m, ctx) -> m.isActivesBitMask(ctx, ZERO|ONE));
+                eventually(mon4, (m, ctx) -> m.isActivesBitMask(ctx, ONE|THREE));
             }
 
             Daemon d0b = new Daemon(cis, 0, new int[] {0, 1}, 0);
@@ -1216,7 +1216,7 @@ public class CollectiveMonitorTest {
 
             eventually(mem1a, (m, ctx) -> m.isMemResult(ctx, ACTIVATE, 0, 2));
             eventually(mem3a, (m, ctx) -> m.isMemResult(ctx, ACTIVATE, 1, 2));
-            eventually(mon4, (m, ctx) -> m.isActivesBitMask(ctx, ZERO|ONE));
+            eventually(mon4, (m, ctx) -> m.isActivesBitMask(ctx, ONE|THREE));
 
             ClientMem mem0b = new ClientMem(cis, 0, 0);
             mem0b.start();

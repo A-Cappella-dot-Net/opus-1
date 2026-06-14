@@ -17,7 +17,7 @@
 package net.a_cappella.presto.ft.collective;
 
 import net.a_cappella.continuo.utils.Utils;
-import net.a_cappella.presto.ft.collective.proxy.NioProxy;
+import net.a_cappella.presto.ft.collective.proxy.MultiProxy;
 import net.a_cappella.presto.ft.constants.MemberStatusEnum;
 import net.a_cappella.presto.testagent.IdFromTo;
 import net.a_cappella.presto.testagent.ProxyRouter;
@@ -36,7 +36,7 @@ public class NetworkIssuesTest extends CollectiveTestBase {
     @Override
     protected AtomicInteger getPort() { return _port; }
 
-    private NioProxy _proxy;
+    private MultiProxy _proxy;
     private CompInfoSet _cis;
 
     @BeforeEach
@@ -293,7 +293,7 @@ public class NetworkIssuesTest extends CollectiveTestBase {
 
     private void startProxy() {
         if (_proxy == null) {
-            _proxy = new NioProxy(ProxyRouter.forwards());
+            _proxy = new MultiProxy(ProxyRouter.forwards());
             _proxy.start();
         }
     }

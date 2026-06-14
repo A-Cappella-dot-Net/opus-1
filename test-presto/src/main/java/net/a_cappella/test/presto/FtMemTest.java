@@ -77,7 +77,7 @@ public class FtMemTest implements IFtMemberListener {
     }
 
 	@Override // IFtMemberListener
-	public void onFtAction(String groupName, int instance, FtMsgOp op, int sliceNo, int ofSlices) {
-		log.info("onFtAction("+groupName+"~"+instance+" '"+op+"' "+sliceNo+"/"+ofSlices+")");
+	public void onFtAction(String groupName, int instance, FtMsgOp op, int stripeNo, int ofStripes) {
+		log.info("onFtAction("+groupName+"~"+instance+" '"+op+"' "+ stripeNo +"/"+ ofStripes +")");
 	}
 }

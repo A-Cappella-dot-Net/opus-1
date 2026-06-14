@@ -76,26 +76,26 @@ public class ConflatorTestBase {
     protected MemConflator memConflator(long conflationInterval) {
         return new MemConflator(conflationInterval, _notifier);
     }
-    protected MemStruct mem(String groupName, int instance, FtMsgOp op, int sliceNo, int ofSlices) {
-        return new MemStruct(groupName, instance, op, sliceNo, ofSlices);
+    protected MemStruct mem(String groupName, int instance, FtMsgOp op, int stripeNo, int ofStripes) {
+        return new MemStruct(groupName, instance, op, stripeNo, ofStripes);
     }
     protected static class MemStruct {
         String _groupName;
         int _instance;
         FtMsgOp _op;
-        int _sliceNo;
-        int _ofSlices;
+        int _stripeNo;
+        int _ofStripes;
 
-        MemStruct(String groupName, int instance, FtMsgOp op, int sliceNo, int ofSlices) {
+        MemStruct(String groupName, int instance, FtMsgOp op, int stripeNo, int ofStripes) {
             _groupName = groupName;
             _instance = instance;
             _op = op;
-            _sliceNo = sliceNo;
-            _ofSlices = ofSlices;
+            _stripeNo = stripeNo;
+            _ofStripes = ofStripes;
         }
         @Override
         public String toString() {
-            return "{"+_groupName+"-"+_instance+" "+_op+" "+_sliceNo+"/"+_ofSlices+"}";
+            return "{"+_groupName+"-"+_instance+" "+_op+" "+ _stripeNo +"/"+ _ofStripes +"}";
         }
     }
 
@@ -120,9 +120,9 @@ public class ConflatorTestBase {
         }
 
         @Override
-        public void notifyFtMemberListeners(String groupName, int instance, FtMsgOp action, int sliceNo, int ofSlices) {
-            log.info("onFtMemMsg("+groupName+"-"+instance+" '"+action+"'"+sliceNo+"/"+ofSlices+")");
-            _memList.add(new MemStruct(groupName, instance, action, sliceNo, ofSlices));
+        public void notifyFtMemberListeners(String groupName, int instance, FtMsgOp action, int stripeNo, int ofStripes) {
+            log.info("onFtMemMsg("+groupName+"-"+instance+" '"+action+"'"+ stripeNo +"/"+ ofStripes +")");
+            _memList.add(new MemStruct(groupName, instance, action, stripeNo, ofStripes));
         }
         @Override
         public void notifyFtMonitorListeners(String groupName, int actives) {

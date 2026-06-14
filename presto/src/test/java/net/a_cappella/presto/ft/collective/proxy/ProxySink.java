@@ -39,7 +39,7 @@ public class ProxySink {
 
     protected final String _cmId;
 
-    private final SinkAndPipes _sinkAndPipes;
+    private final SingleProxy _singleProxy;
     private final SinkThread _sinkThread = new SinkThread();
     private final int _port;
 
@@ -55,8 +55,8 @@ public class ProxySink {
         INITIALIZED, STARTED, STOPPED
     }
 
-    public ProxySink(SinkAndPipes sinkAndPipes, int port, String cmId) {
-        _sinkAndPipes = sinkAndPipes;
+    public ProxySink(SingleProxy singleProxy, int port, String cmId) {
+        _singleProxy = singleProxy;
         _port = port;
         _cmId = cmId;
     }
@@ -153,7 +153,7 @@ public class ProxySink {
                                     client.socket().setTcpNoDelay(true);
                                     SelectionKey clientKey = client.register(_selector, SelectionKey.OP_READ);
                                     if (log.isDebugEnabled()) log.debug("{}registered client key {}", _cmId, keyHash(clientKey));
-                                    _sinkAndPipes.onSrcConnect(clientKey);
+                                    _singleProxy.onSrcConnect(clientKey);
                                 } catch (IOException x) {
                                     log.error("{}Ignoring...", _cmId, x);
                                 }
@@ -177,7 +177,7 @@ public class ProxySink {
                                     log.error("{}Ignoring...", _cmId, y);
                                 }
                                 try {
-                                    _sinkAndPipes.onSrcDisconnect(key);
+                                    _singleProxy.onSrcDisconnect(key);
                                 } catch (Exception y) {
                                     log.error("{}Unexpected exception", _cmId, y);
                                 }
@@ -190,7 +190,7 @@ public class ProxySink {
                             _inBuf.compact();
 
                             if (log.isDebugEnabled()) log.debug("{}Received: {}", _cmId, bytes);
-                            _sinkAndPipes.onMsgFromSrc(key, bytes);
+                            _singleProxy.onMsgFromSrc(key, bytes);
                         }
                     }
                 }

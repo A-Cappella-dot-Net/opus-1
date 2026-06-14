@@ -28,23 +28,23 @@ public class FtMemberMsg extends FtMsg {
 
     public int _instance;
     public int _activeGoal;
-    public int _sliceNo;
-    public int _ofSlices;
+    public int _stripeNo;
+    public int _ofStripes;
 
     public FtMemberMsg() {
         this(FtMsgType.NONE, FtMsgOp.NONE, ' ', null, 0, 0, 0, 0);
     }
 
     public FtMemberMsg(FtMemberMsg other) {
-        this(other._type, other._op, other._fromApp, other._groupName, other._instance, other._activeGoal, other._sliceNo, other._ofSlices);
+        this(other._type, other._op, other._fromApp, other._groupName, other._instance, other._activeGoal, other._stripeNo, other._ofStripes);
     }
 
-    public FtMemberMsg(FtMsgType type, FtMsgOp op, char fromApp, String groupName, int instance, int activeGoal, int sliceNo, int ofSlices) {
+    public FtMemberMsg(FtMsgType type, FtMsgOp op, char fromApp, String groupName, int instance, int activeGoal, int stripeNo, int ofStripes) {
         super(type, op, fromApp, groupName);
         _instance = instance;
         _activeGoal = activeGoal;
-        _sliceNo = sliceNo;
-        _ofSlices = ofSlices;
+        _stripeNo = stripeNo;
+        _ofStripes = ofStripes;
     }
 
     @Override
@@ -62,8 +62,8 @@ public class FtMemberMsg extends FtMsg {
         super.encode(buffer);
         buffer.putInt(_instance);
         buffer.putInt(_activeGoal);
-        buffer.putInt(_sliceNo);
-        buffer.putInt(_ofSlices);
+        buffer.putInt(_stripeNo);
+        buffer.putInt(_ofStripes);
     }
 
     @Override
@@ -71,23 +71,23 @@ public class FtMemberMsg extends FtMsg {
         super.decode(buffer, len);
         _instance = buffer.getInt();
         _activeGoal = buffer.getInt();
-        _sliceNo = buffer.getInt();
-        _ofSlices = buffer.getInt();
+        _stripeNo = buffer.getInt();
+        _ofStripes = buffer.getInt();
         return this;
     }
 
-    public void set(FtMsgType type, FtMsgOp op, char fromApp, int sliceNo, int ofSlices) {
+    public void set(FtMsgType type, FtMsgOp op, char fromApp, int stripeNo, int ofStripes) {
         super.set(type, op, fromApp);
-        _sliceNo = sliceNo;
-        _ofSlices = ofSlices;
+        _stripeNo = stripeNo;
+        _ofStripes = ofStripes;
     }
 
     @Override
     public void reset() {
         super.reset();
         _instance = 0;
-        _sliceNo = 0;
-        _ofSlices = 0;
+        _stripeNo = 0;
+        _ofStripes = 0;
         _activeGoal = 0;
     }
 
@@ -97,8 +97,8 @@ public class FtMemberMsg extends FtMsg {
         int result = super.hashCode();
         result = prime * result + _activeGoal;
         result = prime * result + _instance;
-        result = prime * result + _sliceNo;
-        result = prime * result + _ofSlices;
+        result = prime * result + _stripeNo;
+        result = prime * result + _ofStripes;
         return result;
     }
 
@@ -115,9 +115,9 @@ public class FtMemberMsg extends FtMsg {
             return false;
         if (_instance != other._instance)
             return false;
-        if (_sliceNo != other._sliceNo)
+        if (_stripeNo != other._stripeNo)
             return false;
-        if (_ofSlices != other._ofSlices)
+        if (_ofStripes != other._ofStripes)
             return false;
         return true;
     }

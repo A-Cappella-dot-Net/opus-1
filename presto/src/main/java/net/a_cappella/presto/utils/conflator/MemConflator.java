@@ -29,14 +29,14 @@ public class MemConflator extends BaseConflator<GroupAndInstance, ActionNoOf> {
 
     @Override
     public void notifyFtMsgListeners(GroupAndInstance key, ActionNoOf value) {
-        _notifier.notifyFtMemberListeners(key._groupName, key._instance, value._op, value._sliceNo, value._ofSlices);
+        _notifier.notifyFtMemberListeners(key._groupName, key._instance, value._op, value._stripeNo, value._ofStripes);
     }
 
-    public void conflate(String groupName, int instance, FtMsgOp op, int sliceNo, int ofSlices, boolean force) {
-        conflate(new GroupAndInstance(groupName, instance), new ActionNoOf(op, sliceNo, ofSlices), force);
+    public void conflate(String groupName, int instance, FtMsgOp op, int stripeNo, int ofStripes, boolean force) {
+        conflate(new GroupAndInstance(groupName, instance), new ActionNoOf(op, stripeNo, ofStripes), force);
     }
 
-    public void conflate(String groupName, int instance, FtMsgOp op, int sliceNo, int ofSlices) {
-        conflate(new GroupAndInstance(groupName, instance), new ActionNoOf(op, sliceNo, ofSlices), false);
+    public void conflate(String groupName, int instance, FtMsgOp op, int stripeNo, int ofStripes) {
+        conflate(new GroupAndInstance(groupName, instance), new ActionNoOf(op, stripeNo, ofStripes), false);
     }
 }

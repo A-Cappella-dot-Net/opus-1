@@ -111,13 +111,13 @@ public class CollectiveClient implements IFtMemberClient, IFtMonitorClient, IFtM
     }
 
     @Override
-    public void notifyFtMemberListeners(String groupName, int instance, FtMsgOp action, int sliceNo, int ofSlices) {
-        log.info("{}onFtMemMsg({}-{} '{}' {}/{})", _cmId, groupName, instance, action, sliceNo, ofSlices);
+    public void notifyFtMemberListeners(String groupName, int instance, FtMsgOp action, int stripeNo, int ofStripes) {
+        log.info("{}onFtMemMsg({}-{} '{}' {}/{})", _cmId, groupName, instance, action, stripeNo, ofStripes);
         for (IFtMemberListener listener : _ftMemberListeners) {
-            listener.onFtAction(groupName, instance, action, sliceNo, ofSlices);
+            listener.onFtAction(groupName, instance, action, stripeNo, ofStripes);
         }
         try {
-            if (_prestoClient!=null) _prestoClient.publish(_memObj.set(groupName, instance, action, sliceNo, ofSlices, System.currentTimeMillis()));
+            if (_prestoClient!=null) _prestoClient.publish(_memObj.set(groupName, instance, action, stripeNo, ofStripes, System.currentTimeMillis()));
         } catch (Exception e) {
             log.error("Could not publish "+_memObj, e);
         }
@@ -320,7 +320,7 @@ public class CollectiveClient implements IFtMemberClient, IFtMonitorClient, IFtM
                 if (log.isDebugEnabled()) log.info("{}received {} from {}", _cmId, msg, this);
                 FtMemberMsg resp = (FtMemberMsg) msg;
                 if (resp._type==RESPONSE) {
-                    _memConflator.conflate(resp._groupName, resp._instance, resp._op, resp._sliceNo, resp._ofSlices);
+                    _memConflator.conflate(resp._groupName, resp._instance, resp._op, resp._stripeNo, resp._ofStripes);
                 } else {
                     log.warn("{}Illegal msgType received {}", _cmId, msg);
                 }

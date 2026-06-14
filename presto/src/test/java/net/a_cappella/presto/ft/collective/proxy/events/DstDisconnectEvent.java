@@ -16,17 +16,17 @@
 
 package net.a_cappella.presto.ft.collective.proxy.events;
 
-import net.a_cappella.presto.ft.collective.proxy.SinkAndPipes;
+import net.a_cappella.presto.ft.collective.proxy.SingleProxy;
 
 public class DstDisconnectEvent implements ProxyEvent {
-    private final SinkAndPipes _sinkAndPipes;
+    private final SingleProxy _singleProxy;
 
-    public DstDisconnectEvent(SinkAndPipes sinkAndPipes) {
-        _sinkAndPipes = sinkAndPipes;
+    public DstDisconnectEvent(SingleProxy singleProxy) {
+        _singleProxy = singleProxy;
     }
 
     @Override
     public void apply() {
-        _sinkAndPipes.handleDstDisconnectEvent();
+        _singleProxy.handleDstDisconnectEvent();
     }
 }

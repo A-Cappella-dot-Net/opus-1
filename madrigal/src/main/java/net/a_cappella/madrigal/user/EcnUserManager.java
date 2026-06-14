@@ -143,7 +143,7 @@ public class EcnUserManager implements IEcnUserManager { // IFtMemberListener
 
 	@VisibleForTesting
 	public void onFtMemberMessage(FtMemberObj ftMem) {
-        log.info("{} onLoopback={} onFtMemberMessage({}_{} '{}' {}/{})", _cmId, ftMem.isOnLoopback(), ftMem.getGroupName(), ftMem.getInstance(), ftMem.getAction(), ftMem.getSliceNo(), ftMem.getOfSlices());
+        log.info("{} onLoopback={} onFtMemberMessage({}_{} '{}' {}/{})", _cmId, ftMem.isOnLoopback(), ftMem.getGroupName(), ftMem.getInstance(), ftMem.getAction(), ftMem.getStripeNo(), ftMem.getOfStripes());
     	if (!ftMem.isOnLoopback() && _loopbackDelayMillis != 0) {
     		ftMem.startUsing();
         	_loopbackDelayer.add(_loopbackDelayMillis, ftMem);

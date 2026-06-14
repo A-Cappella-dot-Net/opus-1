@@ -30,20 +30,20 @@ import org.slf4j.LoggerFactory;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 
-public class NioProxy {
-    private static final Logger log = LoggerFactory.getLogger(NioProxy.class);
+public class MultiProxy {
+    private static final Logger log = LoggerFactory.getLogger(MultiProxy.class);
 
     // graceful shutdown
     private volatile boolean _stop = false;
     private CountDownLatch _stopLatch;
 
-    private SinkAndPipes[] _sinkAndPipesArr;
+    private SingleProxy[] _singleProxyArr;
     private final Queue<ProxyEvent> _eventQueue = new MpscLinkedQueue<>();
 
-    public NioProxy(CntFromTo[] cntFromToArr) {
-        _sinkAndPipesArr = new SinkAndPipes[cntFromToArr.length];
+    public MultiProxy(CntFromTo[] cntFromToArr) {
+        _singleProxyArr = new SingleProxy[cntFromToArr.length];
         for (int i = 0; i < cntFromToArr.length; i++) {
-            _sinkAndPipesArr[i] = new SinkAndPipes(_eventQueue, cntFromToArr[i]._from, cntFromToArr[i]._to, cntFromToArr[i]._cnt);
+            _singleProxyArr[i] = new SingleProxy(_eventQueue, cntFromToArr[i]._from, cntFromToArr[i]._to, cntFromToArr[i]._cnt);
         }
     }
 
@@ -74,9 +74,9 @@ public class NioProxy {
         eventThread.start();
     }
     public void handleStartEvent() {
-        log.info("Starting NioProxy");
-        for (int i = 0; i < _sinkAndPipesArr.length; i++) {
-            _sinkAndPipesArr[i].start();
+        log.info("Starting MultiProxy");
+        for (int i = 0; i < _singleProxyArr.length; i++) {
+            _singleProxyArr[i].start();
         }
     }
 
@@ -89,13 +89,13 @@ public class NioProxy {
         }
     }
     public void handleStopEvent() {
-        log.info("Stopping NioProxy");
+        log.info("Stopping MultiProxy");
         _stop = true;
-        for (int i = 0; i < _sinkAndPipesArr.length; i++) {
-            _sinkAndPipesArr[i].stop();
+        for (int i = 0; i < _singleProxyArr.length; i++) {
+            _singleProxyArr[i].stop();
         }
         _stopLatch.countDown();
-        log.info("NioProxy Stopped");
+        log.info("MultiProxy Stopped");
     }
 
 }

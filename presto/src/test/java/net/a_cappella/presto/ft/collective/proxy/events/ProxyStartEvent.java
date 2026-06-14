@@ -16,12 +16,12 @@
 
 package net.a_cappella.presto.ft.collective.proxy.events;
 
-import net.a_cappella.presto.ft.collective.proxy.NioProxy;
+import net.a_cappella.presto.ft.collective.proxy.MultiProxy;
 
 public class ProxyStartEvent implements ProxyEvent {
-    private final NioProxy _proxy;
+    private final MultiProxy _proxy;
 
-    public ProxyStartEvent(NioProxy proxy) {
+    public ProxyStartEvent(MultiProxy proxy) {
         _proxy = proxy;
     }
 

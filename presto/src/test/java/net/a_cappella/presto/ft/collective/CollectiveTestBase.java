@@ -295,8 +295,8 @@ public abstract class CollectiveTestBase {
     protected static class ClientMem implements IFtMemberListener {
         private final CollectiveClient _client;
         private FtMsgOp _op = FtMsgOp.NONE;
-        private int _sliceNo;
-        private int _ofSlices;
+        private int _stripeNo;
+        private int _ofStripes;
 
         public ClientMem(CompInfoSet cis, int instance, int port) {
             _client = new CollectiveClient(_coder, cis.getMemInfo(instance, port), MON_CONF_INTERVAL_MILLIS, MEM_CONF_INTERVAL_MILLIS);
@@ -324,25 +324,25 @@ public abstract class CollectiveTestBase {
 
         public boolean isMemResult(String ctx, FtMsgOp op) {
             if (ctx == null) {
-                return _op == op && _sliceNo == 0 && _ofSlices == ((op == FtMsgOp.ACTIVATE) ? 1 : 0);
+                return _op == op && _stripeNo == 0 && _ofStripes == ((op == FtMsgOp.ACTIVATE) ? 1 : 0);
             }
-            assertEquals(String.format("(%s, %d, %d)", op, 0, 0), String.format("(%s, %d, %d)", _op, _sliceNo, _ofSlices), ctx);
+            assertEquals(String.format("(%s, %d, %d)", op, 0, 0), String.format("(%s, %d, %d)", _op, _stripeNo, _ofStripes), ctx);
             return true;
         }
 
-        public boolean isMemResult(String ctx, FtMsgOp op, int sliceNo, int ofSlices) {
+        public boolean isMemResult(String ctx, FtMsgOp op, int stripeNo, int ofStripes) {
             if (ctx == null) {
-                return _op == op && _sliceNo == sliceNo && _ofSlices == ofSlices;
+                return _op == op && _stripeNo == stripeNo && _ofStripes == ofStripes;
             }
-            assertEquals(String.format("(%s, %d, %d)", op, sliceNo, ofSlices), String.format("(%s, %d, %d)", _op, _sliceNo, _ofSlices), ctx);
+            assertEquals(String.format("(%s, %d, %d)", op, stripeNo, ofStripes), String.format("(%s, %d, %d)", _op, _stripeNo, _ofStripes), ctx);
             return true;
         }
 
         @Override
-        public void onFtAction(String groupName, int instance, FtMsgOp op, int sliceNo, int ofSlices) {
+        public void onFtAction(String groupName, int instance, FtMsgOp op, int stripeNo, int ofStripes) {
             _op = op;
-            _sliceNo = sliceNo;
-            _ofSlices = ofSlices;
+            _stripeNo = stripeNo;
+            _ofStripes = ofStripes;
         }
 
         public boolean isConnected(boolean expected) {
