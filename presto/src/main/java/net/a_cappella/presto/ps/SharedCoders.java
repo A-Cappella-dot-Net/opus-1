@@ -18,18 +18,31 @@ package net.a_cappella.presto.ps;
 
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 import net.a_cappella.continuo.managed.ObjectManager;
 import net.a_cappella.continuo.obj.Coder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 
 public class SharedCoders {
+    private static final Logger log = LoggerFactory.getLogger(SharedCoders.class);
+
     public TIntObjectMap<Coder> _codersByObjType = new TIntObjectHashMap<>();
+    public TIntSet _noCodCtorsFor = new TIntHashSet();
 
     public Coder getCoder(int objType) {
         Coder cod = _codersByObjType.get(objType);
         if (cod == null) {
             Constructor<? extends Coder> codCtor = ObjectManager.getInstance().getCoderConstructor(objType);
+            if (codCtor == null) {
+                if (_noCodCtorsFor.add(objType)) {
+                    log.warn("No Obj defined for {}. Will ignore this and all subsequent requests.", objType);
+                }
+                return null;
+            }
             try {
                 cod = codCtor.newInstance();
                 _codersByObjType.put(objType, cod);

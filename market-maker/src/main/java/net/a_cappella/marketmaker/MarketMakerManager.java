@@ -22,7 +22,7 @@ import net.a_cappella.madrigal.common.constants.MadrigalSide;
 import net.a_cappella.madrigal.common.constants.MadrigalTimeInForce;
 import net.a_cappella.madrigal.common.interfaces.IIdGenerator;
 import net.a_cappella.madrigal.common.obj.*;
-import net.a_cappella.madrigal.om.OrderManagerClient;
+import net.a_cappella.madrigal.lh.om.OrderManagerClient;
 import net.a_cappella.madrigal.user.UserManagerClient;
 import net.a_cappella.presto.ps.PrestoClient;
 import org.slf4j.Logger;

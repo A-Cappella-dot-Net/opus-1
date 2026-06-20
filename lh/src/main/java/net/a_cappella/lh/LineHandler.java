@@ -25,13 +25,13 @@ import net.a_cappella.cembalo.constants.MktStatus;
 import net.a_cappella.cembalo.constants.UserStatus;
 import net.a_cappella.cembalo.generator.Dictionary;
 import net.a_cappella.continuo.msg.MsgCoder;
-import net.a_cappella.madrigal.IEcnUserManager;
-import net.a_cappella.madrigal.ILoginManagerAdaptor;
-import net.a_cappella.madrigal.IMarketDataService;
+import net.a_cappella.madrigal.user.IEcnUserManager;
+import net.a_cappella.madrigal.user.ILoginManagerAdaptor;
+import net.a_cappella.madrigal.lh.md.IMarketDataService;
 import net.a_cappella.madrigal.common.constants.*;
 import net.a_cappella.madrigal.common.obj.*;
-import net.a_cappella.madrigal.om.IOrderManagerAdaptor;
-import net.a_cappella.madrigal.om.IOrderManagerService;
+import net.a_cappella.madrigal.lh.om.IOrderManagerAdaptor;
+import net.a_cappella.madrigal.lh.om.IOrderManagerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -163,7 +163,13 @@ public class LineHandler extends ExchangeClient implements IExchangeClientListen
 	@Override
 	public void onMarketDataSnapshot(String securityID, MarketDataSnapshot mds) {
 		try {
-			_ecnPrice.set(_ecn, securityID, mds);
+			_ecnPrice.set(_ecn, securityID,
+					mds._bidEntries[0]._price, mds._bidEntries[1]._price, mds._bidEntries[2]._price, mds._bidEntries[3]._price, mds._bidEntries[4]._price,
+					mds._bidEntries[0]._size, mds._bidEntries[1]._size, mds._bidEntries[2]._size, mds._bidEntries[3]._size, mds._bidEntries[4]._size,
+					mds._offerEntries[0]._price, mds._offerEntries[1]._price, mds._offerEntries[2]._price, mds._offerEntries[3]._price, mds._offerEntries[4]._price,
+					mds._offerEntries[0]._size, mds._offerEntries[1]._size, mds._offerEntries[2]._size, mds._offerEntries[3]._size, mds._offerEntries[4]._size,
+					mds._tsx
+			);
 			_marketDataService.publishEcnPrice(_ecnPrice);
 		} catch (Exception e) {
 			log.error("", e);

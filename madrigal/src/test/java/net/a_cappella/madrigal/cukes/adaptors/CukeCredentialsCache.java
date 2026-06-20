@@ -16,7 +16,7 @@
 
 package net.a_cappella.madrigal.cukes.adaptors;
 
-import net.a_cappella.madrigal.ICredentialsCache;
+import net.a_cappella.madrigal.credentials.ICredentialsCache;
 import net.a_cappella.madrigal.common.obj.EcnCredentialsObj;
 
 import java.util.HashMap;

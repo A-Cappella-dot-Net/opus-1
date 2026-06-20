@@ -69,7 +69,7 @@
     <logger name="net.a_cappella.presto.ps.SnSManager">
         <level value="INFO" />
     </logger>
-    <logger name="net.a_cappella.madrigal.om.OrderManagerClient">
+    <logger name="net.a_cappella.madrigal.lh.om.OrderManagerClient">
         <level value="DEBUG" />
     </logger>
     <logger name="net.a_cappella.marketmaker.MarketMaker">

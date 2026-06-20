@@ -18,49 +18,49 @@
         <constructor-arg index="0" type="java.util.Collection">
             <list>
                 <!-- do not remove from cache -->
-                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                <bean class="net.a_cappella.madrigal.mcache.KeyBasedManagedSubject">
                     <constructor-arg index="0" value="select * from credentials" />
                 </bean>
-                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                <bean class="net.a_cappella.madrigal.mcache.KeyBasedManagedSubject">
                     <constructor-arg index="0" value="select * from ecn.credentials" />
                 </bean>
-                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                <bean class="net.a_cappella.madrigal.mcache.KeyBasedManagedSubject">
                     <constructor-arg index="0" value="select * from market.status" />
                 </bean>
-                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                <bean class="net.a_cappella.madrigal.mcache.KeyBasedManagedSubject">
                     <constructor-arg index="0" value="select * from ecn.instrument" />
                 </bean>
-                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                <bean class="net.a_cappella.madrigal.mcache.KeyBasedManagedSubject">
                     <constructor-arg index="0" value="select * from ecn.instr.status" />
                 </bean>
-                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                <bean class="net.a_cappella.madrigal.mcache.KeyBasedManagedSubject">
                     <constructor-arg index="0" value="select * from monitor" />
                 </bean>
-                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                <bean class="net.a_cappella.madrigal.mcache.KeyBasedManagedSubject">
                     <constructor-arg index="0" value="select * from ecn.price" />
                 </bean>
-                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                <bean class="net.a_cappella.madrigal.mcache.KeyBasedManagedSubject">
                     <constructor-arg index="0" value="select * from ecn.imbalance" />
                 </bean>
-                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                <bean class="net.a_cappella.madrigal.mcache.KeyBasedManagedSubject">
                     <constructor-arg index="0" value="select * from mid.feed" />
                 </bean>
-                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                <bean class="net.a_cappella.madrigal.mcache.KeyBasedManagedSubject">
                     <constructor-arg index="0" value="select * from user.status where mode=RESPONSE" />
                 </bean>
-                <bean class="net.a_cappella.mcache.KeyBasedManagedSubject">
+                <bean class="net.a_cappella.madrigal.mcache.KeyBasedManagedSubject">
                     <constructor-arg index="0" value="select * from ecn.user.status where mode=RESPONSE" />
                 </bean>
 
                 <!-- remove state when receiving a finalize.order message -->
-                <bean class="net.a_cappella.mcache.OrderStateManagedSubject">
+                <bean class="net.a_cappella.madrigal.mcache.OrderStateManagedSubject">
                     <constructor-arg index="0" value="select * from order" />
                     <constructor-arg index="1" value="select * from finalize.order" />
                     <constructor-arg index="2" ref="tradeDate"/>
                 </bean>
 
                 <!-- remove from cache at EOD -->
-                <bean class="net.a_cappella.mcache.SeqNoManagedSubject">
+                <bean class="net.a_cappella.madrigal.mcache.SeqNoManagedSubject">
                     <constructor-arg index="0" value="select * from seq.no" />
                     <constructor-arg index="1" ref="tradeDate"/>
                 </bean>
@@ -68,7 +68,7 @@
         </constructor-arg>
 	</bean>
 
-    <bean name="managedCache" class="net.a_cappella.mcache.ManagedCache" init-method="init">
+    <bean name="managedCache" class="net.a_cappella.madrigal.mcache.ManagedCache" init-method="init">
         <constructor-arg index="0" ref="client" />
         <constructor-arg index="1" ref="managed-subjects-list" />
     </bean>

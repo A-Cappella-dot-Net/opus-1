@@ -196,11 +196,13 @@ public class LoopbackPrestoClient implements PrestoClient {
         obj.setSerialId(0L);
 
         SharedAeronCoders sharedPubs = _objCoder.encode(obj);
-        UnsafeBuffer buffer = sharedPubs.getBuffer();
-        int len = sharedPubs.getLen();
-        if (log.isDebugEnabled()) log.info("reply: write len={} {} {}", len, obj, pubType);
+        if (sharedPubs != null) {
+            UnsafeBuffer buffer = sharedPubs.getBuffer();
+            int len = sharedPubs.getLen();
+            if (log.isDebugEnabled()) log.info("reply: write len={} {} {}", len, obj, pubType);
 
-        _ringBuffer.write(obj.getMsgType(), buffer, 0, len);
+            _ringBuffer.write(obj.getMsgType(), buffer, 0, len);
+        }
         return 0;
     }
 
@@ -223,10 +225,12 @@ public class LoopbackPrestoClient implements PrestoClient {
         }
 
         SharedAeronCoders sharedPubs = _objCoder.encode(obj);
-        UnsafeBuffer buffer = sharedPubs.getBuffer();
-        int len = sharedPubs.getLen();
+        if (sharedPubs != null) {
+            UnsafeBuffer buffer = sharedPubs.getBuffer();
+            int len = sharedPubs.getLen();
 
-        _ringBuffer.write(obj.getMsgType(), buffer, 0, len);
+            _ringBuffer.write(obj.getMsgType(), buffer, 0, len);
+        }
     }
 
     @Override

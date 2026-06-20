@@ -31,8 +31,8 @@ Scenario: Two ecn user managers and failover
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | login |      |
 
   When ecn user manager instance 0 receives response from ecn
-  | ecnUid  | status    | text |
-  | ecnUid1 | LOGGED_IN |      |
+  | ecnUid  | status | text |
+  | ecnUid1 | On     |      |
   Then ecn user manager instance 0 publishes ecn user status
   | uid  | ecn  | ecnUid  | ecnPwd  | op    | status | text |
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | login | On     |      |
@@ -73,8 +73,8 @@ Scenario: Two ecn user managers and failover
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | logout |
 
   When ecn user manager instance 1 receives response from ecn
-  | ecnUid  | status        | text               |
-  | ecnUid1 | NOT_LOGGED_IN | Already logged out |
+  | ecnUid  | status | text               |
+  | ecnUid1 | Off    | Already logged out |
   Then ecn user manager instance 1 publishes ecn user status
   | uid  | ecn  | ecnUid  | ecnPwd  | op     | status | text               |
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | logout | Off    | Already logged out |
@@ -87,8 +87,8 @@ Scenario: Two ecn user managers and failover
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | login |      |
 
   When ecn user manager instance 1 receives response from ecn
-  | ecnUid  | status    | text |
-  | ecnUid1 | LOGGED_IN |      |
+  | ecnUid  | status | text |
+  | ecnUid1 | On     |      |
   Then ecn user manager instance 1 publishes ecn user status
   | uid  | ecn  | ecnUid  | ecnPwd  | op    | status | text |
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | login | On     |      |
@@ -127,8 +127,8 @@ Scenario: Corner case: while failing over madrigal user logs out
   And ecn user manager instance 1 publishes no ecn user request
 
   When ecn user manager instance 0 receives response from ecn
-  | ecnUid  | status    | text |
-  | ecnUid1 | LOGGED_IN |      |
+  | ecnUid  | status | text |
+  | ecnUid1 | On     |      |
   Then ecn user manager instance 0 publishes ecn user status
   | uid  | ecn  | ecnUid  | ecnPwd  | op    | status | text |
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | login | On     |      |
@@ -152,8 +152,8 @@ Scenario: Corner case: while failing over madrigal user logs out
   Then ecn user manager instance 1 sends no request to ecn
 
   When ecn user manager instance 1 receives response from ecn
-  | ecnUid  | status        | text               |
-  | ecnUid1 | NOT_LOGGED_IN | Already logged out |
+  | ecnUid  | status | text               |
+  | ecnUid1 | Off    | Already logged out |
   Then ecn user manager instance 1 publishes ecn user status
   | uid  | ecn  | ecnUid  | ecnPwd  | op     | status | text               |
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | logout | Off    | Already logged out |
@@ -206,8 +206,8 @@ Scenario: Corner case: before receiving a reply from exchange the ecn user manag
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | login  |
 
   When ecn user manager instance 1 receives response from ecn
-  | ecnUid  | status    | text |
-  | ecnUid1 | LOGGED_IN |      |
+  | ecnUid  | status | text |
+  | ecnUid1 | On     |      |
   Then ecn user manager instance 1 publishes ecn user status
   | uid  | ecn  | ecnUid  | ecnPwd  | op     | status | text |
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | login  | On     |      |

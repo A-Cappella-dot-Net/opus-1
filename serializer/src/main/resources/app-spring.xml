@@ -5,8 +5,7 @@
            http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
-    <import resource="madrigalConfig.xml"/>
-    <import resource="madrigal-obj-insts-pool.xml"/>
+    <import resource="prestoConfig.xml"/>
     <import resource="prestoClient.xml"/>
 
     <bean name="msgCoder" class="net.a_cappella.continuo.msg.MsgCoder" />

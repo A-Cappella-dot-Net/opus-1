@@ -147,6 +147,8 @@ public class AeronSerializer implements PrestoSerializer {
 
     private final Tracker _tracker;
 
+    private volatile boolean _stop = false;
+
     public AeronSerializer(TightLoopThread tightLoopThread, PublicationHelper pubHelper, String trackerListSizeStr, String trackerCellBufferSizeStr) {
         _tightLoopThread = tightLoopThread;
         _pubHelper = pubHelper;
@@ -210,6 +212,7 @@ public class AeronSerializer implements PrestoSerializer {
 
     public void stop() {
         log.info("Stopping Serializer");
+        _stop = true;
         _aeron.close();
     }
 
@@ -217,33 +220,33 @@ public class AeronSerializer implements PrestoSerializer {
         log.info("Waiting for Serializer to connect");
 
         if (_useIpcLoopback) {
-            while (!_pubIpc_0.isConnected());
-            while (!_pubIpc_1.isConnected());
-            while (!_pubIpc_2.isConnected());
+            while (!_pubIpc_0.isConnected()) if (_stop) return;
+            while (!_pubIpc_1.isConnected()) if (_stop) return;
+            while (!_pubIpc_2.isConnected()) if (_stop) return;
         } else {
-            while (!_pubMct_0.isConnected());
-            while (!_pubMct_1.isConnected());
-            while (!_pubMct_2.isConnected());
+            while (!_pubMct_0.isConnected()) if (_stop) return;
+            while (!_pubMct_1.isConnected()) if (_stop) return;
+            while (!_pubMct_2.isConnected()) if (_stop) return;
         }
 
         log.info("all publications connected...");
 
         if (_useIpcLoopback) {
-            while (!_subIpc_4.isConnected());
-            while (!_subIpc_5.isConnected());
-            while (!_subIpc_6.isConnected());
+            while (!_subIpc_4.isConnected()) if (_stop) return;
+            while (!_subIpc_5.isConnected()) if (_stop) return;
+            while (!_subIpc_6.isConnected()) if (_stop) return;
 
-            while (!_subIpc_0.isConnected());
-            while (!_subIpc_1.isConnected());
-            while (!_subIpc_2.isConnected());
+            while (!_subIpc_0.isConnected()) if (_stop) return;
+            while (!_subIpc_1.isConnected()) if (_stop) return;
+            while (!_subIpc_2.isConnected()) if (_stop) return;
         } else {
-            while (!_subMct_4.isConnected());
-            while (!_subMct_5.isConnected());
-            while (!_subMct_6.isConnected());
+            while (!_subMct_4.isConnected()) if (_stop) return;
+            while (!_subMct_5.isConnected()) if (_stop) return;
+            while (!_subMct_6.isConnected()) if (_stop) return;
 
-            while (!_subMct_0.isConnected());
-            while (!_subMct_1.isConnected());
-            while (!_subMct_2.isConnected());
+            while (!_subMct_0.isConnected()) if (_stop) return;
+            while (!_subMct_1.isConnected()) if (_stop) return;
+            while (!_subMct_2.isConnected()) if (_stop) return;
         }
 
         log.info("all subscriptions connected...");

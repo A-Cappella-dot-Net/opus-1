@@ -185,6 +185,8 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
         _seqNo = seqNo;
     }
 
+    private volatile boolean _stop = false;
+
     public AeronClient(MsgCoder coder, String connInfoStr, String monConfInterval, String memConfInterval,
                        TightLoopThread tightLoopThread, PublicationHelper pubHelper, Map<String, String> params) {
         super(coder, connInfoStr, monConfInterval, memConfInterval);
@@ -299,6 +301,7 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
 
     public void stop() {
         log.info("Stopping AeronClient");
+        _stop = true;
         super.stop();
         _aeron.close();
         _sns.stop();
@@ -308,29 +311,29 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
         log.info("Waiting for AeronClient to connect");
 
         if (_useIpcLoopback) {
-            while (!_pubIpc_0.isConnected());
-            while (!_pubIpc_1.isConnected());
-            while (!_pubIpc_2.isConnected());
-            while (!_pubIpc_3.isConnected());
+            while (!_pubIpc_0.isConnected()) if (_stop) return;
+            while (!_pubIpc_1.isConnected()) if (_stop) return;
+            while (!_pubIpc_2.isConnected()) if (_stop) return;
+            while (!_pubIpc_3.isConnected()) if (_stop) return;
         } else {
-            while (!_pubMct_0.isConnected());
-            while (!_pubMct_1.isConnected());
-            while (!_pubMct_2.isConnected());
-            while (!_pubMct_3.isConnected());
+            while (!_pubMct_0.isConnected()) if (_stop) return;
+            while (!_pubMct_1.isConnected()) if (_stop) return;
+            while (!_pubMct_2.isConnected()) if (_stop) return;
+            while (!_pubMct_3.isConnected()) if (_stop) return;
         }
 
         log.info("all publications connected...");
 
         if (_useIpcLoopback) {
-            while (!_subIpc_0.isConnected());
-            while (!_subIpc_1.isConnected());
-            while (!_subIpc_2.isConnected());
-            while (!_subIpc_3.isConnected());
+            while (!_subIpc_0.isConnected()) if (_stop) return;
+            while (!_subIpc_1.isConnected()) if (_stop) return;
+            while (!_subIpc_2.isConnected()) if (_stop) return;
+            while (!_subIpc_3.isConnected()) if (_stop) return;
         } else {
-            while (!_subMct_0.isConnected());
-            while (!_subMct_1.isConnected());
-            while (!_subMct_2.isConnected());
-            while (!_subMct_3.isConnected());
+            while (!_subMct_0.isConnected()) if (_stop) return;
+            while (!_subMct_1.isConnected()) if (_stop) return;
+            while (!_subMct_2.isConnected()) if (_stop) return;
+            while (!_subMct_3.isConnected()) if (_stop) return;
         }
 
         log.info("all subscriptions connected...");
@@ -564,6 +567,8 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
         obj.setSerialId(0L);
 
         SharedAeronCoders sharedPubs = _objCoder.encode(obj);
+        if (sharedPubs == null) return 0;
+
         UnsafeBuffer buffer = sharedPubs.getBuffer();
         int len = sharedPubs.getLen();
 
@@ -599,6 +604,8 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
         obj.setSerialId(_idGenerator.nextId());
 
         SharedAeronCoders sharedPubs = _objCoder.encode(obj);
+        if (sharedPubs == null) return 0;
+
         UnsafeBuffer buffer = sharedPubs.getBuffer();
         int len = sharedPubs.getLen();
 
@@ -626,6 +633,8 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
         obj.setSerialId(0L);
 
         SharedAeronCoders sharedPubs = _objCoder.encode(obj);
+        if (sharedPubs == null) return 0;
+
         UnsafeBuffer buffer = sharedPubs.getBuffer();
         int len = sharedPubs.getLen();
         if (log.isDebugEnabled()) log.info("request: write len={} {}", len, obj);
@@ -643,6 +652,8 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
         obj.setSerialId(0L);
 
         SharedAeronCoders sharedPubs = _objCoder.encode(obj);
+        if (sharedPubs == null) return 0;
+
         UnsafeBuffer buffer = sharedPubs.getBuffer();
         int len = sharedPubs.getLen();
         if (log.isDebugEnabled()) log.info("reply: write len={} {}", len, obj);
@@ -669,6 +680,8 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
         }
 
         SharedAeronCoders sharedPubs = _objCoder.encode(obj);
+        if (sharedPubs == null) return;
+
         UnsafeBuffer buffer = sharedPubs.getBuffer();
         int len = sharedPubs.getLen();
 

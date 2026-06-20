@@ -8,7 +8,7 @@
     <import resource="../prestoConfig.xml"/>
     <import resource="../prestoClient.xml"/>
 
-	<bean name="qnsTest" class="net.a_cappella.test.presto.QnSTest" init-method="start">
+	<bean name="qnsTest" class="net.a_cappella.test.presto.SnSTest" init-method="start">
 		<constructor-arg index="0" ref="client" />
 	</bean>
 

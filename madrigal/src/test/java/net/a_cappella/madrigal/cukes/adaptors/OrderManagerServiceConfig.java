@@ -18,7 +18,7 @@ package net.a_cappella.madrigal.cukes.adaptors;
 
 import io.cucumber.java.DataTableType;
 import net.a_cappella.madrigal.common.constants.MadrigalActionOnFailover;
-import net.a_cappella.madrigal.om.logic.DelRetryType;
+import net.a_cappella.madrigal.lh.om.logic.DelRetryType;
 
 import java.util.Map;
 

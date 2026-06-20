@@ -16,7 +16,7 @@
 
 package net.a_cappella.madrigal.cukes.adaptors;
 
-import net.a_cappella.madrigal.IInstrumentCache;
+import net.a_cappella.madrigal.instrument.IInstrumentCache;
 import net.a_cappella.madrigal.common.obj.EcnInstrumentObj;
 
 import java.util.HashMap;

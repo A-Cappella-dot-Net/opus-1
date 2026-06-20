@@ -21,12 +21,12 @@ import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import net.a_cappella.cembalo.constants.UserStatus;
 import net.a_cappella.continuo.collective.AppInfo;
 import net.a_cappella.continuo.obj.Obj;
-import net.a_cappella.madrigal.ILoginManagerAdaptor;
+import net.a_cappella.madrigal.user.ILoginManagerAdaptor;
 import net.a_cappella.madrigal.common.constants.MadrigalLogOp;
 import net.a_cappella.madrigal.common.constants.MadrigalMode;
+import net.a_cappella.madrigal.common.constants.MadrigalUserStatus;
 import net.a_cappella.madrigal.common.obj.*;
 import net.a_cappella.madrigal.cukes.adaptors.CukeEcnCredentials;
 import net.a_cappella.madrigal.cukes.adaptors.um.*;
@@ -257,7 +257,7 @@ public class EcnUserManagerStepDefs {
 
 		for (CukeExchangeLogOpResponse ecnResponse : ecnResponseList) {
 			EcnUserStatusObj ecnUserStatus = new EcnUserStatusObj();
-			ecnUserStatus.setResponse(instance, null, _ecn, ecnResponse.getEcnUid(), null, MadrigalLogOp.NULL_VAL, EcnConverters.convert(UserStatus.valueOf(ecnResponse.getStatus())), ecnResponse.getText(), System.currentTimeMillis());
+			ecnUserStatus.setResponse(instance, null, _ecn, ecnResponse.getEcnUid(), null, MadrigalLogOp.NULL_VAL, MadrigalUserStatus.valueOf(ecnResponse.getStatus()), ecnResponse.getText(), System.currentTimeMillis());
 			ecnUserStatus.setOnLoopback(true);
 			managerAndPublishedObjects._manager.onEcnUserStatusMessage(ecnUserStatus);
 		}

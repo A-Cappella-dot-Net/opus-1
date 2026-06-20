@@ -16,7 +16,6 @@
 
 package net.a_cappella.madrigal.common.obj;
 
-import net.a_cappella.cembalo.beans.MarketDataSnapshot;
 import net.a_cappella.continuo.ObjPriority;
 import net.a_cappella.continuo.obj.Coder;
 import net.a_cappella.continuo.obj.meta.FieldMetaInfo;
@@ -204,38 +203,43 @@ public class EcnPriceObj extends ObjImpl implements IStaleable {
 		_stale = true;
 	}
 
-	public void set(String ecn, String instrId, MarketDataSnapshot mds) {
+	public void set(String ecn, String instrId,
+					double bid0, double bid1, double bid2, double bid3, double bid4,
+					double bidSize0, double bidSize1, double bidSize2, double bidSize3, double bidSize4,
+					double offer0, double offer1, double offer2, double offer3, double offer4,
+					double offerSize0, double offerSize1, double offerSize2, double offerSize3, double offerSize4,
+					long tsx) {
 		_ecn = ecn;
 		_instrId = instrId;
 
-		_bid0 = mds._bidEntries[0]._price;
-		_bid1 = mds._bidEntries[1]._price;
-		_bid2 = mds._bidEntries[2]._price;
-		_bid3 = mds._bidEntries[3]._price;
-		_bid4 = mds._bidEntries[4]._price;
-		_bidSize0 = mds._bidEntries[0]._size;
-		_bidSize1 = mds._bidEntries[1]._size;
-		_bidSize2 = mds._bidEntries[2]._size;
-		_bidSize3 = mds._bidEntries[3]._size;
-		_bidSize4 = mds._bidEntries[4]._size;
-		_offer0 = mds._offerEntries[0]._price;
-		_offer1 = mds._offerEntries[1]._price;
-		_offer2 = mds._offerEntries[2]._price;
-		_offer3 = mds._offerEntries[3]._price;
-		_offer4 = mds._offerEntries[4]._price;
-		_offerSize0 = mds._offerEntries[0]._size;
-		_offerSize1 = mds._offerEntries[1]._size;
-		_offerSize2 = mds._offerEntries[2]._size;
-		_offerSize3 = mds._offerEntries[3]._size;
-		_offerSize4 = mds._offerEntries[4]._size;
+		_bid0 = bid0;
+		_bid1 = bid1;
+		_bid2 = bid2;
+		_bid3 = bid3;
+		_bid4 = bid4;
+		_bidSize0 = bidSize0;
+		_bidSize1 = bidSize1;
+		_bidSize2 = bidSize2;
+		_bidSize3 = bidSize3;
+		_bidSize4 = bidSize4;
+		_offer0 = offer0;
+		_offer1 = offer1;
+		_offer2 = offer2;
+		_offer3 = offer3;
+		_offer4 = offer4;
+		_offerSize0 = offerSize0;
+		_offerSize1 = offerSize1;
+		_offerSize2 = offerSize2;
+		_offerSize3 = offerSize3;
+		_offerSize4 = offerSize4;
 
 		_ts = System.currentTimeMillis();
-		_tsx = mds.getTsx();
+		_tsx = tsx;
 
 		_stale = false;
 	}
 
-    public String getEcn() {
+	public String getEcn() {
         return _ecn;
     }
     public void setEcn(String ecn) {

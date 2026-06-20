@@ -71,13 +71,13 @@
     <logger name="net.a_cappella.presto.managed.ObjectManager">
         <level value="INFO" />
     </logger>
-    <logger name="net.a_cappella.mcache.ManagedCache">
+    <logger name="net.a_cappella.madrigal.mcache.ManagedCache">
         <level value="DEBUG" />
     </logger>
-    <logger name="net.a_cappella.mcache.ManagedSubject">
+    <logger name="net.a_cappella.madrigal.mcache.ManagedSubject">
         <level value="DEBUG" />
     </logger>
-    <logger name="net.a_cappella.madrigal.om.OrderState">
+    <logger name="net.a_cappella.madrigal.lh.om.OrderState">
         <level value="DEBUG" />
     </logger>
 

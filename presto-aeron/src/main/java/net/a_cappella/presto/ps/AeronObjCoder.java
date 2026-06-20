@@ -56,6 +56,8 @@ public class AeronObjCoder {
     public SharedAeronCoders encode(Obj obj) {
         SharedAeronCoders sharedCoders = _threadLocalWriteSharedCoders.get();
         AeronCoder cod = (AeronCoder) sharedCoders.getCoder(obj.getMsgType());
+        if (cod == null) return null;
+
         cod.setObj(obj);
         int len = cod.encodeObj(sharedCoders.getBuffer(), 0);
         sharedCoders.setLen(len);
@@ -117,6 +119,8 @@ public class AeronObjCoder {
         if (log.isDebugEnabled()) log.debug("decode stream={} objType={} offset={}, length={}, blockLength={}", stream, objType, offset, length, blockLength);
 
         AeronCoderImpl<?> cod = (AeronCoderImpl<?>) _readSharedCoders.getCoder(objType);
+        if (cod == null) return null;
+
         cod.setObjType(objType);
 
         cod.decodeHeader(HEADER_DECODER); // decode the Presto header

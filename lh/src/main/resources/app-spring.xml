@@ -22,12 +22,12 @@
         <constructor-arg index="3" value="1000" />
     </bean>
 
-    <bean name="credentialsCache" class="net.a_cappella.madrigal.CredentialsCache" init-method="init">
+    <bean name="credentialsCache" class="net.a_cappella.madrigal.credentials.CredentialsCache" init-method="init">
         <constructor-arg index="0" ref="client" />
         <constructor-arg index="1" value="${ecn}" />
     </bean>
 
-    <bean name="instrumentCache" class="net.a_cappella.madrigal.InstrumentCache" init-method="init">
+    <bean name="instrumentCache" class="net.a_cappella.madrigal.instrument.InstrumentCache" init-method="init">
         <constructor-arg index="0" ref="client" />
         <constructor-arg index="1" value="${ecn}" />
     </bean>
@@ -44,7 +44,7 @@
         <property name="connectionTimeoutMillis" value="${connection.timeout.millis}"/>
     </bean>
 
-    <bean name="marketDataService" class="net.a_cappella.madrigal.MarketDataService" init-method="init">
+    <bean name="marketDataService" class="net.a_cappella.madrigal.lh.md.MarketDataService" init-method="init">
         <constructor-arg index="0" ref="client" />
     </bean>
 
@@ -54,7 +54,7 @@
         <constructor-arg index="2" ref="lineHandler" />
     </bean>
 
-    <bean name="omsParams" class="net.a_cappella.madrigal.om.OrderManagerServiceParams">
+    <bean name="omsParams" class="net.a_cappella.madrigal.lh.om.OrderManagerServiceParams">
         <constructor-arg name="adaptor" ref="lineHandler" />
         <constructor-arg name="delRetryType" value="${cancel.retry.type}" />
         <constructor-arg name="delRetryConstant" value="${cancel.retry.constant}" />
@@ -66,7 +66,7 @@
         <constructor-arg name="actionOnFailover" value="${action.on.failover}" />
     </bean>
 
-    <bean name="orderManagerService" class="net.a_cappella.madrigal.om.OrderManagerService" init-method="start">
+    <bean name="orderManagerService" class="net.a_cappella.madrigal.lh.om.OrderManagerService" init-method="start">
         <constructor-arg index="0" ref="client" />
         <constructor-arg index="1" value="${ecn}" />
         <constructor-arg index="2" ref="credentialsCache" />

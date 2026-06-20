@@ -32,7 +32,7 @@ import net.a_cappella.madrigal.common.interfaces.IIdGenerator;
 import net.a_cappella.madrigal.common.obj.EcnInstrumentObj;
 import net.a_cappella.madrigal.common.obj.EcnPriceObj;
 import net.a_cappella.madrigal.common.obj.OrderObj;
-import net.a_cappella.madrigal.om.OrderManagerClient;
+import net.a_cappella.madrigal.lh.om.OrderManagerClient;
 import net.a_cappella.madrigal.user.UserManagerClient;
 import net.a_cappella.presto.ps.PrestoClient;
 import org.slf4j.Logger;

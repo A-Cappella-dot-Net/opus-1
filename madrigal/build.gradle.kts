@@ -18,6 +18,8 @@ dependencies {
 
     implementation(libs.trove)
 
+    implementation(libs.spring.framework)
+
     testImplementation(platform(libs.cucumber.bom))
     testImplementation("io.cucumber:cucumber-java")
     testImplementation("io.cucumber:cucumber-junit-platform-engine")

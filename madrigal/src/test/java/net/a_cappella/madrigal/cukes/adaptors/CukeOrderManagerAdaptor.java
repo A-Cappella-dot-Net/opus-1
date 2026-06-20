@@ -19,7 +19,7 @@ package net.a_cappella.madrigal.cukes.adaptors;
 import net.a_cappella.madrigal.common.constants.MadrigalOrdType;
 import net.a_cappella.madrigal.common.constants.MadrigalSide;
 import net.a_cappella.madrigal.common.constants.MadrigalTimeInForce;
-import net.a_cappella.madrigal.om.IOrderManagerAdaptor;
+import net.a_cappella.madrigal.lh.om.IOrderManagerAdaptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

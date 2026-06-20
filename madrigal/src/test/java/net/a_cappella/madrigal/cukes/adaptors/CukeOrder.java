@@ -18,8 +18,8 @@ package net.a_cappella.madrigal.cukes.adaptors;
 
 import io.cucumber.java.DataTableType;
 import net.a_cappella.continuo.utils.Utils;
-import net.a_cappella.madrigal.ICredentialsCache;
-import net.a_cappella.madrigal.IInstrumentCache;
+import net.a_cappella.madrigal.credentials.ICredentialsCache;
+import net.a_cappella.madrigal.instrument.IInstrumentCache;
 import net.a_cappella.madrigal.common.constants.*;
 import net.a_cappella.madrigal.common.obj.OrderObj;
 import org.slf4j.Logger;

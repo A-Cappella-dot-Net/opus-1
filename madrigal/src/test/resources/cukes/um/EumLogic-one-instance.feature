@@ -41,8 +41,8 @@ Scenario: Baseline case
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | login |      |
 
   When ecn user manager instance 0 receives response from ecn
-  | ecnUid  | status    | text |
-  | ecnUid1 | LOGGED_IN |      |
+  | ecnUid  | status | text |
+  | ecnUid1 | On     |      |
   Then ecn user manager instance 0 publishes ecn user status
   | uid  | ecn  | ecnUid  | ecnPwd  | op    | status | text |
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | login | On     |      |
@@ -58,8 +58,8 @@ Scenario: Baseline case
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | logout |      |
 
   When ecn user manager instance 0 receives response from ecn
-  | ecnUid  | status        | text |
-  | ecnUid1 | NOT_LOGGED_IN |      |
+  | ecnUid  | status | text |
+  | ecnUid1 | Off    |      |
   Then ecn user manager instance 0 publishes ecn user status
   | uid  | ecn  | ecnUid  | ecnPwd  | op     | status | text |
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | logout | Off    |      |
@@ -91,8 +91,8 @@ Scenario: On market CLOSE no logout request is sent to exchange but internal log
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | login |      |
 
   When ecn user manager instance 0 receives response from ecn
-  | ecnUid  | status    | text |
-  | ecnUid1 | LOGGED_IN |      |
+  | ecnUid  | status | text |
+  | ecnUid1 | On     |      |
   Then ecn user manager instance 0 publishes ecn user status
   | uid  | ecn  | ecnUid  | ecnPwd  | op    | status | text |
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | login | On     |      |
@@ -134,8 +134,8 @@ Scenario: Corner case: incorrect ecn credentials
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | login |      |
 
   When ecn user manager instance 0 receives response from ecn
-  | ecnUid  | status        | text                |
-  | ecnUid1 | NOT_LOGGED_IN | Invalid credentials |
+  | ecnUid  | status | text                |
+  | ecnUid1 | Off    | Invalid credentials |
   Then ecn user manager instance 0 publishes ecn user status
   | uid  | ecn  | ecnUid  | ecnPwd  | op    | status | text                |
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | login | Off    | Invalid credentials |
@@ -152,8 +152,8 @@ Scenario: Corner case: incorrect ecn credentials
   | uid1 | ecn1 | ecnUid1 | ecnPwd2 | login |      |
 
   When ecn user manager instance 0 receives response from ecn
-  | ecnUid  | status    | text |
-  | ecnUid1 | LOGGED_IN |      |
+  | ecnUid  | status | text |
+  | ecnUid1 | On     |      |
   Then ecn user manager instance 0 publishes ecn user status
   | uid  | ecn  | ecnUid  | ecnPwd  | op    | status | text |
   | uid1 | ecn1 | ecnUid1 | ecnPwd2 | login | On     |      |
@@ -172,8 +172,8 @@ Scenario: Corner case: incorrect ecn credentials
 
   # when the exchange accepts the logout request
   When ecn user manager instance 0 receives response from ecn
-  | ecnUid  | status        | text |
-  | ecnUid1 | NOT_LOGGED_IN |      |
+  | ecnUid  | status | text |
+  | ecnUid1 | Off    |      |
   Then ecn user manager instance 0 publishes ecn user status
   | uid  | ecn  | ecnUid  | ecnPwd  | op     | status | text |
   | uid1 | ecn1 | ecnUid1 | ecnPwd2 | logout | Off    |      |
@@ -187,8 +187,8 @@ Scenario: Corner case: incorrect ecn credentials
 
   # and the exchange rejects the new request
   When ecn user manager instance 0 receives response from ecn
-  | ecnUid  | status        | text                |
-  | ecnUid1 | NOT_LOGGED_IN | Invalid credentials |
+  | ecnUid  | status | text                |
+  | ecnUid1 | Off    | Invalid credentials |
   Then ecn user manager instance 0 publishes ecn user status
   | uid  | ecn  | ecnUid  | ecnPwd  | op    | status | text                |
   | uid1 | ecn1 | ecnUid1 | ecnPwd3 | login | Off    | Invalid credentials |
@@ -207,8 +207,8 @@ Scenario: Corner case: incorrect ecn credentials
 
   # and the exchange accepts the new request
   When ecn user manager instance 0 receives response from ecn
-  | ecnUid  | status    | text |
-  | ecnUid3 | LOGGED_IN |      |
+  | ecnUid  | status | text |
+  | ecnUid3 | On     |      |
   Then ecn user manager instance 0 publishes ecn user status
   | uid  | ecn  | ecnUid  | ecnPwd  | op    | status | text |
   | uid1 | ecn1 | ecnUid3 | ecnPwd3 | login | On     |      |
@@ -240,8 +240,8 @@ Scenario: Corner case: uid is associated with another ecn uid properly credentia
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | login |      |
 
   When ecn user manager instance 0 receives response from ecn
-  | ecnUid  | status    | text |
-  | ecnUid1 | LOGGED_IN |      |
+  | ecnUid  | status | text |
+  | ecnUid1 | On     |      |
   Then ecn user manager instance 0 publishes ecn user status
   | uid  | ecn  | ecnUid  | ecnPwd  | op    | status | text |
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | login | On     |      |
@@ -258,8 +258,8 @@ Scenario: Corner case: uid is associated with another ecn uid properly credentia
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | logout |      |
 
   When ecn user manager instance 0 receives response from ecn
-  | ecnUid  | status        | text |
-  | ecnUid1 | NOT_LOGGED_IN |      |
+  | ecnUid  | status | text |
+  | ecnUid1 | Off    |      |
   Then ecn user manager instance 0 publishes ecn user status
   | uid  | ecn  | ecnUid  | ecnPwd  | op     | status | text |
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | logout | Off    |      |
@@ -272,8 +272,8 @@ Scenario: Corner case: uid is associated with another ecn uid properly credentia
 
   # and the exchange accepts the new request
   When ecn user manager instance 0 receives response from ecn
-  | ecnUid  | status    | text |
-  | ecnUid2 | LOGGED_IN |      |
+  | ecnUid  | status | text |
+  | ecnUid2 | On     |      |
   Then ecn user manager instance 0 publishes ecn user status
   | uid  | ecn  | ecnUid  | ecnPwd  | op    | status | text |
   | uid1 | ecn1 | ecnUid2 | ecnPwd2 | login | On     |      |
@@ -327,8 +327,8 @@ Scenario: Corner case: before receiving a reply from exchange the market status 
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | login |      |
 
   When ecn user manager instance 0 receives response from ecn
-  | ecnUid  | status    | text |
-  | ecnUid1 | LOGGED_IN |      |
+  | ecnUid  | status | text |
+  | ecnUid1 | On     |      |
   Then ecn user manager instance 0 publishes ecn user status
   | uid  | ecn  | ecnUid  | ecnPwd  | op     | status | text |
   | uid1 | ecn1 | ecnUid1 | ecnPwd1 | login  | On     |      |
