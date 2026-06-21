@@ -5,12 +5,15 @@
            http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
-    <import resource="../prestoConfig.xml"/>
-    <import resource="../prestoClient.xml"/>
+    <!-- bean name="embeddedMediaDriver" class="net.a_cappella.presto.EmbeddedMediaDriver" init-method="start">
+        <property name="mediaDriverType" value="${media.driver.type}"/>
+    </bean -->
 
-	<bean name="typesTest" class="net.a_cappella.test.presto.sns.TypesTest" init-method="start">
+    <import resource="prestoConfig.xml"/>
+    <import resource="prestoClient.xml"/>
+
+	<bean name="burstPong" class="net.a_cappella.test.presto.perf.burst.BurstPong" init-method="start">
 		<constructor-arg index="0" ref="client" />
 	</bean>
 
-    <!-- import resource="jmx.xml"/ -->
 </beans>

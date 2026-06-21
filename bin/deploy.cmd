@@ -29,8 +29,6 @@ scp -p %APPS_HOME%\serializer\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/rel
 
 scp -p %APPS_HOME%\dev-tools\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
 
-scp -p %APPS_HOME%\test-aeron\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
-
 ssh %TARGET_MACHINE% "cd /opt/madrigal/bin;./unpack-all.sh"
 
 goto end

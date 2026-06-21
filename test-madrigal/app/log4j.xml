@@ -59,19 +59,6 @@
     <!-- ============================== -->
     <!-- Detail loggers                 -->
     <!-- ============================== -->
-    <logger name="net.a_cappella.presto.ps.AeronClient">
-        <level value="INFO" />
-    </logger>
-    <logger name="net.a_cappella.presto.ps.ChronicleClient">
-        <level value="INFO" />
-    </logger>
-    <logger name="net.a_cappella.presto.ps.SnSHandler">
-        <level value="INFO" />
-    </logger>
-    <logger name="net.a_cappella.presto.ps.SnSManager">
-        <level value="INFO" />
-    </logger>
-
     <logger name="net.a_cappella.continuo.utils.tightloop.TightLoopThread">
         <level value="INFO" />
     </logger>
@@ -79,8 +66,26 @@
     <logger name="net.a_cappella.continuo.socket.BaseClientPipe">
         <level value="INFO" />
     </logger>
+    <logger name="net.a_cappella.continuo.socket.BaseServerSink">
+        <level value="INFO" />
+    </logger>
+
+    <logger name="net.a_cappella.presto.managed.ObjectManager">
+        <level value="INFO" />
+    </logger>
+
+    <logger name="net.a_cappella.presto.ps.SnSHandler">
+        <level value="INFO" />
+    </logger>
+    <logger name="net.a_cappella.presto.ps.SnSManager">
+        <level value="INFO" />
+    </logger>
+    <logger name="net.a_cappella.presto.ps.sql.WhereNode">
+        <level value="INFO" />
+    </logger>
+
     <logger name="net.a_cappella.presto.ft.collective.CollectiveClient">
-        <level value="TRACE" />
+        <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.presto.ft.collective.CollectiveMember">
         <level value="INFO" />
@@ -88,24 +93,27 @@
     <logger name="net.a_cappella.presto.ft.FtManager">
         <level value="INFO" />
     </logger>
+
+    <logger name="net.a_cappella.presto.ps.AeronClient">
+        <level value="INFO" />
+    </logger>
+    <logger name="net.a_cappella.presto.ps.AeronDaemon">
+        <level value="INFO" />
+    </logger>
+
     <logger name="net.a_cappella.cembalo.ExchangeClient">
         <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.madrigal.lh.om.OrderManagerClient">
         <level value="DEBUG" />
     </logger>
-    <logger name="net.a_cappella.test.madrigal.ox.OrderExerciser">
-        <level value="INFO" />
-    </logger>
-
-    <logger name="net.a_cappella.continuo.managed.ObjectManager">
-        <level value="INFO" />
-    </logger>
-
     <logger name="net.a_cappella.madrigal.common.obj.EcnInstrumentObj">
         <level value="INFO" />
     </logger>
 
+    <logger name="net.a_cappella.test.madrigal.ox.OrderExerciser">
+        <level value="INFO" />
+    </logger>
     <logger name="net.a_cappella.test.madrigal.ox.AbstractFeatureExerciser">
         <level value="DEBUG" />
     </logger>

@@ -9,7 +9,7 @@
 
     <bean name="msgCoder" class="net.a_cappella.continuo.msg.MsgCoder" />
 
-    <bean name="client" class="net.a_cappella.test.presto.SimpleClient" init-method="start">
+    <bean name="client" class="net.a_cappella.test.presto.pipesink.SimpleClient" init-method="start">
         <constructor-arg index="0" ref="msgCoder" />
         <constructor-arg index="1" value="${my.info}" />
         <constructor-arg index="2" value="${server.info}" />

@@ -5,12 +5,13 @@
            http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
-    <import resource="../prestoConfig.xml"/>
-    <import resource="../prestoClient.xml"/>
+	<!-- import resource="prestoConfig.xml"/ -->
+	<import resource="madrigalConfig.xml"/>
+	<import resource="prestoClient.xml"/>
 
-	<bean name="typesTest" class="net.a_cappella.test.presto.sns.TypesTest" init-method="start">
+	<bean name="burstPing" class="net.a_cappella.test.madrigal.perf.MadBurst" init-method="start">
 		<constructor-arg index="0" ref="client" />
-	</bean>
 
-    <!-- import resource="jmx.xml"/ -->
+		<property name="pinToCpu" value="${pin.to.cpu}"/>
+	</bean>
 </beans>

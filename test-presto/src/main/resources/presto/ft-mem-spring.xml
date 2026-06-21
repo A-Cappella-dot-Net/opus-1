@@ -17,7 +17,7 @@
         <property name="reconnectIntervalMillis" value="${reconnect.interval.millis}"/>
     </bean>
 
-	<bean name="qnsTest" class="net.a_cappella.test.presto.FtMemTest" init-method="start">
+	<bean name="qnsTest" class="net.a_cappella.test.presto.ft.FtMemTest" init-method="start">
 		<constructor-arg index="0" ref="client" />
 	</bean>
 

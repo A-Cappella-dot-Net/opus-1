@@ -13,7 +13,7 @@
     <appender name="STDOUT" class="org.apache.log4j.ConsoleAppender">
         <param name="Target" value="System.out" />
         <layout class="org.apache.log4j.PatternLayout">
-            <param name="ConversionPattern" value="%d{ABSOLUTE} %p [%c{1}] %m%n" />
+            <param name="ConversionPattern" value="%d{ABSOLUTE} %p [%t][%c{1}] %m%n" />
             <!-- param name="ConversionPattern" value="%d{ABSOLUTE} %p [%t][%c{1}] %m%n" / -->
         </layout>
         <filter class="org.apache.log4j.varia.LevelRangeFilter">
@@ -24,7 +24,7 @@
     <appender name="STDERR" class="org.apache.log4j.ConsoleAppender">
         <param name="Target" value="System.err" />
         <layout class="org.apache.log4j.PatternLayout">
-            <param name="ConversionPattern" value="%d{ABSOLUTE} %p [%c.%M] %m%n" />
+            <param name="ConversionPattern" value="%d{ABSOLUTE} %p [%t][%c.%M] %m%n" />
         </layout>
         <filter class="org.apache.log4j.varia.LevelRangeFilter">
             <param name="LevelMin" value="WARN" />
@@ -37,7 +37,7 @@
         <param name="append" value="true" />
         <param name="threshold" value="DEBUG" />
         <layout class="org.apache.log4j.PatternLayout">
-            <param name="ConversionPattern" value="%d{ABSOLUTE} %p [%c{1}] %m%n" />
+            <param name="ConversionPattern" value="%d{ABSOLUTE} %p [%t][%c{1}] %m%n" />
         </layout>
     </appender>
 
@@ -59,23 +59,31 @@
     <!-- ============================== -->
     <!-- Detail loggers                 -->
     <!-- ============================== -->
-    <logger name="net.a_cappella.presto.ps.AeronClient">
+    <logger name="net.a_cappella.continuo.utils.tightloop.TightLoopThread">
         <level value="INFO" />
     </logger>
+
+    <logger name="net.a_cappella.continuo.socket.BaseClientPipe">
+        <level value="INFO" />
+    </logger>
+    <logger name="net.a_cappella.continuo.socket.BaseServerSink">
+        <level value="INFO" />
+    </logger>
+
+    <logger name="net.a_cappella.presto.managed.ObjectManager">
+        <level value="INFO" />
+    </logger>
+
     <logger name="net.a_cappella.presto.ps.SnSHandler">
         <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.presto.ps.SnSManager">
         <level value="INFO" />
     </logger>
-
-    <logger name="net.a_cappella.continuo.utils.tightloop.TightLoopThread">
+    <logger name="net.a_cappella.presto.ps.sql.WhereNode">
         <level value="INFO" />
     </logger>
 
-    <logger name="net.a_cappella.presto.socket.BaseClientPipe">
-        <level value="INFO" />
-    </logger>
     <logger name="net.a_cappella.presto.ft.collective.CollectiveClient">
         <level value="INFO" />
     </logger>
@@ -86,7 +94,10 @@
         <level value="INFO" />
     </logger>
 
-    <logger name="net.a_cappella.presto.managed.ObjectManager">
+    <logger name="net.a_cappella.presto.ps.AeronClient">
+        <level value="INFO" />
+    </logger>
+    <logger name="net.a_cappella.presto.ps.AeronDaemon">
         <level value="INFO" />
     </logger>
 
