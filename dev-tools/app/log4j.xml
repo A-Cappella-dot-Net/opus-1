@@ -98,23 +98,23 @@
         <level value="INFO" />
     </logger>
 
-    <logger name="net.a_cappella.devtools.TableData">
+    <logger name="net.a_cappella.madrigal.devtools.TableData">
         <level value="INFO" />
     </logger>
 
-    <logger name="net.a_cappella.devtools.SubscriberTab">
+    <logger name="net.a_cappella.madrigal.devtools.SubscriberTab">
         <level value="TRACE" />
     </logger>
-    <logger name="net.a_cappella.devtools.SessionHandler">
+    <logger name="net.a_cappella.madrigal.devtools.SessionHandler">
         <level value="DEBUG" />
     </logger>
-    <logger name="net.a_cappella.devtools.LoopbackPrestoClient">
+    <logger name="net.a_cappella.madrigal.devtools.LoopbackPrestoClient">
         <level value="INFO" />
     </logger>
-    <logger name="net.a_cappella.devtools.ObjGenerator">
+    <logger name="net.a_cappella.madrigal.devtools.ObjGenerator">
         <level value="INFO" />
     </logger>
-    <logger name="net.a_cappella.devtools.TestViewport">
+    <logger name="net.a_cappella.madrigal.devtools.TestViewport">
         <level value="DEBUG" />
     </logger>
 

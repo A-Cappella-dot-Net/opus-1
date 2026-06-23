@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.a_cappella.devtools.obj;
+package net.a_cappella.madrigal.devtools.obj;
 
 import net.a_cappella.presto.obj.AeronCoderImpl;
 import org.agrona.sbe.MessageDecoderFlyweight;

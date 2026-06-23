@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.a_cappella.devtools;
+package net.a_cappella.madrigal.devtools;
 
 import com.google.gson.JsonObject;
 import net.a_cappella.madrigal.common.constants.MadrigalUserStatus;

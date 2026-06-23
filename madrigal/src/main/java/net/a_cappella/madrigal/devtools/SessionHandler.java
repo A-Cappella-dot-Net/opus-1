@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.a_cappella.devtools;
+package net.a_cappella.madrigal.devtools;
 
 import com.google.gson.*;
 import net.a_cappella.continuo.datatypes.PDate;
@@ -25,9 +25,9 @@ import net.a_cappella.continuo.managed.MsgInstantiator;
 import net.a_cappella.continuo.managed.ObjectManager;
 import net.a_cappella.continuo.managed.Pool;
 import net.a_cappella.continuo.msg.Msg;
-import net.a_cappella.devtools.obj.DevToolsConstants;
-import net.a_cappella.devtools.obj.WebSocketMsgCoder;
-import net.a_cappella.devtools.obj.WebSocketMsgObj;
+import net.a_cappella.madrigal.devtools.obj.DevToolsConstants;
+import net.a_cappella.madrigal.devtools.obj.WebSocketMsgCoder;
+import net.a_cappella.madrigal.devtools.obj.WebSocketMsgObj;
 import net.a_cappella.presto.ps.PrestoClient;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.WebSocketListener;
@@ -405,7 +405,7 @@ public class SessionHandler implements WebSocketListener {
         }
     }
 
-    // TODO consider alternative to sending net.a_cappella.devtools.ColumnDef object
+    // TODO consider alternative to sending net.a_cappella.madrigal.devtools.ColumnDef object
     private void sendMetaData(String tabId) {
         JsonObject response = new JsonObject();
         response.addProperty("type", "meta_data");

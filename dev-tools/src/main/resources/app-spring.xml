@@ -8,7 +8,7 @@
     <import resource="madrigalConfig.xml"/>
     <import resource="prestoClient.xml"/>
 
-    <bean name="viewServer" class="net.a_cappella.devtools.ViewServer" init-method="init">
+    <bean name="viewServer" class="net.a_cappella.madrigal.devtools.ViewServer" init-method="init">
         <constructor-arg index="0" ref="client" />
     </bean>
 

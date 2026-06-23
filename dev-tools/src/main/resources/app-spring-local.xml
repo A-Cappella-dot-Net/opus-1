@@ -21,7 +21,7 @@
         <property name="sleepNanosOnBackPressureRetry" value="${sleep.nanos.on.back.pressure.retry}"/>
     </bean>
 
-    <bean name="client" class="net.a_cappella.devtools.LoopbackPrestoClient" init-method="start" scope="singleton">
+    <bean name="client" class="net.a_cappella.madrigal.devtools.LoopbackPrestoClient" init-method="start" scope="singleton">
         <constructor-arg index="0" value="${connection.info}" />
         <constructor-arg index="1" ref="tightLoopThread" />
         <constructor-arg index="2" ref="pubHelper" />
@@ -33,7 +33,7 @@
         </constructor-arg>
     </bean>
 
-    <bean name="viewServer" class="net.a_cappella.devtools.ViewServer" init-method="init">
+    <bean name="viewServer" class="net.a_cappella.madrigal.devtools.ViewServer" init-method="init">
         <constructor-arg index="0" ref="client" />
     </bean>
 

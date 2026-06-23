@@ -14,19 +14,22 @@
  * limitations under the License.
  */
 
-package net.a_cappella.devtools;
+package net.a_cappella.madrigal.devtools;
 
-import com.google.gson.*;
-import net.a_cappella.continuo.datatypes.PDate;
+public class TokenInfo {
+    private final String _username;
+    private final long _expiryTimeMillis;
 
-import java.lang.reflect.Type;
+    public TokenInfo(String username, long expiryTimeMillis) {
+        _username = username;
+        _expiryTimeMillis = expiryTimeMillis;
+    }
 
-public class PDateSerializer implements JsonSerializer<PDate> {
-    @Override
-    public JsonElement serialize(PDate src, Type typeOfSrc, JsonSerializationContext context) {
-        JsonObject obj = new JsonObject();
-        obj.addProperty("value", src.getDate());
-        obj.addProperty("type", "date");
-        return obj;
+    public boolean isExpired() {
+        return _expiryTimeMillis < System.currentTimeMillis();
+    }
+
+    public String getUsername() {
+        return _username;
     }
 }

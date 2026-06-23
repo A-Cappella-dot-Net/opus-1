@@ -43,7 +43,6 @@
             <option value="$PROJECT_DIR$/presto-test-agent-rt" />
             <option value="$PROJECT_DIR$/serializer" />
             <option value="$PROJECT_DIR$/sys" />
-            <option value="$PROJECT_DIR$/test-aeron" />
             <option value="$PROJECT_DIR$/test-madrigal" />
             <option value="$PROJECT_DIR$/test-presto" />
           </set>

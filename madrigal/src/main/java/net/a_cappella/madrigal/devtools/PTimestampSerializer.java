@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package net.a_cappella.devtools;
+package net.a_cappella.madrigal.devtools;
 
 import com.google.gson.*;
-import net.a_cappella.continuo.datatypes.PTime;
+import net.a_cappella.continuo.datatypes.PTimestamp;
 
 import java.lang.reflect.Type;
 
-public class PTimeSerializer implements JsonSerializer<PTime> {
+public class PTimestampSerializer implements JsonSerializer<PTimestamp> {
     @Override
-    public JsonElement serialize(PTime src, Type typeOfSrc, JsonSerializationContext context) {
+    public JsonElement serialize(PTimestamp src, Type typeOfSrc, JsonSerializationContext context) {
         JsonObject obj = new JsonObject();
-        obj.addProperty("value", src.getTime());
-        obj.addProperty("type", "time");
+        obj.addProperty("value", src.getTimestamp());
+        obj.addProperty("type", "timestamp");
         return obj;
     }
 }

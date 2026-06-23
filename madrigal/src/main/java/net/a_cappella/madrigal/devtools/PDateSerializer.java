@@ -14,23 +14,19 @@
  * limitations under the License.
  */
 
-package net.a_cappella.devtools;
+package net.a_cappella.madrigal.devtools;
 
 import com.google.gson.*;
-import net.a_cappella.continuo.datatypes.PNanos;
+import net.a_cappella.continuo.datatypes.PDate;
 
 import java.lang.reflect.Type;
 
-public class PNanosSerializer implements JsonSerializer<PNanos> {
+public class PDateSerializer implements JsonSerializer<PDate> {
     @Override
-    public JsonElement serialize(PNanos src, Type typeOfSrc, JsonSerializationContext context) {
-        long nanos = src.getNanos();
-        long millis = nanos / 1_000_000;
-        long subMilliNanos = nanos % 1_000_000; // Remaining nanos after millis
+    public JsonElement serialize(PDate src, Type typeOfSrc, JsonSerializationContext context) {
         JsonObject obj = new JsonObject();
-        obj.addProperty("value", millis);
-        obj.addProperty("nanos", subMilliNanos);
-        obj.addProperty("type", "nanos");
+        obj.addProperty("value", src.getDate());
+        obj.addProperty("type", "date");
         return obj;
     }
 }

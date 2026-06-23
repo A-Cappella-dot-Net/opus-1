@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.a_cappella.devtools;
+package net.a_cappella.madrigal.devtools;
 
 import net.a_cappella.continuo.obj.ObjKey;
 import org.slf4j.Logger;

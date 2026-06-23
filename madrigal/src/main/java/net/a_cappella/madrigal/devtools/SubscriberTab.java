@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.a_cappella.devtools;
+package net.a_cappella.madrigal.devtools;
 
 import com.google.gson.JsonObject;
 import net.a_cappella.continuo.managed.ObjectManager;
@@ -35,16 +35,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static net.a_cappella.devtools.ColumnDef.*;
-import static net.a_cappella.devtools.ColumnDef.DEFAULT_WIDTH_BOOLEAN;
-import static net.a_cappella.devtools.ColumnDef.DEFAULT_WIDTH_DATETIME_DATE;
-import static net.a_cappella.devtools.ColumnDef.DEFAULT_WIDTH_DATETIME_ISO;
-import static net.a_cappella.devtools.ColumnDef.DEFAULT_WIDTH_DATETIME_TIME;
-import static net.a_cappella.devtools.ColumnDef.DEFAULT_WIDTH_DECIMAL;
-import static net.a_cappella.devtools.ColumnDef.DEFAULT_WIDTH_INT;
-import static net.a_cappella.devtools.ColumnDef.DEFAULT_WIDTH_LONG;
-import static net.a_cappella.devtools.ColumnDef.DEFAULT_WIDTH_SHORT;
-import static net.a_cappella.devtools.ColumnDef.DEFAULT_WIDTH_STRING;
+import static net.a_cappella.madrigal.devtools.ColumnDef.*;
+import static net.a_cappella.madrigal.devtools.ColumnDef.DEFAULT_WIDTH_BOOLEAN;
+import static net.a_cappella.madrigal.devtools.ColumnDef.DEFAULT_WIDTH_DATETIME_DATE;
+import static net.a_cappella.madrigal.devtools.ColumnDef.DEFAULT_WIDTH_DATETIME_ISO;
+import static net.a_cappella.madrigal.devtools.ColumnDef.DEFAULT_WIDTH_DATETIME_TIME;
+import static net.a_cappella.madrigal.devtools.ColumnDef.DEFAULT_WIDTH_DECIMAL;
+import static net.a_cappella.madrigal.devtools.ColumnDef.DEFAULT_WIDTH_INT;
+import static net.a_cappella.madrigal.devtools.ColumnDef.DEFAULT_WIDTH_LONG;
+import static net.a_cappella.madrigal.devtools.ColumnDef.DEFAULT_WIDTH_SHORT;
+import static net.a_cappella.madrigal.devtools.ColumnDef.DEFAULT_WIDTH_STRING;
 
 public class SubscriberTab implements ISnSListener {
     private static final Logger log = LoggerFactory.getLogger(SubscriberTab.class);

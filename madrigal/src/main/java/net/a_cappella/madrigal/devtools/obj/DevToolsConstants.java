@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.a_cappella.devtools.obj;
+package net.a_cappella.madrigal.devtools.obj;
 
 public interface DevToolsConstants {
 

@@ -14,22 +14,19 @@
  * limitations under the License.
  */
 
-package net.a_cappella.devtools;
+package net.a_cappella.madrigal.devtools;
 
-public class TokenInfo {
-    private final String _username;
-    private final long _expiryTimeMillis;
+import com.google.gson.*;
+import net.a_cappella.continuo.datatypes.PTime;
 
-    public TokenInfo(String username, long expiryTimeMillis) {
-        _username = username;
-        _expiryTimeMillis = expiryTimeMillis;
-    }
+import java.lang.reflect.Type;
 
-    public boolean isExpired() {
-        return _expiryTimeMillis < System.currentTimeMillis();
-    }
-
-    public String getUsername() {
-        return _username;
+public class PTimeSerializer implements JsonSerializer<PTime> {
+    @Override
+    public JsonElement serialize(PTime src, Type typeOfSrc, JsonSerializationContext context) {
+        JsonObject obj = new JsonObject();
+        obj.addProperty("value", src.getTime());
+        obj.addProperty("type", "time");
+        return obj;
     }
 }
