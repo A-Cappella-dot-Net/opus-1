@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class ViewServer {
     private static final Logger log = LoggerFactory.getLogger(ViewServer.class);
@@ -54,6 +55,9 @@ public class ViewServer {
         _client.waitUntilInitialized();
 
         _userManager.start();
+        _scheduler.scheduleAtFixedRate(
+                () -> _tokenStore.entrySet().removeIf(e -> e.getValue().isExpired()),
+                30, 30, TimeUnit.SECONDS);
 
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
@@ -65,13 +69,27 @@ public class ViewServer {
         context.addServlet(staticHolder, "/");
 
         JettyWebSocketServletContainerInitializer.configure(context, (servletContext, wsContainer) -> {
-            wsContainer.addMapping("/ws",
-                    (servletUpgradeRequest, servletUpgradeResponse) -> new SessionHandler(this));
+            wsContainer.addMapping("/ws", (servletUpgradeRequest, servletUpgradeResponse) -> {
+                String origin = servletUpgradeRequest.getHeader("Origin");
+                String host = servletUpgradeRequest.getHeader("Host");
+                if (!isAllowedOrigin(origin, host)) {
+                    log.warn("Rejected WebSocket connection from origin '{}' (host '{}')", origin, host);
+                    return null;
+                }
+                return new SessionHandler(this);
+            });
         });
 
         _server.setHandler(context);
         _server.start();
         _server.join();
+    }
+
+    private boolean isAllowedOrigin(String origin, String host) {
+        if (origin == null || host == null) return false;
+        // Strip scheme from origin (e.g. "http://localhost:8080" -> "localhost:8080")
+        String originHost = origin.replaceFirst("^https?://", "");
+        return originHost.equals(host);
     }
 
     public void stop() {

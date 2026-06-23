@@ -205,7 +205,7 @@ public class PublisherHandler {
                 case NANOS: return PNanos.parsePNanos(str);
                 case TIME: return PTime.parsePTime(str);
                 case DATE: return PDate.parsePDate(str);
-                case ENUM: return parseEnum(str);
+                case ENUM: return parseEnum(str, fmi);
                 default: return "Unknown Type";
             }
         }
@@ -265,11 +265,13 @@ public class PublisherHandler {
         }
     }
 
-    private <T extends Enum<T>> T parseEnum(String str) throws Exception {
+    private <T extends Enum<T>> T parseEnum(String str, FieldMetaInfo fmi) throws Exception {
+        // Class is sourced from trusted field metadata, never from user input
+        String className = fmi.getField().getGenericType().getTypeName();
+        Class<T> clazz = (Class<T>) Class.forName(className);
+        // Accept either "ClassName.VALUE" or just "VALUE"
         int pos = str.lastIndexOf(".");
-        String enumClass = str.substring(0, pos);
-        String enumValue = str.substring(pos+1);
-        Class<T> clazz = (Class<T>) Class.forName(enumClass);
+        String enumValue = (pos >= 0) ? str.substring(pos + 1) : str;
         return Enum.valueOf(clazz, enumValue);
     }
 

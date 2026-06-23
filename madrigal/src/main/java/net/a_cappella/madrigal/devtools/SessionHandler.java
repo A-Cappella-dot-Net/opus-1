@@ -114,7 +114,7 @@ public class SessionHandler implements WebSocketListener {
     private ScheduledFuture<?> _pingTask;
 
     public String _username;
-    public String _password;
+    String _hashedPwd;
     public boolean _isAuthenticated = false;
 
     private SubscriberHandler _subscriberHandler;
@@ -273,15 +273,15 @@ public class SessionHandler implements WebSocketListener {
         }
     }
 
-    public void authenticated(String uid, String pwd) {
+    public void authenticated(String uid, String hashedPwd) {
         _username = uid;
-        _password = pwd;
+        _hashedPwd = hashedPwd;
         _isAuthenticated = true;
     }
 
-    public void notAuthenticated(String uid, String pwd) {
+    public void notAuthenticated(String uid, String hashedPwd) {
         _username = uid;
-        _password = pwd;
+        _hashedPwd = hashedPwd;
         _isAuthenticated = false;
     }
 
@@ -312,10 +312,10 @@ public class SessionHandler implements WebSocketListener {
     private void handleLogout() {
         log.info("{} User logged out: {}", _remote, _username);
 
-        _userManager.logout(this, _username, _password);
+        _userManager.logout(this, _username);
 
         _username = null;
-        _password = null;
+        _hashedPwd = null;
         _isAuthenticated = false;
 
         resetTabs();

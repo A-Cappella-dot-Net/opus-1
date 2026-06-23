@@ -25,8 +25,12 @@ import net.a_cappella.presto.ps.PrestoClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -38,7 +42,7 @@ public class VsUserManager {
     private final IUserManagerClient _userMgr;
 
     private Map<Integer, SessionHandler> _handlersByReqId = new HashMap<>(); // pending requests to MUM
-    private Map<String, String> _loggedInUsers = new HashMap<>(); // (uid, pwd) - caches credentials of logged in users
+    private Map<String, String> _loggedInUsers = new HashMap<>(); // (uid, pwd hash) - caches hashed credentials of logged in users
 
     // logout affects all sessions associated to the initiating host and leaves the others unchanged
     private Map<String, Map<String, Set<SessionHandler>>> _handlersByHostAnUid = new HashMap<>(); // (host, (uid, handler))
@@ -58,15 +62,15 @@ public class VsUserManager {
         } else {
             SessionHandler handler = _handlersByReqId.remove(reqId);
             if (handler != null) {
-                // the password is not coming back in UserStatusObj so it's retrieved from handler
-                String pwd = handler._password;
+                // password is not returned in UserStatusObj; handler already holds the hash
+                String hashedPwd = handler._hashedPwd;
                 if (userStatus.getReqStatus() == MadrigalUserStatus.On) {
-                    _loggedInUsers.put(uid, pwd);
-                    handler.authenticated(uid, pwd);
+                    _loggedInUsers.put(uid, hashedPwd);
+                    handler.authenticated(uid, hashedPwd);
                     _handlersByHostAnUid.computeIfAbsent(handler._host, h -> new HashMap<>())
                             .computeIfAbsent(uid, u -> new HashSet<>())
                             .add(handler);
-                    handler.sendMessage(loginSucceeded(uid, pwd));
+                    handler.sendMessage(loginSucceeded(uid));
                 } else { // userStatus.getReqStatus() == MadrigalUserStatus.Off
                     handler.sendMessage(loginFailed(uid));
                 }
@@ -89,7 +93,7 @@ public class VsUserManager {
         _userMgr.start();
     }
 
-    private JsonObject loginSucceeded(String username, String password) {
+    private JsonObject loginSucceeded(String username) {
         JsonObject response = new JsonObject();
         response.addProperty("type", "login_response");
         response.addProperty("success", true);
@@ -112,13 +116,13 @@ public class VsUserManager {
 
     public void login(SessionHandler handler, String uid, String pwd) {
         if (_loggedInUsers.containsKey(uid)) {
-            String verPwd = _loggedInUsers.get(uid);
-            if (verPwd.equals(pwd)) {
-                handler.authenticated(uid, pwd);
+            String verHashedPwd = _loggedInUsers.get(uid);
+            if (verHashedPwd.equals(hash(pwd))) {
+                handler.authenticated(uid, verHashedPwd);
                 _handlersByHostAnUid.computeIfAbsent(handler._host, h -> new HashMap<>())
                         .computeIfAbsent(uid, u -> new HashSet<>())
                         .add(handler);
-                handler.sendMessage(loginSucceeded(uid, pwd));
+                handler.sendMessage(loginSucceeded(uid));
             } else {
                 handler.notAuthenticated(uid, null);
                 _handlersByHostAnUid.computeIfAbsent(handler._host, h -> new HashMap<>())
@@ -126,19 +130,19 @@ public class VsUserManager {
                         .remove(handler);
                 handler.sendMessage(loginFailed(uid));
             }
-        } else { // need to login
-            int reqId = _userMgr.login(uid, pwd, false);
-            handler.notAuthenticated(uid, pwd); // optimistically storing the pwd in the handler
+        } else { // need to login via UserManager
+            int reqId = _userMgr.login(uid, pwd, false); // plaintext needed for real auth
+            handler.notAuthenticated(uid, hash(pwd));    // store only the hash
             _handlersByReqId.put(reqId, handler);
         }
     }
 
-    public void logout(SessionHandler handler, String uid, String pwd) {
+    public void logout(SessionHandler handler, String uid) {
         Map<String, Set<SessionHandler>> handlersByUid = _handlersByHostAnUid.get(handler._host);
         if (handlersByUid != null) {
             Set<SessionHandler> handlers = handlersByUid.get(uid);
             if (handlers != null) {
-                handlers.stream().filter(h -> h._password.equals(pwd)).forEach(h -> h.forceLogout());
+                handlers.stream().filter(h -> h._hashedPwd.equals(handler._hashedPwd)).forEach(h -> h.forceLogout());
             }
         }
     }
@@ -154,6 +158,15 @@ public class VsUserManager {
             }
         } else {
             return false;
+        }
+    }
+
+    private static String hash(String pwd) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(pwd.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e); // SHA-256 is guaranteed by the JDK spec
         }
     }
 
