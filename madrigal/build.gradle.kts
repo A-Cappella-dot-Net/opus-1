@@ -1,6 +1,5 @@
 plugins {
     id("buildlogic.java-library-conventions")
-    id("maven-publish")
     id("com.github.node-gradle.node") version "7.0.2"
 }
 
@@ -145,15 +144,4 @@ tasks.processResources {
 // Clean React when cleaning Java
 tasks.clean {
     dependsOn(cleanReact)
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            groupId = "net.a-cappella"
-            artifactId = "madrigal"
-
-            from(components["java"]) // Or "kotlin" for Kotlin projects
-        }
-    }
 }

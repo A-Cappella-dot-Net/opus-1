@@ -1,6 +1,5 @@
 plugins {
     id("buildlogic.java-library-conventions")
-    id("maven-publish")
 }
 
 val mockitoAgent = configurations.create("mockitoAgent")
@@ -95,14 +94,3 @@ tasks.check {
     dependsOn(proxyAgentTest)
 }
 
-
-publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            groupId = "net.a-cappella"
-            artifactId = "presto"
-
-            from(components["java"]) // Or "kotlin" for Kotlin projects
-        }
-    }
-}

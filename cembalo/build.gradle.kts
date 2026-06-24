@@ -1,6 +1,5 @@
 plugins {
     id("buildlogic.java-library-conventions")
-    id("maven-publish")
 }
 
 tasks.register<JavaExec>("genFixConstants") {
@@ -50,16 +49,5 @@ tasks {
         }
         jvmArgs("-javaagent:${mockitoAgent.asPath}")
         jvmArgs("-Xshare:off")
-    }
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            groupId = "net.a-cappella"
-            artifactId = "cembalo"
-
-            from(components["java"]) // Or "kotlin" for Kotlin projects
-        }
     }
 }

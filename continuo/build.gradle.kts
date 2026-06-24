@@ -1,6 +1,5 @@
 plugins {
     id("buildlogic.java-library-conventions")
-    id("maven-publish")
 }
 
 dependencies {
@@ -14,15 +13,4 @@ dependencies {
     }
     implementation(libs.agrona)
     implementation(libs.trove)
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            groupId = "net.a-cappella"
-            artifactId = "continuo"
-
-            from(components["java"]) // Or "kotlin" for Kotlin projects
-        }
-    }
 }

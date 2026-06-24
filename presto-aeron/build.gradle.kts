@@ -1,6 +1,5 @@
 plugins {
     id("buildlogic.java-library-conventions")
-    id("maven-publish")
 }
 
 val mockitoAgent = configurations.create("mockitoAgent")
@@ -67,16 +66,5 @@ tasks {
         }
         jvmArgs("-javaagent:${mockitoAgent.asPath}")
         jvmArgs("-Xshare:off")
-    }
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            groupId = "net.a-cappella"
-            artifactId = "presto-aeron"
-
-            from(components["java"]) // Or "kotlin" for Kotlin projects
-        }
     }
 }
