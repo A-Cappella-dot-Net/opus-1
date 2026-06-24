@@ -12,6 +12,7 @@ plugins {
 
 rootProject.name = "opus-1"
 
+include("opus-1-bom")
 include("continuo")
 include("cembalo")
 include("exchange")
