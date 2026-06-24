@@ -141,6 +141,10 @@ tasks.processResources {
     dependsOn(copyReactBuild)
 }
 
+tasks.named("sourcesJar") {
+    dependsOn(copyReactBuild)
+}
+
 // Clean React when cleaning Java
 tasks.clean {
     dependsOn(cleanReact)
