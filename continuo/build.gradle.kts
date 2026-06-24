@@ -21,7 +21,6 @@ publishing {
         create<MavenPublication>("mavenJava") {
             groupId = "net.a-cappella"
             artifactId = "continuo"
-            version = "1.0.0-SNAPSHOT" // or dynamic version as above
 
             from(components["java"]) // Or "kotlin" for Kotlin projects
         }
