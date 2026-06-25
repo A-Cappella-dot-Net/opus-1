@@ -202,19 +202,15 @@ public class CollectiveMember {
     }
 
     public boolean isStarted() {
-        return _sink.isStarted() && allPipesStarted();
+        return _sink != null && _sink.isStarted() && allPipesStarted();
     }
 
     public boolean isStopped() {
-        return _sink.isStopped() && allPipesStopped();
+        return _sink == null || (_sink.isStopped() && allPipesStopped());
     }
 
     public boolean isUpgraded(int version) {
         return isStarted() && _upgradeMgr.getVersion() == version;
-    }
-
-    public ServerSink getSink() {
-        return _sink;
     }
 
     public List<ClientPipe> getPipes() {
