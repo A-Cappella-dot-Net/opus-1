@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      increment:
+        description: 'Version increment type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run tests
+        run: ./gradlew test
+
+      - name: Release
+        run: |
+          if [ "${{ inputs.increment }}" = "minor" ]; then
+            ./gradlew release -Prelease.versionIncrementer=incrementMinor
+          elif [ "${{ inputs.increment }}" = "major" ]; then
+            ./gradlew release -Prelease.versionIncrementer=incrementMajor
+          else
+            ./gradlew release
+          fi
