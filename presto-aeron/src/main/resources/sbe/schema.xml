@@ -67,12 +67,12 @@
         <data name="mapData" id="1" type="varDataEncoding"/>
     </sbe:message>
 
-    <sbe:message name="PingObj" id="107" description="Ping message">
+    <sbe:message name="PingObj" id="106" description="Ping message">
         <field name="id" id="1" type="int32"/>
         <field name="payload" id="2" type="int64"/>
     </sbe:message>
 
-    <sbe:message name="TestObj" id="108" description="Test message containing all Presto primitive types">
+    <sbe:message name="TestObj" id="107" description="Test message containing all Presto primitive types">
         <field name="aShort" id="1" type="int16"/>
         <field name="anInt" id="2" type="int32"/>
         <field name="aChar" id="3" type="uint16"/>
@@ -93,13 +93,13 @@
         <data name="aString" id="13" type="varStringEncoding"/>
     </sbe:message>
 
-    <sbe:message name="CacheCmdObj" id="109" description="Cache Command">
+    <sbe:message name="CacheCmdObj" id="108" description="Cache Command">
         <field name="command" id="1" type="CommandNameType"/>
         <field name="cacheSubject" id="2" type="SubjectNameType"/>
         <data name="whereClause" id="3" type="varStringEncoding"/>
     </sbe:message>
 
-    <sbe:message name="SeqNoObj" id="110" description="SeqNo message">
+    <sbe:message name="SeqNoObj" id="109" description="SeqNo message">
         <field name="seqNo" id="1" type="int64"/>
     </sbe:message>
 

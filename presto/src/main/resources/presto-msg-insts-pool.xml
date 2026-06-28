@@ -62,7 +62,7 @@
                     <constructor-arg name="incrementSize" value="10" />
                 </bean>
                 <bean class="net.a_cappella.continuo.managed.Pool">
-                    <constructor-arg name="instantiator" ref="allegro.test.msg" />
+                    <constructor-arg name="instantiator" ref="continuo.test.msg" />
                     <constructor-arg name="initialSize" value="10" />
                     <constructor-arg name="incrementSize" value="10" />
                 </bean>

@@ -45,7 +45,7 @@
     <bean name="presto.paths.subjects" class="net.a_cappella.continuo.managed.MsgInstantiator">
         <constructor-arg name="className" value="net.a_cappella.presto.msg.PathsSubjectsMsg" />
     </bean>
-    <bean name="allegro.test.msg" class="net.a_cappella.continuo.managed.MsgInstantiator">
+    <bean name="continuo.test.msg" class="net.a_cappella.continuo.managed.MsgInstantiator">
         <constructor-arg name="className" value="net.a_cappella.continuo.msg.TestMsg" />
     </bean>
 

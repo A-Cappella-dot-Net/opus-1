@@ -20,7 +20,7 @@
                 <ref bean="presto.ft.monitor.msg"/>
                 <ref bean="presto.source.ports"/>
                 <ref bean="presto.paths.subjects"/>
-                <ref bean="allegro.test.msg"/>
+                <ref bean="continuo.test.msg"/>
             </list>
         </constructor-arg>
     </bean>
