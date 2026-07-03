@@ -1,0 +1,3 @@
+# serializer
+
+The deployable serializer application. The serializer stamps explicitly serialized messages — and only those — with global sequence numbers, so that their consumers observe the same total order of events. Deterministic processing is thereby intentional, chosen per message stream, rather than enforced across the system. It runs as a fault-tolerant presto group (active/standby, including hot/hot), preserving sequence-number continuity across failover. Assembled from Spring wiring around [presto](../presto/README.md)'s `SerializerService` and [presto-aeron](../presto-aeron/README.md)'s `AeronSerializer`, and launched through `continuo.Main`.
