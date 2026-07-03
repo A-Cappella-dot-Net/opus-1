@@ -26,8 +26,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static net.a_cappella.presto.ft.constants.MemberStatusEnum.DOWN;
-import static net.a_cappella.presto.ft.constants.MemberStatusEnum.UP;
+import static net.a_cappella.presto.ft.constants.MemberStatusEnum.*;
 
 @Tag("proxy-agent")
 public class NetworkIssuesTest extends CollectiveTestBase {
@@ -75,8 +74,8 @@ public class NetworkIssuesTest extends CollectiveTestBase {
 
         stopProxy();
 
-        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, DOWN}));
-        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, UP}));
+        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, HALF_UP}));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {HALF_UP, UP}));
 
         startProxy();
 
@@ -223,8 +222,8 @@ public class NetworkIssuesTest extends CollectiveTestBase {
 
         stopProxy();
 
-        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, DOWN, UP}));
-        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, UP, UP}));
+        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, HALF_UP, UP}));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {HALF_UP, UP, UP}));
         eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
 
         startProxy();
@@ -271,8 +270,8 @@ public class NetworkIssuesTest extends CollectiveTestBase {
 
         stopProxy();
 
-        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, DOWN, UP}));
-        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {DOWN, UP, UP}));
+        eventually(d0, (d, ctx) -> d.iAmPrimary(ctx, true, new MemberStatusEnum[] {UP, HALF_UP, UP}));
+        eventually(d1, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {HALF_UP, UP, UP}));
         eventually(d2, (d, ctx) -> d.iAmPrimary(ctx, false, new MemberStatusEnum[] {UP, UP, UP}));
 
         startProxy();
