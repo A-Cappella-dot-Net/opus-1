@@ -82,7 +82,7 @@ public class BaseServerSink {
         return _conMap.isConnected(selKey);
     }
 
-    protected void sendMsg(SelectionKey key, Msg msg) { // TODO non synchronized version
+    protected boolean sendMsg(SelectionKey key, Msg msg) { // TODO non synchronized version
         SocketChannel client = (SocketChannel) key.channel();
         try {
             if (log.isDebugEnabled()) log.debug("{}sending {} to {}", _cmId, msg, keyHash(key));
@@ -98,12 +98,13 @@ public class BaseServerSink {
             }
             if (log.isDebugEnabled()) log.debug("{}sent    {} bytes to {}", _cmId, len, keyHash(key));
             ((LongHolder) key.attachment()).incrementValue();
-        } catch (IOException x) {
+            return true;
+        } catch (Exception x) {
             log.info("{}{} Could not send to {} : {}", _cmId, x.getClass().getName(), keyHash(key), msg);
-            throw new RuntimeException(x);
+            return false;
         }
     }
-    protected void sendMsg(SelectionKey key, Msg[] msgs) { // TODO non synchronized version
+    protected boolean sendMsg(SelectionKey key, Msg[] msgs) { // TODO non synchronized version
         SocketChannel client = (SocketChannel) key.channel();
         try {
             if (log.isDebugEnabled()) log.debug("{}sending {} messages {}", _cmId, msgs.length, Arrays.toString(msgs));
@@ -119,9 +120,10 @@ public class BaseServerSink {
             }
             if (log.isDebugEnabled()) log.debug("{}sent    {} bytes to {}", _cmId, len, keyHash(key));
             ((LongHolder) key.attachment()).incrementValue();
-        } catch (IOException x) {
+            return true;
+        } catch (Exception x) {
             log.info("{}{} Could not send to {} {}", _cmId, x.getClass().getName(), keyHash(key), Arrays.toString(msgs));
-            throw new RuntimeException(x);
+            return false;
         }
     }
 
@@ -290,7 +292,10 @@ public class BaseServerSink {
             try {
                 if (pair==null) {
                     resp = new RegistrationResponse('Y');
-                    sendMsg(key, resp);
+                    if (!sendMsg(key, resp)) {
+                        _conMap.disconnect(key);
+                        return;
+                    }
                     onClientConnect(key, req);
                 } else {
                     resp = new RegistrationResponse('N');

@@ -283,15 +283,15 @@ public class Utils {
                 sleep(left);
             }
         }
-        // presto.utils.conflator.ConflatorTest.conflationTest fails spuriously at lines 241 and 248
-        // this is trying to prove that the issue is with the sleep not returning fast enough
-        // so far have not been able to reproduce the issue
-        long actual = System.currentTimeMillis() - end;
-        if (actual>millis) { // at least twice as intended
-            String info = "===> slept too long... "+millis+" vs "+(actual+millis);
-            System.out.println(info);
-            log.info(info);
-        }
+//        // presto.utils.conflator.ConflatorTest.conflationTest fails spuriously at lines 241 and 248
+//        // this is trying to prove that the issue is with the sleep not returning fast enough
+//        // so far have not been able to reproduce the issue
+//        long actual = System.currentTimeMillis() - end;
+//        if (actual>millis) { // at least twice as intended
+//            String info = "===> slept too long... "+millis+" vs "+(actual+millis);
+//            System.out.println(info);
+//            log.info(info);
+//        }
     }
 
 

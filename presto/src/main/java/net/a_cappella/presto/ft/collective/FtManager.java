@@ -517,11 +517,7 @@ public class FtManager {
                 msg.set(RESPONSE, ACTIVATE, NO, i, maxActives);
 
                 if (_member.iAmPrimary()) {
-                    try {
-                        _member.sendMsg(mk._key, msg);
-                    } catch (Exception x) {
-                        log.error("Could not send message to " + keyHash(mk._key), x);
-                    }
+                    _member.sendMsg(mk._key, msg);
                 }
 
             }

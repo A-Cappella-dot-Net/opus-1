@@ -39,18 +39,22 @@ public class MemberStatus {
         return _viaPipe;
     }
 
-    public void setStatus(MemberStatusEnum status) {
-        _viaSink = status;
-        _viaPipe = status;
-    }
     public MemberStatusEnum getStatus(boolean iAmCore) {
         if (_viaPipe == IDK) {
             return IDK;
         }
-        if ((!iAmCore || _viaSink == UP) && _viaPipe == UP) {
+        if (!iAmCore) {
+            // A non-core member only opens an outgoing pipe to the cores; no return sink
+            // connection is expected, so the pipe direction alone determines the status.
+            return _viaPipe == UP ? UP : DOWN;
+        }
+        if (_viaSink == UP && _viaPipe == UP) {
             return UP;
         }
-        return DOWN;
+        if (_viaSink == DOWN && _viaPipe == DOWN) {
+            return DOWN;
+        }
+        return HALF_UP;
     }
 
     public String toString() {

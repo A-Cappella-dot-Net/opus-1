@@ -127,7 +127,11 @@ public class CollectiveMember {
                 FtEvent e;
                 int workCount = 0;
                 while ((e = _eventQueue.poll()) != null) {
-                    e.apply();
+                    try {
+                        e.apply();
+                    } catch (Throwable t) {
+                        log.error("{}Uncaught exception applying event {}; EventThread continuing", _cmId, e, t);
+                    }
                     workCount++;
                 }
                 idleStrategy.idle(workCount);
@@ -256,15 +260,15 @@ public class CollectiveMember {
     public boolean isCoreUp() {
         for (int i = 0; i < _pipes.size(); i++) {
             ClientPipe pipe = _pipes.get(i);
-            if (pipe.getStatus()==MemberStatusEnum.UP) {
+            if (pipe.getStatus() == MemberStatusEnum.UP) {
                 return true;
             }
         }
         return false;
     }
 
-    public void sendMsg(SelectionKey key, Msg msg) {
-        _sink.sendMsg(key, msg);
+    public boolean sendMsg(SelectionKey key, Msg msg) {
+        return _sink.sendMsg(key, msg);
     }
 
     public void sendMsgToAllMembers(Msg msg) {
@@ -372,11 +376,10 @@ public class CollectiveMember {
         // checking that all pipes are up
         for (int i = 0; i < pipes.size(); i++) {
             ClientPipe pipe = pipes.get(i);
-            if (pipe.getStatus()==MemberStatusEnum.UP) break; // first UP and there have been no IDKs before
-            if (pipe.getStatus()==MemberStatusEnum.IDK) {
+            if (pipe.getStatus() == MemberStatusEnum.UP) break; // first UP and there have been no IDKs before
+            if (pipe.getStatus() == MemberStatusEnum.IDK) {
                 log.info("{}calculatePrimary {} =>  still not certain...", _cmId, _pipes);
                 // need to wait until I am certain; otherwise there could be overlap
-                resetPrimary(pipes, 0);
                 _iAmPrimary = false;
                 return DONT_CARE;
             }
@@ -385,31 +388,34 @@ public class CollectiveMember {
         for (int i = 0; i < pipes.size(); i++) {
             ClientPipe pipe = pipes.get(i);
             if (pipe.getStatus() == MemberStatusEnum.UP) {
-                if (pipe.isPrimary()) { // i is already primary
-                    if (pipe._myPipe) {
+                if (pipe._myPipe) {
+                    if (_iAmPrimary) {
                         log.info("{}calculatePrimary {} ===> I am still primary!!!", _cmId, pipes);
+                        return DONT_CARE; // still primary
                     } else {
-                        log.info("{}calculatePrimary {} {} => {} is still primary", _cmId, _myInfo, pipes, pipe);
+                        log.info("{}calculatePrimary {} ===> I am primary!!!", _cmId, pipes);
+                        _iAmPrimary = true;
+                        return I_BECAME_PRIMARY;
                     }
+                } else {
+                    log.info("{}calculatePrimary {} {} => {} is still primary", _cmId, _myInfo, pipes, pipe);
+                    _iAmPrimary = false;
                     return DONT_CARE;
                 }
-                setPrimary(pipes, i);
-                if (pipe._myPipe) {
-                    log.info("{}calculatePrimary {} ===> I am primary!!!", _cmId, pipes);
-                    _iAmPrimary = true;
-                    return I_BECAME_PRIMARY;
-                } else {
-                    log.info("{}calculatePrimary {} => {} is primary", _cmId, pipes, pipe);
+            } else if (pipe.getStatus() == MemberStatusEnum.HALF_UP) {
+                if (_iAmPrimary) {
+                    log.info("{}calculatePrimary {} ===> I am losing leadership!!!", _cmId, pipes);
                     _iAmPrimary = false;
+                    return DONT_CARE;
+                } else {
+                    log.info("{}calculatePrimary {} => {} transient state => need to wait", _cmId, pipes, pipe);
                     return DONT_CARE;
                 }
             } else {
                 pipe.setPrimary(false);
             }
         }
-        log.info("{}calculatePrimary {} => no primary is up atm...", _cmId, pipes);
-        _iAmPrimary = false;
-        return NO_PRIMARY;
+        return NO_PRIMARY; // should be non-reachable
     }
 
     private void setPrimary(List<ClientPipe> pipes, int atIndex) {
@@ -433,13 +439,12 @@ public class CollectiveMember {
             _iAmPrimary = false;
             return DONT_CARE;
         }
-        if (_iAmCore) {
+        if (_iAmCore) { // a non-core member does not vote...
             boolean first = true;
             for (int i = 0; i < _pipes.size(); i++) {
                 ClientPipe pipe = _pipes.get(i);
                 if (pipe.getStatus() == MemberStatusEnum.UP) {
-                    // I am voting for the first member that is UP
-                    if (first) {
+                    if (first) { // I am voting for the first member that is UP
                         first = false;
                         if (_myVote != pipe) {
                             _myVote = pipe;
@@ -447,12 +452,13 @@ public class CollectiveMember {
                             sendMsgToAllMembers(new VoteMsg(_myPipe._appInfo, pipe._appInfo));
                         }
                     }
-                } else {
+                } else { // pipe is not UP => clear its vote
                     pipe._myVote = null;
                 }
             }
         }
-        PrimaryCalculationResult result = calculateQuorumPrimary("calculateVotes");
+        // ... but needs to know if there is no primary, especially when the core is up
+        PrimaryCalculationResult result = calculateQuorumPrimary("calculateVotes" + (_myVote == null ? "" : " " + _myVote._appInfo));
         if (result == NO_PRIMARY) {
             _iAmPrimary = false;
         }
@@ -465,7 +471,7 @@ public class CollectiveMember {
         ClientPipe voterPipe = findPipe(vote.ofMember());
         voterPipe._myVote = findPipe(vote.forMember());
         // tally votes
-        PrimaryCalculationResult result = calculateQuorumPrimary("handleVoteMessage");
+        PrimaryCalculationResult result = calculateQuorumPrimary("handleVoteMessage " + vote);
         if (result == NO_PRIMARY) {
             _iAmPrimary = false;
         }
@@ -484,12 +490,14 @@ public class CollectiveMember {
                 myVote._myVoteCnt++;
             }
         }
-        if (_myVote == null || !_iAmCore) {
-            log.info("{}{} => {}", _cmId, method, _pipes);
-        } else {
-            log.info("{}{} => I'm voting {} {}", _cmId, method, _myVote._appInfo, _pipes);
-        }
-        if (quorumPrimaryHasChanged()) {
+
+        log.info("{}{} => {}", _cmId, method, _pipes);
+
+        ClientPipe newPrimary = findQuorumWinner();
+
+        if (_primary != newPrimary) {
+            _primary = newPrimary;
+
             if (_primary == null) {
                 log.info("{}{} ===> no primary...", _cmId, method);
                 return NO_PRIMARY;
@@ -503,7 +511,7 @@ public class CollectiveMember {
         return DONT_CARE;
     }
 
-    private boolean quorumPrimaryHasChanged() {
+    private ClientPipe findQuorumWinner() {
         // identify winner
         ClientPipe newPrimary = null;
         for (ClientPipe pipe : _pipes) {
@@ -515,9 +523,7 @@ public class CollectiveMember {
                 pipe._primary = false;
             }
         }
-        boolean change = _primary != newPrimary;
-        _primary = newPrimary;
-        return change;
+        return newPrimary;
     }
 
     private ClientPipe findPipe(AppInfo appInfo) {
@@ -621,20 +627,17 @@ public class CollectiveMember {
         }
 
         @Override
-        public void sendMsg(SelectionKey key, Msg msg) {
-            super.sendMsg(key, msg);
-            if (msg instanceof FtMemberMsg || msg instanceof FtMonitorMsg) {
-                if (log.isDebugEnabled()) log.info("{}ServerSink sent {} to {}", _cmId, msg, keyHash(key));
+        public boolean sendMsg(SelectionKey key, Msg msg) {
+            boolean sent = super.sendMsg(key, msg);
+            if (log.isDebugEnabled() && sent && (msg instanceof FtMemberMsg || msg instanceof FtMonitorMsg)) {
+                log.info("{}ServerSink sent {} to {}", _cmId, msg, keyHash(key));
             }
+            return sent;
         }
 
         public void sendMsgToAllMembers(Msg msg) {
             for (SelectionKey key : _memberKeys) {
-                try {
-                    super.sendMsg(key, msg);
-                } catch (Exception x) {
-                    log.error("{}Could not send message to {} {}", _cmId, keyHash(key), x.getMessage());
-                }
+                super.sendMsg(key, msg);
             }
         }
     }
@@ -736,7 +739,8 @@ public class CollectiveMember {
         }
 
         public void setStatus(MemberStatusEnum status) {
-            _memberStatus.setStatus(status);
+            _memberStatus.setSinkConnectionStatus(status);
+            _memberStatus.setPipeConnectionStatus(status);
         }
         public void setSinkConnectionStatus(MemberStatusEnum status) {
             _memberStatus.setSinkConnectionStatus(status);
@@ -755,7 +759,7 @@ public class CollectiveMember {
         }
 
         public String toString() {
-            return "{"+((_myPipe) ? "* " : "")+_appInfo+"@"+_connInfo.getPort()+" "+_memberStatus+" "+((_myVote==null) ? null : _myVote._appInfo)+" "+_myVoteCnt+"}";
+            return ((_myPipe) ? "*{" : "{")+_appInfo+"@"+_connInfo.getPort()+" "+_memberStatus+" "+((_myVote==null) ? null : _myVote._appInfo)+" "+_myVoteCnt+"}";
         }
     }
 

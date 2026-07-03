@@ -17,5 +17,5 @@
 package net.a_cappella.presto.ft.constants;
 
 public enum MemberStatusEnum {
-    IDK, DOWN, UP
+    IDK, DOWN, UP, HALF_UP
 }

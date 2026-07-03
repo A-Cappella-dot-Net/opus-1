@@ -52,8 +52,9 @@ public class SimpleServer extends BaseServerSink {
 		}
 	}
 
-	public void sendMsg(SelectionKey key, Msg msg) {
-		super.sendMsg(key, msg);
-		log.info(_cmId+"serverSink sent "+msg+" to "+keyHash(key));
+	public boolean sendMsg(SelectionKey key, Msg msg) {
+		boolean sent = super.sendMsg(key, msg);
+		if (sent) log.info(_cmId+"serverSink sent "+msg+" to "+keyHash(key));
+		return sent;
 	}
 }

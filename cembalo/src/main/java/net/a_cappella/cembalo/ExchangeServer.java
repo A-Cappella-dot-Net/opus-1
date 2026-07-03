@@ -220,23 +220,19 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
                                     long orderID, String clOrdID, String origClOrdID, char execType, char ordStatus, int ordRejReason,
                                     String symbol, char side, char ordType, char timeInForce, double price, double qty, double shownQty,
                                     double lastQty, double lastPx, double leavesQty, double cumQty, double avgPx, String text) {
-        FixMessage fixMessage = null;
-        boolean delivered = true;
-        try {
-            fixMessage = ObjectManager.getInstance().acquire(TYPE_FIX_MESSAGE);
+        FixMessage fixMessage = ObjectManager.getInstance().acquire(TYPE_FIX_MESSAGE);
+        if (fixMessage != null) {
             fixMessage.executionReport(uid, ++_execId,
                     orderID, clOrdID, origClOrdID, execType, ordStatus, ordRejReason,
                     symbol, side, ordType, timeInForce, price, qty, shownQty,
                     lastQty, lastPx, leavesQty, cumQty, avgPx, text);
 
-            _sink.sendMsg(key, fixMessage);
-        } catch (Exception e) {
-            log.error("", e);
-            // add the message to the non delivered message list for the user
-            _nonDeliveredMessages.computeIfAbsent(uid, u -> new ArrayList<>()).add(fixMessage);
-            delivered = false;
-        } finally {
-            if (fixMessage!=null && delivered) fixMessage.stopUsing();
+            if (_sink.sendMsg(key, fixMessage)) {
+                fixMessage.stopUsing();
+            } else {
+                // add the message to the non delivered message list for the user
+                _nonDeliveredMessages.computeIfAbsent(uid, u -> new ArrayList<>()).add(fixMessage);
+            }
         }
     }
 
@@ -244,20 +240,16 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
     public void sendOrderCancelReject(final SelectionKey key, String uid,
                                       long orderID, String clOrdID, String origClOrdID, char ordStatus,
                                       char cxlRejResponseTo, int cxlRejReason, String text) {
-        FixMessage fixMessage = null;
-        boolean delivered = true;
-        try {
-            fixMessage = ObjectManager.getInstance().acquire(TYPE_FIX_MESSAGE);
+        FixMessage fixMessage = ObjectManager.getInstance().acquire(TYPE_FIX_MESSAGE);
+        if (fixMessage != null) {
             fixMessage.orderCancelReject(uid, ++_execId, orderID, clOrdID, origClOrdID, ordStatus, cxlRejResponseTo, cxlRejReason, text);
 
-            _sink.sendMsg(key, fixMessage);
-        } catch (Exception e) {
-            log.error("", e);
-            // add the message to the non delivered message list for the user
-            _nonDeliveredMessages.computeIfAbsent(uid, u -> new ArrayList<>()).add(fixMessage);
-            delivered = false;
-        } finally {
-            if (fixMessage!=null && delivered) fixMessage.stopUsing();
+            if (_sink.sendMsg(key, fixMessage)) {
+                fixMessage.stopUsing();
+            } else {
+                // add the message to the non delivered message list for the user
+                _nonDeliveredMessages.computeIfAbsent(uid, u -> new ArrayList<>()).add(fixMessage);
+            }
         }
     }
 
@@ -274,9 +266,10 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
             setOutBufSize(_outBufferSize);
         }
 
-        public void sendMsg(SelectionKey key, FixMessage fix) {
-            super.sendMsg(key, fix);
-            if (log.isDebugEnabled()) log.debug("sent "+fix);
+        public boolean sendMsg(SelectionKey key, FixMessage fix) {
+            boolean sent = super.sendMsg(key, fix);
+            if (log.isDebugEnabled() && sent) log.debug("sent "+fix);
+            return sent;
         }
 
         @Override
@@ -380,15 +373,10 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
                     if (nonDeliveredMessages != null && !nonDeliveredMessages.isEmpty()) {
                         log.info("re-sending the non delivered messages");
                         nonDeliveredMessages.forEach(fixMessage -> {
-                            boolean delivered = true;
-                            try {
-                                sendMsg(key, fixMessage);
-                            } catch (Exception e) {
-                                log.error("", e);
+                            if (sendMsg(key, fixMessage)) {
+                                fixMessage.stopUsing();
+                            } else {
                                 _nonDeliveredMessages.computeIfAbsent(uid, u -> new ArrayList<>()).add(fixMessage);
-                                delivered = false;
-                            } finally {
-                                if (fixMessage!=null && delivered) fixMessage.stopUsing();
                             }
                         });
                         log.info("done re-sending the non delivered messages");
