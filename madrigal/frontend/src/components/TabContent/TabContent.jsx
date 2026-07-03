@@ -32,7 +32,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
 
   const [startCol, setStartCol] = useState(0);
   const [leftOffset, setLeftOffset] = useState(0);
-  const [totalCols, setTotalCols] = useState(0);
+  const [, setTotalCols] = useState(0);
 
   const [scrollMetrics, setScrollMetrics] = useState({
     verticalThumbRatio: 1,
@@ -64,7 +64,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
   });
 
   // Use custom hooks
-  const { selectedRows, handleRowClick, clearSelection, setSelectedRows, setLastSelectedRow } =
+  const { selectedRows, handleRowClick, clearSelection } =
     useRowSelection(visibleStartRow);
 
   const { scrollVertical, scrollHorizontal, vThumbDragRef, hThumbDragRef } =
@@ -80,7 +80,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
     const endIdx = visibleEndRow - bufferStartRow;
     if (startIdx < 0 || endIdx >= bufferData.length) return [];
     return bufferData.slice(startIdx, endIdx + 1);
-  }, [bufferData, bufferStartRow, visibleStartRow, visibleEndRow]);
+  }, [bufferData, bufferStartRow, bufferEndRow, visibleStartRow, visibleEndRow]);
 
   // Throttle function for scroll events
   const throttle = useCallback((fn, delay = 50) => {
@@ -112,7 +112,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
   }, []);
 
   // Throttled scroll update function
-  const sendScrollUpdate = useCallback(throttle((message) => {
+  const sendScrollUpdate = useMemo(() => throttle((message) => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify(message));
     }
@@ -121,6 +121,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
   // WebSocket message handler
   useEffect(() => {
     if (!ws.current || !wsReady) return;
+    const socket = ws.current;
 
     const handleMessage = (event) => {
       const msg = JSON.parse(event.data);
@@ -262,10 +263,13 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
             horizontalThumbPosition: 0
           });
           break;
+
+        default:
+          break;
       }
     };
 
-    ws.current.addEventListener('message', handleMessage);
+    socket.addEventListener('message', handleMessage);
 
     // Send init only once per tab, only when active
     if (isActive && !hasInitialized.current) {
@@ -290,9 +294,7 @@ export const TabContent = ({ tabId, isActive, ws, wsReady, tabLabel, onUpdateTab
     }
 
     return () => {
-      if (ws.current) {
-        ws.current.removeEventListener('message', handleMessage);
-      }
+      socket.removeEventListener('message', handleMessage);
     };
   }, [isActive, tabId, wsReady, onUpdateTabLabel, clearSelection, ws]);
 

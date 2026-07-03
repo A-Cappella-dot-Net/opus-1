@@ -10,6 +10,7 @@ export const PublisherTabContent = ({ tabId, isActive, ws, wsReady, tabLabel, on
 
   useEffect(() => {
     if (!ws.current || !wsReady) return;
+    const socket = ws.current;
 
     const handleMessage = (event) => {
       const msg = JSON.parse(event.data);
@@ -35,10 +36,13 @@ export const PublisherTabContent = ({ tabId, isActive, ws, wsReady, tabLabel, on
         case 'update_status':
           setStatusText(msg.status);
           break;
+
+        default:
+          break;
       }
     };
 
-    ws.current.addEventListener('message', handleMessage);
+    socket.addEventListener('message', handleMessage);
 
     // Only send init message for active tab
     if (!hasInitialized.current && isActive) {
@@ -61,11 +65,9 @@ export const PublisherTabContent = ({ tabId, isActive, ws, wsReady, tabLabel, on
     }
 
     return () => {
-      if (ws.current) {
-        ws.current.removeEventListener('message', handleMessage);
-      }
+      socket.removeEventListener('message', handleMessage);
     };
-  }, [isActive, tabId, wsReady, onUpdateTabLabel]);
+  }, [isActive, tabId, wsReady, onUpdateTabLabel, ws]);
 
   // Separate useEffect for Publish All event listener
   useEffect(() => {

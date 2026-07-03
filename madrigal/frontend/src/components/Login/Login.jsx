@@ -9,6 +9,7 @@ export const Login = ({ ws, wsReady, onLoginSuccess }) => {
 
   useEffect(() => {
     if (!ws.current) return;
+    const socket = ws.current;
 
     const handleMessage = (event) => {
       const msg = JSON.parse(event.data);
@@ -25,12 +26,10 @@ export const Login = ({ ws, wsReady, onLoginSuccess }) => {
       }
     };
 
-    ws.current.addEventListener('message', handleMessage);
+    socket.addEventListener('message', handleMessage);
 
     return () => {
-      if (ws.current) {
-        ws.current.removeEventListener('message', handleMessage);
-      }
+      socket.removeEventListener('message', handleMessage);
     };
   }, [ws, username, onLoginSuccess]);
 

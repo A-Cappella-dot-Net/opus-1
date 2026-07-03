@@ -29,7 +29,7 @@ export const useTableScroll = (tabId, ws, visibleStartRow, startCol, topOffset, 
         viewportPositionFromTop: viewportPositionFromTop
       }));
     }
-  }, [tabId, ws, visibleStartRow, startCol, topOffset, totalRows, actualRowHeight]);
+  }, [tabId, ws, visibleStartRow, topOffset, totalRows, actualRowHeight]);
 
   const scrollHorizontal = useCallback((direction, tableBodyRef) => {
     let totalWidth = 0;

@@ -29,7 +29,7 @@ const App = () => {
     setUsername(null);
     setIsAuthenticated(false);
     setMode(null);
-  }, [isAuthenticated, username, mode]);
+  }, []);
 
   const { ws, wsReady, isConnected } = useWebSocket(handleAuthError);
 
@@ -97,6 +97,7 @@ const App = () => {
     console.log('Token auth effect:', { wsReady, hasCurrent: !!ws.current, pendingTokenAuth });
 
     if (!wsReady || !ws.current || !pendingTokenAuth) return;
+    const socket = ws.current;
 
     const pendingToken = sessionStorage.getItem('pending_token');
     console.log('Pending token from storage:', pendingToken);
@@ -156,16 +157,17 @@ const App = () => {
 
       return () => {
         clearTimeout(timeoutId);
-        ws.current?.removeEventListener('message', authHandler);
+        socket.removeEventListener('message', authHandler);
       };
     }
-  }, [wsReady, pendingTokenAuth]);
+  }, [wsReady, pendingTokenAuth, ws]);
 
   // Handle reauth when WebSocket connects (for page refresh)
   useEffect(() => {
     console.log('Reauth effect check:', { wsReady, hasCurrent: !!ws.current, reauthPending });
 
     if (!wsReady || !ws.current || !reauthPending) return;
+    const socket = ws.current;
 
     const username = sessionStorage.getItem('username');
     const isAuth = sessionStorage.getItem('isAuthenticated');
@@ -215,13 +217,13 @@ const App = () => {
 
       return () => {
         clearTimeout(timeoutId);
-        ws.current?.removeEventListener('message', reauthHandler);
+        socket.removeEventListener('message', reauthHandler);
       };
     } else {
       console.log('No credentials to reauth with');
       setReauthPending(false);
     }
-  }, [wsReady, reauthPending]);
+  }, [wsReady, reauthPending, ws]);
 
   const handleLoginSuccess = (user) => {
     setUsername(user);

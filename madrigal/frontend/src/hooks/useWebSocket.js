@@ -120,6 +120,9 @@ export const useWebSocket = (onAuthError) => {
         ws.current.close(1000, 'Component unmounting'); // Normal closure
       }
     };
+    // Connect once on mount and tear down on unmount; `connect` is intentionally
+    // not a dependency to avoid reconnecting on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const sendMessage = (message) => {
