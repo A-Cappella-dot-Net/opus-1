@@ -20,6 +20,7 @@ import static net.a_cappella.continuo.PrestoConstants.SERIAL;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
@@ -33,6 +34,104 @@ import org.slf4j.LoggerFactory;
 
 public abstract class Msg extends Poolable implements ITypedMsg, Serializable {
     private static final Logger log = LoggerFactory.getLogger(Msg.class);
+
+    /**
+     * System property holding <em>additional</em> {@link ObjectInputFilter} allow-patterns for the
+     * Java-serialization decode path (see {@link #decode(ByteBuffer, int)}). A deployment sets this
+     * from its own launch configuration to permit its own {@link Msg} subclasses, without editing
+     * this class or repository:
+     *
+     * <pre>-DserialFilterAdditions="com.acme.msg.**;com.acme.util.Ticket"</pre>
+     *
+     * <p>The name is unqualified so it is independent of the package layout (a rename never changes
+     * it). System-property names share one JVM-wide namespace, so keep it distinctive to avoid
+     * colliding with unrelated components.
+     *
+     * <p>The value is a semicolon-separated list of class/package patterns in the standard JDK
+     * filter grammar ({@link ObjectInputFilter.Config#createFilter(String)}). These <em>extend</em>
+     * the built-in {@link #BASELINE_SERIAL_FILTER}: the effective filter allows the baseline classes
+     * <em>and</em> these additions, and rejects everything else. Supply only the extra allow-patterns
+     * — the leading limits and the trailing reject-all come from the baseline, so a {@code !*} here is
+     * unnecessary and would prematurely reject any additions listed after it.
+     */
+    public static final String SERIAL_FILTER_PROPERTY = "serialFilterAdditions";
+
+    /**
+     * Built-in baseline allow-list for {@link #decode(ByteBuffer, int)}, always applied.
+     *
+     * <p>{@code decode} deserializes attacker-reachable wire bytes with
+     * {@link ObjectInputStream#readObject()}. Without a filter, {@code readObject} instantiates
+     * <em>any</em> serializable class named in the byte stream (running its {@code readObject}/
+     * {@code readResolve} logic) before the {@code (Msg)} cast is reached — the classic
+     * Java-deserialization remote-code-execution vector via gadget chains.
+     *
+     * <p>The baseline permits only the project's own package subtree — the group root of
+     * {@link Msg}'s package plus all subpackages (e.g. {@code net.a_cappella.**}). The root is
+     * derived at runtime via {@link #projectPackageRoot()} rather than hard-coded, so the packages
+     * can be refactored without editing this filter. Those project classes are the only ones present
+     * in a legitimately encoded stream: pool bookkeeping ({@code _pooled}, {@code _identityHashCode},
+     * {@code _numberOfUsers}) is declared in {@link net.a_cappella.continuo.managed.Poolable}, which
+     * is deliberately <em>not</em> {@link java.io.Serializable}; Java therefore skips those inherited
+     * fields when serializing a {@link Msg} and re-runs {@code Poolable}'s constructor on decode.
+     * Nothing from {@code java.*} is written to the wire, so no JDK value type needs to be
+     * allow-listed here.
+     *
+     * <p>The {@code max*} limits bound graph depth / references / array length as defence-in-depth
+     * against decompression-style DoS. Any patterns from {@link #SERIAL_FILTER_PROPERTY} are appended
+     * after this, then a reject-all ({@code !*}) is appended last, so anything outside the baseline and
+     * the configured additions is refused before its code can run.
+     */
+    private static final String BASELINE_SERIAL_FILTER =
+            "maxdepth=32;maxrefs=10000;maxarray=100000;" + projectPackageRoot() + ".**";
+
+    private static final ObjectInputFilter DESERIALIZATION_FILTER =
+            buildFilter(System.getProperty(SERIAL_FILTER_PROPERTY));
+
+    /**
+     * Builds the decode allow-list: the {@link #BASELINE_SERIAL_FILTER}, extended with the
+     * caller-supplied {@code additions} (typically from {@link #SERIAL_FILTER_PROPERTY}), then
+     * terminated with a reject-all so it stays a strict allow-list. Fails safe: if {@code additions}
+     * is not a valid filter pattern, the baseline-only allow-list is used rather than leaving the
+     * decode path unfiltered.
+     */
+    static ObjectInputFilter buildFilter(String additions) {
+        String extra = (additions == null) ? "" : additions.trim();
+        if (!extra.isEmpty()) {
+            try {
+                return ObjectInputFilter.Config.createFilter(BASELINE_SERIAL_FILTER + ";" + extra + ";!*");
+            } catch (RuntimeException e) {
+                log.error("Ignoring invalid {}='{}'; using baseline serialization allow-list only",
+                        SERIAL_FILTER_PROPERTY, extra, e);
+            }
+        }
+        return ObjectInputFilter.Config.createFilter(BASELINE_SERIAL_FILTER + ";!*");
+    }
+
+    /**
+     * Number of leading package labels that form the project's group root — the two labels
+     * {@code net.a_cappella} of {@code net.a_cappella.continuo.msg}. This is the granularity of the
+     * allow-list prefix; if the packages are ever re-rooted at a different depth, change this one
+     * value rather than a hard-coded string.
+     */
+    private static final int PROJECT_PACKAGE_ROOT_LABELS = 2;
+
+    /**
+     * The project group root, taken from {@link Msg}'s own package (see
+     * {@link #PROJECT_PACKAGE_ROOT_LABELS}), e.g. {@code net.a_cappella}. Deriving it from the class
+     * — the way {@code LoggerFactory.getLogger(Msg.class)} derives its name — keeps the deserialization
+     * allow-list correct across package renames. Falls back to the full package name if it has fewer
+     * labels than expected.
+     */
+    private static String projectPackageRoot() {
+        String pkg = Msg.class.getPackageName();
+        int cut = -1;
+        for (int i = 0; i < PROJECT_PACKAGE_ROOT_LABELS; i++) {
+            int next = pkg.indexOf('.', cut + 1);
+            if (next < 0) return pkg; // fewer labels than expected: allow-list the whole package
+            cut = next;
+        }
+        return pkg.substring(0, cut);
+    }
 
     public Msg() {}
 
@@ -64,6 +163,7 @@ public abstract class Msg extends Poolable implements ITypedMsg, Serializable {
         Msg obj = null;
         try {
             ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes));
+            in.setObjectInputFilter(DESERIALIZATION_FILTER);
             obj = (Msg) in.readObject();
             in.close();
         } catch (Exception x) {
