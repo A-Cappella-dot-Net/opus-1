@@ -725,8 +725,8 @@ public class CollectiveMember {
 
         @Override
         public void sendMsg(Msg msg) throws IOException {
-            if (msg instanceof FtMemberMsg) {
-                if (log.isDebugEnabled()) log.info("{}ClientPipe sending {} to {}", _cmId, msg, this);
+            if (log.isDebugEnabled() && (msg instanceof FtMemberMsg || msg instanceof FtMonitorMsg)) {
+                log.info("{}ClientPipe sending {} to {}", _cmId, msg, this);
             }
             super.sendMsg(msg);
         }

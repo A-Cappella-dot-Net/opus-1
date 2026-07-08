@@ -121,6 +121,9 @@ public class FtManager {
             _activeMemRequests.remove(gi);
             removeStruct(gi);
         }
+        for (String groupName : affectedGroups) {
+            evalMembership(groupName, false);
+        }
 
         // identify the monitor group registrations affected by the pipe disconnect
         Set<String> monitoredGroupsToRemove = new HashSet<>();
@@ -135,7 +138,7 @@ public class FtManager {
                     if (e.getValue() == YES) { // first degree registration
                         // propagate the disconnect to the other cores
                         mon.set(REQUEST, UNREGISTER, NO);
-                        mon._actives = CollectiveClient.NONE;
+                        // preserve mon._actives as it is used in the de-duplication logic
                         _member.sendMsgToOtherCores(mon);
                     }
                     keys.remove(key);
@@ -149,10 +152,6 @@ public class FtManager {
         }
         for (String groupName : monitoredGroupsToRemove) {
             _activeMonRequests.remove(groupName);
-        }
-
-        for (String groupName : affectedGroups) {
-            evalMembership(groupName, false);
         }
 
         if (log.isTraceEnabled()) log.trace("{}{}", _cmId, memberStructsToString());
@@ -372,7 +371,7 @@ public class FtManager {
         MonAndKeys mk = _activeMonRequests.get(groupName);
         if (mk != null) {
             FtMonitorMsg msg = mk._mon;
-            if (actives!=msg._actives || forceNotify) {
+            if (actives != msg._actives || forceNotify) {
                 msg._actives = actives;
                 msg._type = RESPONSE;
                 msg._fromApp = NO;
@@ -391,7 +390,7 @@ public class FtManager {
         }
         int bitMask = 0;
         for (InstanceStatus ms : structsForGroup) {
-            if (ms.getStatus()==ACTIVE) {
+            if (ms.getStatus() == ACTIVE) {
                 bitMask |= 1 << ms.getInstance();
             }
         }
