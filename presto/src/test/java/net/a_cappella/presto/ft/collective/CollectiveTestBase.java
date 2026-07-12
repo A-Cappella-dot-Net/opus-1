@@ -252,6 +252,7 @@ public abstract class CollectiveTestBase {
 
             init(_collectiveCoresVersion, _collectiveCores);
             _collectiveMember.start();
+            eventually(cis, () -> isStarted(true));
         }
 
         public void restart(CompInfoSet cis, int[] cores, int version) {

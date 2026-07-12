@@ -372,65 +372,43 @@ public class CollectiveMember {
             _iAmPrimary = false;
             return DONT_CARE;
         }
-        List<ClientPipe> pipes = _pipes;
-        // checking that all pipes are up
-        for (int i = 0; i < pipes.size(); i++) {
-            ClientPipe pipe = pipes.get(i);
+        // checking that all pipes are in a known state
+        for (int i = 0; i < _pipes.size(); i++) {
+            ClientPipe pipe = _pipes.get(i);
             if (pipe.getStatus() == MemberStatusEnum.UP) break; // first UP and there have been no IDKs before
             if (pipe.getStatus() == MemberStatusEnum.IDK) {
                 log.info("{}calculatePrimary {} =>  still not certain...", _cmId, _pipes);
-                // need to wait until I am certain; otherwise there could be overlap
                 _iAmPrimary = false;
                 return DONT_CARE;
             }
         }
         // calculate primary
-        for (int i = 0; i < pipes.size(); i++) {
-            ClientPipe pipe = pipes.get(i);
+        for (int i = 0; i < _pipes.size(); i++) {
+            ClientPipe pipe = _pipes.get(i);
             if (pipe.getStatus() == MemberStatusEnum.UP) {
                 if (pipe._myPipe) {
                     if (_iAmPrimary) {
-                        log.info("{}calculatePrimary {} ===> I am still primary!!!", _cmId, pipes);
-                        return DONT_CARE; // still primary
+                        log.info("{}calculatePrimary {} ===> I am still primary!!!", _cmId, _pipes);
+                        return DONT_CARE;
                     } else {
-                        log.info("{}calculatePrimary {} ===> I am primary!!!", _cmId, pipes);
+                        log.info("{}calculatePrimary {} ===> I am primary!!!", _cmId, _pipes);
                         _iAmPrimary = true;
                         return I_BECAME_PRIMARY;
                     }
                 } else {
-                    log.info("{}calculatePrimary {} {} => {} is still primary", _cmId, _myInfo, pipes, pipe);
+                    log.info("{}calculatePrimary {} {} => {} is still primary", _cmId, _myInfo, _pipes, pipe);
                     _iAmPrimary = false;
                     return DONT_CARE;
                 }
             } else if (pipe.getStatus() == MemberStatusEnum.HALF_UP) {
-                if (_iAmPrimary) {
-                    log.info("{}calculatePrimary {} ===> I am losing leadership!!!", _cmId, pipes);
+                if (_iAmPrimary) { // I am losing leadership
+                    log.info("{}calculatePrimary {} => {} transient state => need to wait", _cmId, _pipes, pipe);
                     _iAmPrimary = false;
-                    return DONT_CARE;
-                } else {
-                    log.info("{}calculatePrimary {} => {} transient state => need to wait", _cmId, pipes, pipe);
-                    return DONT_CARE;
                 }
-            } else {
-                pipe.setPrimary(false);
+                return DONT_CARE;
             }
         }
-        return NO_PRIMARY; // should be non-reachable
-    }
-
-    private void setPrimary(List<ClientPipe> pipes, int atIndex) {
-        ClientPipe pipe = pipes.get(atIndex);
-        pipe.setPrimary(true);
-        for (int i=atIndex+1; i<pipes.size(); i++) {
-            pipe = pipes.get(i);
-            pipe.setPrimary(false);
-        }
-    }
-    private void resetPrimary(List<ClientPipe> pipes, int fromIndex) {
-        for (int i=fromIndex; i<pipes.size(); i++) {
-            ClientPipe pipe = pipes.get(i);
-            pipe.setPrimary(false);
-        }
+        return NO_PRIMARY; // non-reachable
     }
 
     private PrimaryCalculationResult calculateVotes() {
@@ -451,6 +429,10 @@ public class CollectiveMember {
                             _myPipe._myVote = pipe;
                             sendMsgToAllMembers(new VoteMsg(_myPipe._appInfo, pipe._appInfo));
                         }
+                    }
+                } else if (pipe.getStatus() == MemberStatusEnum.HALF_UP) {
+                    if (pipe._myVote != null) {
+                        log.info("{}calculateVotes {} => {} transient state => need to wait", _cmId, _pipes, pipe);
                     }
                 } else { // pipe is not UP => clear its vote
                     pipe._myVote = null;
@@ -546,7 +528,7 @@ public class CollectiveMember {
 
     @VisibleForTesting
     public boolean verifyStatuses(MemberStatusEnum[] statuses) throws RuntimeException {
-        if (statuses.length != _pipes.size()) {
+        if (_pipes == null || statuses.length != _pipes.size()) {
             return false;
         }
         for (int i = 0; i < _pipes.size(); i++) {

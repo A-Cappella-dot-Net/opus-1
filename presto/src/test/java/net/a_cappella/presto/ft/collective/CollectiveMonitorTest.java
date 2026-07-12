@@ -376,7 +376,7 @@ public class CollectiveMonitorTest {
 
             eventually(mem0, (m, ctx) -> m.isMemResult(ctx, DISCONNECT));
             eventually(mem1, (m, ctx) -> m.isMemResult(ctx, ACTIVATE));
-            eventually(mon2, (m, ctx) -> m.isActivesBitMask(ctx, ZERO));
+            eventually(mon2, (m, ctx) -> m.isActivesBitMask(ctx, ONE));
 
             Daemon d0b = new Daemon(cis, 0, new int[] {0, 1, 2}, 0);
             d0b.start();

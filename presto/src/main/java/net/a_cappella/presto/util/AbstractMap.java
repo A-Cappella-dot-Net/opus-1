@@ -102,7 +102,6 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * finding such an entry, <tt>false</tt> is returned.  Note that this
      * implementation requires linear time in the size of the map.
      *
-     * @throws ClassCastException   {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      */
     public boolean containsValue(Object value) {
