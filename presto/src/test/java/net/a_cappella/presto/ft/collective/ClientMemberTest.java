@@ -29,7 +29,7 @@ import static net.a_cappella.presto.ft.constants.FtMsgOp.*;
 import static net.a_cappella.presto.ft.constants.MemberStatusEnum.DOWN;
 import static net.a_cappella.presto.ft.constants.MemberStatusEnum.UP;
 
-public class CollectiveClientTest {
+public class ClientMemberTest {
 
     private static final AtomicInteger _port = new AtomicInteger(18430);
 

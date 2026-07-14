@@ -32,7 +32,7 @@ import static net.a_cappella.presto.ft.constants.FtMsgOp.NO_PRIMARY;
 import static net.a_cappella.presto.ft.constants.MemberStatusEnum.DOWN;
 import static net.a_cappella.presto.ft.constants.MemberStatusEnum.UP;
 
-public class CollectiveMonitorTest {
+public class ClientMonitorTest {
 
     private static final AtomicInteger _port = new AtomicInteger(19430);
 
