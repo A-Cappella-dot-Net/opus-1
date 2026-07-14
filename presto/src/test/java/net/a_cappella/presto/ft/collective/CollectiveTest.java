@@ -27,7 +27,7 @@ import static net.a_cappella.presto.ft.collective.CollectiveMember.isUseVotedQuo
 import static net.a_cappella.presto.ft.constants.MemberStatusEnum.DOWN;
 import static net.a_cappella.presto.ft.constants.MemberStatusEnum.UP;
 
-public class CollectiveMemberTest {
+public class CollectiveTest {
 
     private static final AtomicInteger _port = new AtomicInteger(17430);
 
