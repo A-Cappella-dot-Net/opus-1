@@ -1,6 +1,7 @@
 # opus-1 — Presto and Madrigal
 
 [![GitHub Clones](https://img.shields.io/badge/dynamic/json?color=success&label=Clone&query=count&url=https://gist.githubusercontent.com/puiuvlad/fb3fab8c668ce09abffd28ca5daa0a01/raw/clone.json&logo=github)](https://github.com/A-Cappella-dot-Net/opus-1)
+[![GitHub Views](https://img.shields.io/badge/dynamic/json?color=success&label=Views&query=count&url=https://gist.githubusercontent.com/puiuvlad/fb3fab8c668ce09abffd28ca5daa0a01/raw/views.json&logo=github)](https://github.com/A-Cappella-dot-Net/opus-1)
 
 Opus-1 gathers together the components of a trading system, built from the ground up for low-latency, allocation-free operation: a foundation library, messaging middleware with pluggable transports, the core of a securities exchange, and the trading-system components that tie them together. It does not contain everything a complete system would want — it is a starting point.
 
