@@ -142,15 +142,15 @@ jobs:
             **Markdown**
 
             ```markdown' >> CLONE.md
-            echo "[![GitHub Clones]($shields$clone_url&label=Clones&logo=github)]($repo)" >> CLONE.md
-            echo "[![GitHub Views]($shields$views_url&label=Views&logo=github)]($repo)" >> CLONE.md
+            echo "[![GitHub Cloners]($shields$clone_url&label=Cloners&logo=github)]($repo)" >> CLONE.md
+            echo "[![GitHub Visitors]($shields$views_url&label=Visitors&logo=github)]($repo)" >> CLONE.md
             echo '
             ```
 
             **HTML**
             ```html' >> CLONE.md
-            echo "<a href='$repo'><img alt='GitHub Clones' src='$shields$clone_url&label=Clones&logo=github'></a>" >> CLONE.md
-            echo "<a href='$repo'><img alt='GitHub Views' src='$shields$views_url&label=Views&logo=github'></a>" >> CLONE.md
+            echo "<a href='$repo'><img alt='GitHub Cloners' src='$shields$clone_url&label=Cloners&logo=github'></a>" >> CLONE.md
+            echo "<a href='$repo'><img alt='GitHub Visitors' src='$shields$views_url&label=Visitors&logo=github'></a>" >> CLONE.md
             echo '```' >> CLONE.md
 
             git add CLONE.md
