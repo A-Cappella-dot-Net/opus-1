@@ -103,7 +103,7 @@ public class PublisherHandler {
             JsonObject tab = tabs.get(i).getAsJsonObject();
 
             String tabId = tab.get("tabId").getAsString();
-            String subject = msg.get("subject").getAsString();
+            String subject = tab.get("subject").getAsString();
             sendTabLabel(tabId, subject);
             publish(subject, tab.get("message").getAsString(), tabId);
         }
