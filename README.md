@@ -48,6 +48,10 @@ Opus-1 gathers together the components of a trading system, built from the groun
 ./gradlew build
 ```
 
+## Further Reading
+
+**Building a Low-Latency Trading System — Design and Implementation** ([available on Amazon](https://a.co/d/0hU2AU81)) covers the reasoning behind Presto and Madrigal's design — the tradeoffs the source code alone doesn't explain. Topics include the case for a microservices architecture over a monolith, the leader election algorithms behind Presto's fault tolerance (Voted Quorum vs. First Alive), the performance methodology used to measure IPC and multicast latency, and the factors driving latency outliers under load. Chapters on Cembalo's matching engine, gateway order-flow tactics, and market making walk through the data structures and design decisions in detail, alongside the testing methodology used throughout.
+
 License (See LICENSE file for full license)
 -------------------------------------------
 Copyright 2026 Vladimir Ivanov
