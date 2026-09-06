@@ -115,6 +115,7 @@ public class FixMessage extends Msg {
 
     private String _fixMsgType;
     private final FixFields _fields;
+    private int _d10;
 
     public FixMessage() {
         _fields = ObjectManager.getInstance().acquire(TYPE_FIX_FIELDS);
@@ -129,15 +130,24 @@ public class FixMessage extends Msg {
         return TYPE_FIX_MESSAGE;
     }
 
+    public void setD10(int d10) {
+        _d10 = d10;
+    }
+    public int getD10() {
+        return _d10;
+    }
+
     @Override
     public void encode(ByteBuffer buffer) {
         putString(buffer, _fixMsgType);
         _fields.encode(buffer);
+        buffer.putInt(_d10);
     }
     @Override
     public Msg decode(ByteBuffer buffer, int len) {
         _fixMsgType = getInternedString(buffer);
         _fields.decode(buffer, 0);
+        _d10 = buffer.getInt();
         return this;
     }
 

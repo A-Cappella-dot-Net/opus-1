@@ -81,6 +81,7 @@ public class NativeStrategy extends OrderHandlerStrategy {
 		String uid = request.getEcnUid();
 		String clOrdId = request.getClOrdId();
 		String xClOrdId = handler.getAndMapNextXClOrdId(clOrdId);
+		String ordId = request.getOrdId();
 		String symbol = request.getEcnInstrId();
 		MadrigalOrdType ordType = request.getOrdType();
 		MadrigalTimeInForce tif = request.getTimeInForce();
@@ -89,7 +90,7 @@ public class NativeStrategy extends OrderHandlerStrategy {
 		double qty = request.getOrderQty();
 		double qtyShown = Math.min(request.getShownQty(), qty);
 
-		_adaptor.sendNewOrderSingle(uid, xClOrdId, symbol, ordType, tif, side, px, qtyShown, qty);
+		_adaptor.sendNewOrderSingle(uid, xClOrdId, symbol, ordType, tif, side, px, qtyShown, qty, ordId);
 	}
 
 	@Override

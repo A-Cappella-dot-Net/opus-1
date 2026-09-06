@@ -16,10 +16,12 @@
 
 package net.a_cappella.madrigal.lh.om;
 
+import net.a_cappella.continuo.utils.OrderStatsLogger;
 import net.a_cappella.madrigal.common.obj.MarketStatusObj;
 import net.a_cappella.madrigal.common.obj.OrderObj;
 
 public interface IOrderManagerService {
 	void publishMarketStatus(MarketStatusObj marketStatus) throws Exception;
 	void publishResponse(OrderObj response);
+	void setOrderStatsLogger(OrderStatsLogger osl);
 }

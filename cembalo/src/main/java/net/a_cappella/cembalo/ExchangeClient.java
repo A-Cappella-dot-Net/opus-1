@@ -17,69 +17,9 @@
 package net.a_cappella.cembalo;
 
 import static net.a_cappella.cembalo.constants.ExchangeConstants.TYPE_FIX_MESSAGE;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_ExecutionReport;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_MarketDataRequestReject;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_MarketDataSnapshot;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_OrderCancelReject;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_SecurityList;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_UserResponse;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_AvgPx;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_ClOrdID;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_ContractMultiplier;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_CouponRate;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_CumQty;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_CxlRejReason;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_CxlRejResponseTo;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_ExecID;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_ExecType;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_ImbalanceQty;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_LastFragment;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_LastPx;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_LastQty;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_LeavesQty;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MDBook;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MDBookPhase;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MDEntryPx;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MDEntrySize;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MDEntryType;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MatchedQty;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MaturityDate;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MinPriceIncrement;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MinQty;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MinQtyIncrement;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_NoMDEntries;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_NoRelatedSym;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_OrdRejReason;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_OrdStatus;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_OrdType;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_OrderID;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_OrigClOrdID;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_Price;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_QuoteCondition;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_SecurityID;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_SecurityRequestResult;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_Side;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_Symbol;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_Text;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_TimeInForce;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_TradeCondition;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_TransactTime;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_UserStatus;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_UserStatusText;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_Username;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_LastFragment_Last;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_MDEntryType_Bid;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_MDEntryType_ClosingPrice;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_MDEntryType_Imbalance;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_MDEntryType_Offer;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_MDEntryType_OpeningPrice;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_MDEntryType_Quote;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_SecurityRequestResult_ValidRequest;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_SubscriptionRequestType_SnapshotAndSubscribe;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_TradeCondition_ImbalanceMoreBuyers;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_TradeCondition_ImbalanceMoreSellers;
 import static net.a_cappella.cembalo.constants.MktStatus.CLOSED;
 import static net.a_cappella.cembalo.constants.MktStatus.OPEN;
+import static net.a_cappella.cembalo.generated.FixConstants.*;
 
 import net.a_cappella.continuo.ShutdownHook;
 import net.a_cappella.continuo.collective.AppInfo;
@@ -88,6 +28,7 @@ import net.a_cappella.continuo.managed.ObjectManager;
 import net.a_cappella.continuo.msg.Msg;
 import net.a_cappella.continuo.msg.MsgCoder;
 import net.a_cappella.continuo.socket.BaseClientPipe;
+import net.a_cappella.continuo.utils.OrderStatsLogger;
 import net.a_cappella.continuo.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -149,6 +90,7 @@ public class ExchangeClient {
         _listener = listener;
     }
 
+    protected final OrderStatsLogger _osl = new OrderStatsLogger();
 
     public ExchangeClient(MsgCoder coder, String connInfoStr, Dictionary dictionary) {
         _coder = coder;
@@ -255,13 +197,14 @@ public class ExchangeClient {
         }
     }
 
-    public void sendNewOrderSingle(String uid, String clOrdID, String symbol, OrdType ordType, TimeInForce tif, Side side, double px, double qtyShown, double qty) {
+    public void sendNewOrderSingle(String uid, String clOrdID, String symbol, OrdType ordType, TimeInForce tif, Side side, double px, double qtyShown, double qty, String ordId) {
 //		log.info("sending NOS("+uid+","+clOrdID+","+symbol+","+tif+","+side+","+px+","+qtyShown+","+qty+")");
         FixMessage fixMessage = null;
         try {
             fixMessage = ObjectManager.getInstance().acquire(TYPE_FIX_MESSAGE);
             fixMessage.newOrderSingle(uid, clOrdID, symbol, ordType, tif, side, px, qtyShown, qty);
             if (log.isDebugEnabled()) log.info("sending "+fixMessage);
+            _osl.onReqOut(ordId);
             _pipe.sendMsg(fixMessage);
         } catch (Exception e) {
             log.error("", e);
@@ -476,6 +419,12 @@ public class ExchangeClient {
             double avgPx = fields.getFloat(Tag_AvgPx);
             long transactTime = Utils.parseMillis(fields.getString(Tag_TransactTime));
             String text = fields.getString(Tag_Text);
+
+            if (execType == Val_ExecType_New || (execType == Val_ExecType_Rejected && origClOrdId == null)) {
+                int verPos = clOrdId.indexOf("-");
+                String ordId = clOrdId.substring(0, verPos);
+                _osl.onAckNakIn(ordId, fixMessage.getD10());
+            }
 
             _listener.onExecutionReport(
                     execId, ecnOrdId, clOrdId, origClOrdId,

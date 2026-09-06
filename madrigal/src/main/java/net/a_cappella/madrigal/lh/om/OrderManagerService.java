@@ -18,6 +18,7 @@ package net.a_cappella.madrigal.lh.om;
 
 import com.google.common.annotations.VisibleForTesting;
 import net.a_cappella.continuo.obj.Obj;
+import net.a_cappella.continuo.utils.OrderStatsLogger;
 import net.a_cappella.madrigal.credentials.ICredentialsCache;
 import net.a_cappella.madrigal.instrument.IInstrumentCache;
 import net.a_cappella.madrigal.common.constants.*;
@@ -89,6 +90,11 @@ public class OrderManagerService implements IOrderManagerService {
 		_finalizerDelay = finalizerDelay;
 	}
 	private StringDelayer _handlerFinalizer;
+
+	public OrderStatsLogger _osl;
+	public void setOrderStatsLogger(OrderStatsLogger osl) {
+		_osl = osl;
+	}
 
 	public OrderManagerService(PrestoClient client, String ecn,
                                ICredentialsCache credentialsCache,
@@ -193,6 +199,7 @@ public class OrderManagerService implements IOrderManagerService {
         String ordId = order.getOrdId();
         MadrigalReqType reqType = order.getReqType();
         if (ADD == reqType) {
+			_osl.onReqIn(order.getOrdId());
         	RootOrderHandler rootOrderHandler = _activeHandlers.add(order);
             if (rootOrderHandler == null) {
                 log.error(VAL_ERR_STRING_ALREADY_EXISTS+" '"+ordId+"'");
@@ -274,6 +281,11 @@ public class OrderManagerService implements IOrderManagerService {
 			if (_ecn.equals(ecn)) {
 				if (MadrigalOrdStatus.FILL != response.getStatus()) response.setFillId(null);
 				response.setExecId(++_execId);
+
+				if (response.getReqType() == ADD && (response.getStatus() == MadrigalOrdStatus.ACK || response.getStatus() == MadrigalOrdStatus.NAK)) {
+					_osl.onAckNakOut(response.getOrdId());
+				}
+
 				_client.publish(response);
 			} else { // ecn.startsWith(LH_ECN_PREFIX)
 				_client.serialize(response);

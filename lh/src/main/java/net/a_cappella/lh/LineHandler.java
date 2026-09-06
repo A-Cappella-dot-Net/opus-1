@@ -80,6 +80,9 @@ public class LineHandler extends ExchangeClient implements IExchangeClientListen
 		if (handleMarketData && !handleOrderFlow) {
 			connectToExchange();
 		}
+		if (handleOrderFlow) {
+			_orderManagerService.setOrderStatsLogger(_osl);
+		}
 		setHandleMarketData(handleMarketData);
 	}
 
@@ -106,8 +109,8 @@ public class LineHandler extends ExchangeClient implements IExchangeClientListen
 	}
 
 	@Override
-	public void sendNewOrderSingle(String uid, String clOrdID, String symbol, MadrigalOrdType ordType, MadrigalTimeInForce tif, MadrigalSide side, double px, double qtyShown, double qty) {
-		super.sendNewOrderSingle(uid, clOrdID, symbol, EcnConverters.convert(ordType), EcnConverters.convert(tif), EcnConverters.convert(side), px, qtyShown, qty);
+	public void sendNewOrderSingle(String uid, String clOrdID, String symbol, MadrigalOrdType ordType, MadrigalTimeInForce tif, MadrigalSide side, double px, double qtyShown, double qty, String ordId) {
+		super.sendNewOrderSingle(uid, clOrdID, symbol, EcnConverters.convert(ordType), EcnConverters.convert(tif), EcnConverters.convert(side), px, qtyShown, qty, ordId);
 	}
 	@Override
 	public void sendOrderCancelRequest(String uid, String ecnOrdId, String clOrdId, String origClOrdId, String symbol, MadrigalSide side, double qty) {
