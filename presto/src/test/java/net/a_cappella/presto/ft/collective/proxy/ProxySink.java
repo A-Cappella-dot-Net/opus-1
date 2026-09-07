@@ -45,7 +45,6 @@ public class ProxySink {
 
     private int _inBufSize = 512;
     private int _outBufSize = 512;
-    private ByteBuffer _inBuf;
     private ByteBuffer _outBuf;
 
     private final CountDownLatch _stopLatch = new CountDownLatch(1);
@@ -80,7 +79,6 @@ public class ProxySink {
     public void startSink() {
         ShutdownHook.registerShutdownAction(() -> stopSink());
 
-        _inBuf = ByteBuffer.allocate(_inBufSize);
         _outBuf = ByteBuffer.allocate(_outBufSize);
         log.info("{}Server starting", _cmId);
         _sinkThread.setName(_cmId+"SinkThread");
@@ -152,6 +150,7 @@ public class ProxySink {
                                     client.configureBlocking(false);
                                     client.socket().setTcpNoDelay(true);
                                     SelectionKey clientKey = client.register(_selector, SelectionKey.OP_READ);
+                                    clientKey.attach(ByteBuffer.allocate(_inBufSize)); // per-connection input buffer
                                     if (log.isDebugEnabled()) log.debug("{}registered client key {}", _cmId, keyHash(clientKey));
                                     _singleProxy.onSrcConnect(clientKey);
                                 } catch (IOException x) {
@@ -161,9 +160,10 @@ public class ProxySink {
                         } else {
                             if (!key.isReadable()) continue;
                             SocketChannel client = (SocketChannel) key.channel();
+                            ByteBuffer inBuf = (ByteBuffer) key.attachment();
                             if (log.isDebugEnabled()) log.debug("{}reading {}", _cmId, keyHash(key));
                             try {
-                                int no = client.read(_inBuf);
+                                int no = client.read(inBuf);
                                 if (no<0) throw new IOException("reached end-of-stream");
                                 if (no>0) {
                                     if (log.isDebugEnabled()) log.debug("{}read {} bytes from {}", _cmId, no, keyHash(key));
@@ -183,11 +183,11 @@ public class ProxySink {
                                 }
                                 continue;
                             }
-                            _inBuf.flip();
+                            inBuf.flip();
                             // TODO double check this logic....
-                            byte[] bytes = new byte[_inBuf.remaining()];
-                            _inBuf.get(bytes); // copy the contents of _inBuf into bytes
-                            _inBuf.compact();
+                            byte[] bytes = new byte[inBuf.remaining()];
+                            inBuf.get(bytes); // copy the contents of inBuf into bytes
+                            inBuf.compact();
 
                             if (log.isDebugEnabled()) log.debug("{}Received: {}", _cmId, bytes);
                             _singleProxy.onMsgFromSrc(key, bytes);
