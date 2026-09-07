@@ -16,71 +16,14 @@
 
 package net.a_cappella.cembalo;
 
-import static net.a_cappella.cembalo.constants.ExchangeConstants.TYPE_FIX_MESSAGE;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_ExecutionReport;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_MarketDataRequestReject;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_MarketDataSnapshot;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_OrderCancelReject;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_SecurityList;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_UserResponse;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_AvgPx;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_ClOrdID;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_ContractMultiplier;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_CouponRate;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_CumQty;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_CxlRejReason;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_CxlRejResponseTo;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_ExecID;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_ExecType;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_ImbalanceQty;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_LastFragment;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_LastPx;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_LastQty;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_LeavesQty;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MDBook;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MDBookPhase;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MDEntryPx;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MDEntrySize;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MDEntryType;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MatchedQty;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MaturityDate;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MinPriceIncrement;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MinQty;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MinQtyIncrement;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_NoMDEntries;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_NoRelatedSym;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_OrdRejReason;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_OrdStatus;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_OrdType;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_OrderID;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_OrigClOrdID;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_Price;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_QuoteCondition;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_SecurityID;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_SecurityRequestResult;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_Side;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_Symbol;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_Text;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_TimeInForce;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_TradeCondition;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_TransactTime;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_UserStatus;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_UserStatusText;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_Username;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_LastFragment_Last;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_MDEntryType_Bid;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_MDEntryType_ClosingPrice;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_MDEntryType_Imbalance;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_MDEntryType_Offer;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_MDEntryType_OpeningPrice;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_MDEntryType_Quote;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_SecurityRequestResult_ValidRequest;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_SubscriptionRequestType_SnapshotAndSubscribe;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_TradeCondition_ImbalanceMoreBuyers;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_TradeCondition_ImbalanceMoreSellers;
-import static net.a_cappella.cembalo.constants.MktStatus.CLOSED;
-import static net.a_cappella.cembalo.constants.MktStatus.OPEN;
-
+import net.a_cappella.cembalo.beans.Imbalance;
+import net.a_cappella.cembalo.beans.InstrumentStatus;
+import net.a_cappella.cembalo.beans.MarketDataSnapshot;
+import net.a_cappella.cembalo.constants.*;
+import net.a_cappella.cembalo.fix.FixFields;
+import net.a_cappella.cembalo.fix.FixMessage;
+import net.a_cappella.cembalo.fix.FixRepeatingGroup;
+import net.a_cappella.cembalo.generator.Dictionary;
 import net.a_cappella.continuo.ShutdownHook;
 import net.a_cappella.continuo.collective.AppInfo;
 import net.a_cappella.continuo.collective.ConnInfo;
@@ -89,24 +32,14 @@ import net.a_cappella.continuo.msg.Msg;
 import net.a_cappella.continuo.msg.MsgCoder;
 import net.a_cappella.continuo.socket.BaseClientPipe;
 import net.a_cappella.continuo.utils.Utils;
+import org.agrona.concurrent.IdleStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import net.a_cappella.cembalo.beans.Imbalance;
-import net.a_cappella.cembalo.beans.InstrumentStatus;
-import net.a_cappella.cembalo.beans.MarketDataSnapshot;
-import net.a_cappella.cembalo.constants.Book;
-import net.a_cappella.cembalo.constants.InstrPhase;
-import net.a_cappella.cembalo.constants.InstrStatus;
-import net.a_cappella.cembalo.constants.MktStatus;
-import net.a_cappella.cembalo.constants.OrdType;
-import net.a_cappella.cembalo.constants.Side;
-import net.a_cappella.cembalo.constants.TimeInForce;
-import net.a_cappella.cembalo.constants.UserStatus;
-import net.a_cappella.cembalo.fix.FixFields;
-import net.a_cappella.cembalo.fix.FixMessage;
-import net.a_cappella.cembalo.fix.FixRepeatingGroup;
-import net.a_cappella.cembalo.generator.Dictionary;
+import static net.a_cappella.cembalo.constants.ExchangeConstants.TYPE_FIX_MESSAGE;
+import static net.a_cappella.cembalo.constants.MktStatus.CLOSED;
+import static net.a_cappella.cembalo.constants.MktStatus.OPEN;
+import static net.a_cappella.cembalo.generated.FixConstants.*;
 
 public class ExchangeClient {
     private static final Logger log = LoggerFactory.getLogger(ExchangeClient.class);
@@ -149,6 +82,15 @@ public class ExchangeClient {
         _listener = listener;
     }
 
+    private int _pinToCpu = 0; // >0 = pinned to that value; <=0 = not pinned
+    public void setPinToCpu(String pinToCpu) {
+        _pinToCpu = Utils.parseAsInt("pinToCpu", pinToCpu, _pinToCpu);
+    }
+
+    private IdleStrategy _idleStrategy = Utils.getIdleStrategy("busyspin");
+    public void setIdleStrategy(Object idleStrategyObj) {
+        _idleStrategy = Utils.getIdleStrategy(idleStrategyObj, "backoff");
+    }
 
     public ExchangeClient(MsgCoder coder, String connInfoStr, Dictionary dictionary) {
         _coder = coder;
@@ -160,7 +102,10 @@ public class ExchangeClient {
     public void start() {
         _pipe = new ClientPipe(_coder, _myInfo, _sinkInfo, _inBufferSize, _outBufferSize);
         _pipe.setConnectionTimeoutMillis(_connectionTimeoutMillis);
+        _pipe.setIdleStrategy(_idleStrategy);
+        _pipe.setPinToCpu(_pinToCpu);
         _pipe.startPipe();
+        log.info("IdleStrategy = " + _idleStrategy);
         ShutdownHook.registerShutdownAction(() -> stop());
     }
 
