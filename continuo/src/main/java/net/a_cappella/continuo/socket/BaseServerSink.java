@@ -53,7 +53,6 @@ public class BaseServerSink {
 
     private int _inBufSize = 512;
     private int _outBufSize = 512;
-    private ByteBuffer _inBuf;
     private ByteBuffer _outBuf;
     private final MsgCoder _coder;
     private final List<Msg> _msgs = new ArrayList<>();
@@ -97,7 +96,7 @@ public class BaseServerSink {
                 } while (_outBuf.position()!=0); // make sure to write the entire buffer
             }
             if (log.isDebugEnabled()) log.debug("{}sent    {} bytes to {}", _cmId, len, keyHash(key));
-            ((LongHolder) key.attachment()).incrementValue();
+            ((ClientState) key.attachment()).incrementValue();
             return true;
         } catch (Exception x) {
             log.info("{}{} Could not send to {} : {}", _cmId, x.getClass().getName(), keyHash(key), msg);
@@ -119,7 +118,7 @@ public class BaseServerSink {
                 } while (_outBuf.position()!=0); // make sure to write the entire buffer
             }
             if (log.isDebugEnabled()) log.debug("{}sent    {} bytes to {}", _cmId, len, keyHash(key));
-            ((LongHolder) key.attachment()).incrementValue();
+            ((ClientState) key.attachment()).incrementValue();
             return true;
         } catch (Exception x) {
             log.info("{}{} Could not send to {} {}", _cmId, x.getClass().getName(), keyHash(key), Arrays.toString(msgs));
@@ -131,7 +130,6 @@ public class BaseServerSink {
     public void startSink() {
         ShutdownHook.registerShutdownAction(() -> stopSink());
 
-        _inBuf = ByteBuffer.allocate(_inBufSize);
         _outBuf = ByteBuffer.allocate(_outBufSize);
         log.info("{}Server starting", _cmId);
         _conMap.logConnectionsMaps();
@@ -204,7 +202,7 @@ public class BaseServerSink {
                                     client.configureBlocking(false);
                                     client.socket().setTcpNoDelay(true);
                                     SelectionKey clientKey = client.register(_selector, SelectionKey.OP_READ);
-                                    clientKey.attach(new LongHolder(0)); // TODO not really used
+                                    clientKey.attach(new ClientState(_inBufSize));
                                     if (log.isDebugEnabled()) log.debug("{}registered client key {}", _cmId, keyHash(clientKey));
                                     onClientConnect(clientKey);
                                 } catch (IOException x) {
@@ -214,9 +212,10 @@ public class BaseServerSink {
                         } else {
                             if (!key.isReadable()) continue;
                             SocketChannel client = (SocketChannel) key.channel();
+                            ByteBuffer inBuf = ((ClientState) key.attachment())._inBuf;
                             if (log.isDebugEnabled()) log.debug("{}reading {}", _cmId, keyHash(key));
                             try {
-                                int no = client.read(_inBuf);
+                                int no = client.read(inBuf);
                                 if (no<0) throw new IOException("reached end-of-stream");
                                 if (no>0) {
                                     if (log.isDebugEnabled()) log.debug("{}read {} bytes from {}", _cmId, no, keyHash(key));
@@ -237,9 +236,9 @@ public class BaseServerSink {
                                 }
                                 continue;
                             }
-                            _inBuf.flip();
-                            _coder.decode(_inBuf, _msgs);
-                            _inBuf.compact();
+                            inBuf.flip();
+                            _coder.decode(inBuf, _msgs);
+                            inBuf.compact();
 
                             for (int j=0; j<_msgs.size(); j++) {
                                 Msg msg = _msgs.get(j);
@@ -429,11 +428,17 @@ public class BaseServerSink {
         }
     }
 
-    private static class LongHolder {
+    /**
+     * Per-connection state attached to each client's {@link SelectionKey}. Each connection owns its
+     * own input buffer so that a partial (not-yet-decoded) frame left behind by {@code compact()} is
+     * never concatenated with bytes read from a different connection.
+     */
+    private static class ClientState {
+        private final ByteBuffer _inBuf;
         private long _value;
 
-        public LongHolder(long value) {
-            _value = value;
+        public ClientState(int inBufSize) {
+            _inBuf = ByteBuffer.allocate(inBufSize);
         }
         public long getValue() {
             return _value;
