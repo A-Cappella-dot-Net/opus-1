@@ -37,6 +37,10 @@ import java.util.concurrent.CountDownLatch;
 import net.a_cappella.continuo.ShutdownHook;
 import net.a_cappella.continuo.collective.ConnInfo;
 import net.a_cappella.continuo.msg.*;
+import net.a_cappella.continuo.utils.Utils;
+import net.openhft.affinity.Affinity;
+import net.openhft.affinity.AffinityLock;
+import org.agrona.concurrent.IdleStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,6 +60,9 @@ public class BaseServerSink {
     private ByteBuffer _outBuf;
     private final MsgCoder _coder;
     private final List<Msg> _msgs = new ArrayList<>();
+
+    private IdleStrategy _idleStrategy = Utils.getIdleStrategy("backoff");
+    private int _pinToCpu = 0; // >0 = pinned to that value; <=0 = not pinned
 
     private final CountDownLatch _stopLatch = new CountDownLatch(1);
     private volatile SinkStatus _sinkStatus = SinkStatus.INITIALIZED;
@@ -159,6 +166,12 @@ public class BaseServerSink {
         _outBufSize = outBufSize;
     }
 
+    public void setIdleStrategy(Object idleStrategyObj) {
+        _idleStrategy = Utils.getIdleStrategy(idleStrategyObj, "backoff");
+    }
+    public void setPinToCpu(int pinToCpu) {
+        _pinToCpu = pinToCpu;
+    }
 
 
 
@@ -174,6 +187,11 @@ public class BaseServerSink {
         }
 
         public void run() {
+            if (_pinToCpu > 0) {
+                Affinity.setAffinity(_pinToCpu);
+                log.info("Pinned to CPU "+Affinity.getCpu()+" of "+ AffinityLock.BASE_AFFINITY);
+            }
+
             log.info("{}Starting Sink", _cmId);
             _sinkStatus = SinkStatus.STARTED;
 
