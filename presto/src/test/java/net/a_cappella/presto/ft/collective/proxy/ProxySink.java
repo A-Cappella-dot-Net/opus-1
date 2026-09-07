@@ -184,7 +184,6 @@ public class ProxySink {
                                 continue;
                             }
                             inBuf.flip();
-                            // TODO double check this logic....
                             byte[] bytes = new byte[inBuf.remaining()];
                             inBuf.get(bytes); // copy the contents of inBuf into bytes
                             inBuf.compact();
