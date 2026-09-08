@@ -39,6 +39,7 @@ import net.a_cappella.continuo.socket.BaseClientPipe;
 import net.a_cappella.continuo.socket.BaseServerSink;
 import net.a_cappella.continuo.utils.ExchangeStatsLogger;
 import net.a_cappella.continuo.utils.Utils;
+import org.agrona.concurrent.IdleStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -119,6 +120,16 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
         return _strictRwt;
     }
 
+    private int _pinToCpu = 0; // >0 = pinned to that value; <=0 = not pinned
+    public void setPinToCpu(String pinToCpu) {
+        _pinToCpu = Utils.parseAsInt("pinToCpu", pinToCpu, _pinToCpu);
+    }
+
+    private IdleStrategy _idleStrategy = Utils.getIdleStrategy("busyspin");
+    public void setIdleStrategy(Object idleStrategyObj) {
+        _idleStrategy = Utils.getIdleStrategy(idleStrategyObj, "backoff");
+    }
+
     private final ExchangeStatsLogger _esl = new ExchangeStatsLogger();
 
     public ExchangeServer(String myInfoStr, MsgCoder coder,
@@ -142,6 +153,9 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
             _matchersBySecurityId.put(securityID, new Matcher(this, _activeOrders, instrument));
         });
 
+        _sink.setIdleStrategy(_idleStrategy);
+        _sink.setPinToCpu(_pinToCpu);
+        log.info("IdleStrategy = " + _idleStrategy);
         _sink.startSink();
 
         _pipe.setConnectionTimeoutMillis(_connectionTimeoutMillis);

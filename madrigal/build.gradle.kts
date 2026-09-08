@@ -83,7 +83,7 @@ tasks {
 
 node {
     download = true
-    version = "20.11.0"
+    version = "24.20.0" // LTS; required by Vite 8/vitest 5 (frontend/package.json), which need Node >=20.19/22.12
     npmVersion = "10.2.4"
     workDir = file("${project.projectDir}/.gradle/nodejs")
     npmWorkDir = file("${project.projectDir}/.gradle/npm")

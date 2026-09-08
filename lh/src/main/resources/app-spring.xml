@@ -42,6 +42,7 @@
         <property name="ecnUserManager" ref="ecnUserManager" />
         <property name="orderManagerService" ref="orderManagerService" />
         <property name="connectionTimeoutMillis" value="${connection.timeout.millis}"/>
+        <property name="pinToCpu" value="${pin.to.cpu}"/>
     </bean>
 
     <bean name="marketDataService" class="net.a_cappella.madrigal.lh.md.MarketDataService" init-method="init">

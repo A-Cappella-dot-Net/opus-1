@@ -16,6 +16,14 @@
 
 package net.a_cappella.cembalo;
 
+import net.a_cappella.cembalo.beans.Imbalance;
+import net.a_cappella.cembalo.beans.InstrumentStatus;
+import net.a_cappella.cembalo.beans.MarketDataSnapshot;
+import net.a_cappella.cembalo.constants.*;
+import net.a_cappella.cembalo.fix.FixFields;
+import net.a_cappella.cembalo.fix.FixMessage;
+import net.a_cappella.cembalo.fix.FixRepeatingGroup;
+import net.a_cappella.cembalo.generator.Dictionary;
 import static net.a_cappella.cembalo.constants.ExchangeConstants.TYPE_FIX_MESSAGE;
 import static net.a_cappella.cembalo.constants.MktStatus.CLOSED;
 import static net.a_cappella.cembalo.constants.MktStatus.OPEN;
@@ -30,24 +38,14 @@ import net.a_cappella.continuo.msg.MsgCoder;
 import net.a_cappella.continuo.socket.BaseClientPipe;
 import net.a_cappella.continuo.utils.OrderStatsLogger;
 import net.a_cappella.continuo.utils.Utils;
+import org.agrona.concurrent.IdleStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import net.a_cappella.cembalo.beans.Imbalance;
-import net.a_cappella.cembalo.beans.InstrumentStatus;
-import net.a_cappella.cembalo.beans.MarketDataSnapshot;
-import net.a_cappella.cembalo.constants.Book;
-import net.a_cappella.cembalo.constants.InstrPhase;
-import net.a_cappella.cembalo.constants.InstrStatus;
-import net.a_cappella.cembalo.constants.MktStatus;
-import net.a_cappella.cembalo.constants.OrdType;
-import net.a_cappella.cembalo.constants.Side;
-import net.a_cappella.cembalo.constants.TimeInForce;
-import net.a_cappella.cembalo.constants.UserStatus;
-import net.a_cappella.cembalo.fix.FixFields;
-import net.a_cappella.cembalo.fix.FixMessage;
-import net.a_cappella.cembalo.fix.FixRepeatingGroup;
-import net.a_cappella.cembalo.generator.Dictionary;
+import static net.a_cappella.cembalo.constants.ExchangeConstants.TYPE_FIX_MESSAGE;
+import static net.a_cappella.cembalo.constants.MktStatus.CLOSED;
+import static net.a_cappella.cembalo.constants.MktStatus.OPEN;
+import static net.a_cappella.cembalo.generated.FixConstants.*;
 
 public class ExchangeClient {
     private static final Logger log = LoggerFactory.getLogger(ExchangeClient.class);
@@ -90,6 +88,15 @@ public class ExchangeClient {
         _listener = listener;
     }
 
+    private int _pinToCpu = 0; // >0 = pinned to that value; <=0 = not pinned
+    public void setPinToCpu(String pinToCpu) {
+        _pinToCpu = Utils.parseAsInt("pinToCpu", pinToCpu, _pinToCpu);
+    }
+
+    private IdleStrategy _idleStrategy = Utils.getIdleStrategy("busyspin");
+    public void setIdleStrategy(Object idleStrategyObj) {
+        _idleStrategy = Utils.getIdleStrategy(idleStrategyObj, "backoff");
+    }
     protected final OrderStatsLogger _osl = new OrderStatsLogger();
 
     public ExchangeClient(MsgCoder coder, String connInfoStr, Dictionary dictionary) {
@@ -102,7 +109,10 @@ public class ExchangeClient {
     public void start() {
         _pipe = new ClientPipe(_coder, _myInfo, _sinkInfo, _inBufferSize, _outBufferSize);
         _pipe.setConnectionTimeoutMillis(_connectionTimeoutMillis);
+        _pipe.setIdleStrategy(_idleStrategy);
+        _pipe.setPinToCpu(_pinToCpu);
         _pipe.startPipe();
+        log.info("IdleStrategy = " + _idleStrategy);
         ShutdownHook.registerShutdownAction(() -> stop());
     }
 

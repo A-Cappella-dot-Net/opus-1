@@ -29,6 +29,8 @@ import net.a_cappella.continuo.collective.AppInfo;
 import net.a_cappella.continuo.collective.ConnInfo;
 import net.a_cappella.continuo.msg.*;
 import net.a_cappella.continuo.utils.Utils;
+import net.openhft.affinity.Affinity;
+import net.openhft.affinity.AffinityLock;
 import org.agrona.concurrent.IdleStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +60,7 @@ public class BaseClientPipe {
     private long _connectionTimeoutNanos = 200L * 1_000_000L; // 200 millis
     private long _registrationTimeoutNanos = 500L * 1_000_000L; // 500 millis
     private IdleStrategy _idleStrategy = Utils.getIdleStrategy("backoff");
+    private int _pinToCpu = 0; // >0 = pinned to that value; <=0 = not pinned
 
     private volatile PipeStatus _pipeStatus = PipeStatus.INITIALIZED;
 
@@ -167,6 +170,9 @@ public class BaseClientPipe {
     public void setIdleStrategy(Object idleStrategyObj) {
         _idleStrategy = Utils.getIdleStrategy(idleStrategyObj, "backoff");
     }
+    public void setPinToCpu(int pinToCpu) {
+        _pinToCpu = pinToCpu;
+    }
 
 
     public String toString() {
@@ -205,6 +211,11 @@ public class BaseClientPipe {
 
         @Override
         public void run() {
+            if (_pinToCpu > 0) {
+                Affinity.setAffinity(_pinToCpu);
+                log.info("Pinned to CPU "+Affinity.getCpu()+" of "+ AffinityLock.BASE_AFFINITY);
+            }
+
             log.info("{}Starting ClientPipe {} {}", _cmId, _sinkInfo, _caller);
             boolean firstAttempt = true;
             SocketAddress socketAddress = new InetSocketAddress(_sinkInfo.getHost(), _sinkInfo.getPort());
