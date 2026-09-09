@@ -203,10 +203,12 @@ public class BaseServerSink {
                 SelectionKey serverKey = _server.register(_selector, SelectionKey.OP_ACCEPT);
 
                 while (!_stop) {
-                    _selector.select(); // blocks until a message is received or the selector is woken up by 'signalStop'
-                    if (!_selector.isOpen()) {
-                        break;
-                    }
+//                    _selector.select(); // blocks until a message is received or the selector is woken up by 'signalStop'
+//                    if (!_selector.isOpen()) {
+//                        break;
+//                    }
+                    int n = _selector.selectNow();   // non-blocking
+                    if (n == 0) { _idleStrategy.idle(); continue; }
                     Set<SelectionKey> keys = _selector.selectedKeys();
                     for (Iterator<SelectionKey> i = keys.iterator(); i.hasNext(); ) {
                         SelectionKey key = i.next();

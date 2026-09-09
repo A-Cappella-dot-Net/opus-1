@@ -214,7 +214,7 @@ public class ExchangeClient {
             fixMessage = ObjectManager.getInstance().acquire(TYPE_FIX_MESSAGE);
             fixMessage.newOrderSingle(uid, clOrdID, symbol, ordType, tif, side, px, qtyShown, qty);
             if (log.isDebugEnabled()) log.info("sending "+fixMessage);
-            _osl.onReqOut(ordId);
+            if (_osl != null) _osl.onReqOut(ordId);
             _pipe.sendMsg(fixMessage);
         } catch (Exception e) {
             log.error("", e);
@@ -430,7 +430,7 @@ public class ExchangeClient {
             long transactTime = Utils.parseMillis(fields.getString(Tag_TransactTime));
             String text = fields.getString(Tag_Text);
 
-            if (execType == Val_ExecType_New || (execType == Val_ExecType_Rejected && origClOrdId == null)) {
+            if ((_osl != null) && (execType == Val_ExecType_New || (execType == Val_ExecType_Rejected && origClOrdId == null))) {
                 int verPos = clOrdId.indexOf("-");
                 String ordId = clOrdId.substring(0, verPos);
                 _osl.onAckNakIn(ordId, fixMessage.getD10());

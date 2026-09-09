@@ -199,7 +199,7 @@ public class OrderManagerService implements IOrderManagerService {
         String ordId = order.getOrdId();
         MadrigalReqType reqType = order.getReqType();
         if (ADD == reqType) {
-			_osl.onReqIn(order.getOrdId());
+			if (_osl != null) _osl.onReqIn(order.getOrdId());
         	RootOrderHandler rootOrderHandler = _activeHandlers.add(order);
             if (rootOrderHandler == null) {
                 log.error(VAL_ERR_STRING_ALREADY_EXISTS+" '"+ordId+"'");
@@ -282,7 +282,7 @@ public class OrderManagerService implements IOrderManagerService {
 				if (MadrigalOrdStatus.FILL != response.getStatus()) response.setFillId(null);
 				response.setExecId(++_execId);
 
-				if (response.getReqType() == ADD && (response.getStatus() == MadrigalOrdStatus.ACK || response.getStatus() == MadrigalOrdStatus.NAK)) {
+				if ((_osl != null) && (response.getReqType() == ADD && (response.getStatus() == MadrigalOrdStatus.ACK || response.getStatus() == MadrigalOrdStatus.NAK))) {
 					_osl.onAckNakOut(response.getOrdId());
 				}
 

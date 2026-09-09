@@ -73,44 +73,44 @@
         <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.presto.ps.SnSManager">
-        <level value="DEBUG" />
+        <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.presto.ft.collective.CollectiveClient">
         <level value="INFO" />
     </logger>
 
     <logger name="net.a_cappella.cembalo.ExchangeClient">
-        <level value="DEBUG" />
+        <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.madrigal.lh.om.OrderManagerService">
-        <level value="DEBUG" />
+        <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.madrigal.lh.om.RootOrderHandler">
-        <level value="DEBUG" />
+        <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.madrigal.lh.om.OrderHandler">
-        <level value="DEBUG" />
+        <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.madrigal.lh.strategy.om.NativeStrategy">
-        <level value="DEBUG" />
+        <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.madrigal.lh.strategy.om.SimulatedIocStrategy">
-        <level value="DEBUG" />
+        <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.madrigal.lh.strategy.om.SimulatedIbgRwtStrategy">
-        <level value="DEBUG" />
+        <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.madrigal.lh.strategy.om.SniperStrategy">
-        <level value="DEBUG" />
+        <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.madrigal.lh.strategy.om.ResumeOnFailoverStrategy">
-        <level value="DEBUG" />
+        <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.madrigal.user.EcnUserManager">
-        <level value="DEBUG" />
+        <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.madrigal.lh.om.UserStatusCache">
-        <level value="DEBUG" />
+        <level value="INFO" />
     </logger>
 
     <!-- ============================== -->
