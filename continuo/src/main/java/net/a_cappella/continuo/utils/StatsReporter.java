@@ -47,6 +47,7 @@ public class StatsReporter {
 
     private final BlockingQueue<Sample> _queue = new LinkedBlockingQueue<>();
     private final Thread _thread;
+    private final StatsLogger _statsLogger = new StatsLogger(log);
 
     public StatsReporter(String threadName) {
         _thread = new Thread(this::run, threadName);
@@ -70,6 +71,8 @@ public class StatsReporter {
     }
 
     private void run() {
+        // One header line per reporter, before any data rows, so the DATAPOINT rows load into Excel.
+        _statsLogger.logHeader("name" + StatsLogger.TAB);
         try {
             for (;;) {
                 Sample s = _queue.take();
@@ -82,16 +85,7 @@ public class StatsReporter {
     }
 
     private void logSample(Sample s) {
-        Histogram h = s._histogram;
-        log.info("{} n={} min={} mean={} p50={} p90={} p99={} p99.9={} max={} (ns)",
-                s._name,
-                h.getTotalCount(),
-                h.getMinValue(),
-                (long) h.getMean(),
-                h.getValueAtPercentile(50.0),
-                h.getValueAtPercentile(90.0),
-                h.getValueAtPercentile(99.0),
-                h.getValueAtPercentile(99.9),
-                h.getMaxValue());
+        if (s._histogram.getTotalCount() == 0) return; // skip an empty (e.g. boundary-aligned flush) interval
+        _statsLogger.logRow(s._histogram, s._name + StatsLogger.TAB);
     }
 }

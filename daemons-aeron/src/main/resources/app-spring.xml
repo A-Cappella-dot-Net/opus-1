@@ -23,6 +23,8 @@
         <property name="reconnectIntervalMillis" value="${reconnect.interval.millis}"/>
         <property name="connectionTimeoutMillis" value="${connection.timeout.millis}"/>
 
+        <property name="sharedIdleStrategy" value="${shared.idle.strategy}"/>
+        <property name="sharedNetworkIdleStrategy" value="${shared.network.idle.strategy}"/>
         <property name="conductorIdleStrategy" value="${conductor.idle.strategy}"/>
         <property name="receiverIdleStrategy" value="${receiver.idle.strategy}"/>
         <property name="senderIdleStrategy" value="${sender.idle.strategy}"/>
