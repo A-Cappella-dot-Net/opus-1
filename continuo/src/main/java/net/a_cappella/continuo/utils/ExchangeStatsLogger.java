@@ -41,17 +41,11 @@ public class ExchangeStatsLogger {
 
     private static final long HIGHEST_TRACKABLE_VALUE = TimeUnit.MILLISECONDS.toNanos(200);
     private static final int NUMBER_OF_SIGNIFICANT_VALUE_DIGITS = 3;
-    private static final int DEFAULT_WARMUP_COUNT = 1000;
-    private static final int DEFAULT_SAMPLE_COUNT = 1000;
 
     private final Map<String, TimeStamps> _map = new HashMap<>();
 
     private final StatsReporter _reporter;
     private final LatencyRecorder _d;
-
-    public ExchangeStatsLogger() {
-        this(DEFAULT_WARMUP_COUNT, DEFAULT_SAMPLE_COUNT);
-    }
 
     public ExchangeStatsLogger(int warmupCount, int sampleCount) {
         this(warmupCount, sampleCount, HIGHEST_TRACKABLE_VALUE, NUMBER_OF_SIGNIFICANT_VALUE_DIGITS);

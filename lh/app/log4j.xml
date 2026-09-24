@@ -112,6 +112,9 @@
     <logger name="net.a_cappella.madrigal.lh.om.UserStatusCache">
         <level value="INFO" />
     </logger>
+    <logger name="net.a_cappella.continuo.utils.OrderStatsLogger">
+        <level value="INFO" />
+    </logger>
 
     <!-- ============================== -->
     <!-- Root logger                    -->

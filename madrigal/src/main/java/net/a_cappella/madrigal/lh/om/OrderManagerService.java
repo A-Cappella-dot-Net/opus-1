@@ -91,7 +91,7 @@ public class OrderManagerService implements IOrderManagerService {
 	}
 	private StringDelayer _handlerFinalizer;
 
-	public OrderStatsLogger _osl;
+	private OrderStatsLogger _osl;
 	public void setOrderStatsLogger(OrderStatsLogger osl) {
 		_osl = osl;
 	}
@@ -138,6 +138,7 @@ public class OrderManagerService implements IOrderManagerService {
 		return _omsParams;
 	}
 
+	@Override
     public void start() {
 		_activeHandlers = new ActiveOrderHandlers(this, _ecn);
 		_inactiveStates = new InactiveOrderStates(this);

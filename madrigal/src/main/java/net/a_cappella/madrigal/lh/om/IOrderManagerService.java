@@ -21,6 +21,7 @@ import net.a_cappella.madrigal.common.obj.MarketStatusObj;
 import net.a_cappella.madrigal.common.obj.OrderObj;
 
 public interface IOrderManagerService {
+	void start();
 	void publishMarketStatus(MarketStatusObj marketStatus) throws Exception;
 	void publishResponse(OrderObj response);
 	void setOrderStatsLogger(OrderStatsLogger osl);

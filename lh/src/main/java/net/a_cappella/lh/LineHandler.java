@@ -25,6 +25,8 @@ import net.a_cappella.cembalo.constants.MktStatus;
 import net.a_cappella.cembalo.constants.UserStatus;
 import net.a_cappella.cembalo.generator.Dictionary;
 import net.a_cappella.continuo.msg.MsgCoder;
+import net.a_cappella.continuo.utils.OrderStatsLogger;
+import net.a_cappella.continuo.utils.Utils;
 import net.a_cappella.madrigal.user.IEcnUserManager;
 import net.a_cappella.madrigal.user.ILoginManagerAdaptor;
 import net.a_cappella.madrigal.lh.md.IMarketDataService;
@@ -65,6 +67,15 @@ public class LineHandler extends ExchangeClient implements IExchangeClientListen
 	private final EcnImbalanceObj _ecnImbalance = new EcnImbalanceObj();
 	private final MarketStatusObj _marketStatus = new MarketStatusObj();
 
+	private int _warmupCount;
+	public void setWarmupCount(String warmupCount) {
+		_warmupCount = Utils.parseAsInt("warmupCount", warmupCount, _warmupCount);
+	}
+	private int _sampleCount;
+	public void setSampleCount(String sampleCount) {
+		_sampleCount = Utils.parseAsInt("sampleCount", sampleCount, _sampleCount);
+	}
+
 	public LineHandler(String ecn, MsgCoder coder, String connInfoStr, Dictionary dictionary) {
 		super(coder, connInfoStr, dictionary);
 
@@ -80,10 +91,15 @@ public class LineHandler extends ExchangeClient implements IExchangeClientListen
 		if (handleMarketData && !handleOrderFlow) {
 			connectToExchange();
 		}
-		if (handleOrderFlow) {
-			_orderManagerService.setOrderStatsLogger(_osl);
-		}
 		setHandleMarketData(handleMarketData);
+
+		if (handleOrderFlow) {
+			if (_sampleCount > 0) {
+				_osl = new OrderStatsLogger(_warmupCount, _sampleCount);
+				_orderManagerService.setOrderStatsLogger(_osl);
+			}
+			_orderManagerService.start();
+		}
 	}
 
 

@@ -43,6 +43,8 @@
         <property name="orderManagerService" ref="orderManagerService" />
         <property name="connectionTimeoutMillis" value="${connection.timeout.millis}"/>
         <property name="pinToCpu" value="${pin.to.cpu}"/>
+        <property name="warmupCount" value="${warmup.count}"/>
+        <property name="sampleCount" value="${sample.count}"/>
     </bean>
 
     <bean name="marketDataService" class="net.a_cappella.madrigal.lh.md.MarketDataService" init-method="init">
@@ -67,7 +69,7 @@
         <constructor-arg name="actionOnFailover" value="${action.on.failover}" />
     </bean>
 
-    <bean name="orderManagerService" class="net.a_cappella.madrigal.lh.om.OrderManagerService" init-method="start">
+    <bean name="orderManagerService" class="net.a_cappella.madrigal.lh.om.OrderManagerService">
         <constructor-arg index="0" ref="client" />
         <constructor-arg index="1" value="${ecn}" />
         <constructor-arg index="2" ref="credentialsCache" />

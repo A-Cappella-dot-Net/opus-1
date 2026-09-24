@@ -97,7 +97,8 @@ public class ExchangeClient {
     public void setIdleStrategy(Object idleStrategyObj) {
         _idleStrategy = Utils.getIdleStrategy(idleStrategyObj, "backoff");
     }
-    protected final OrderStatsLogger _osl = new OrderStatsLogger();
+
+    protected OrderStatsLogger _osl;
 
     public ExchangeClient(MsgCoder coder, String connInfoStr, Dictionary dictionary) {
         _coder = coder;

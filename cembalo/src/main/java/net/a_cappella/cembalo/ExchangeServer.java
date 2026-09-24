@@ -130,7 +130,15 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
         _idleStrategy = Utils.getIdleStrategy(idleStrategyObj, "backoff");
     }
 
-    private final ExchangeStatsLogger _esl = new ExchangeStatsLogger();
+    private ExchangeStatsLogger _esl;
+    private int _warmupCount;
+    public void setWarmupCount(String warmupCount) {
+        _warmupCount = Utils.parseAsInt("warmupCount", warmupCount, _warmupCount);
+    }
+    private int _sampleCount;
+    public void setSampleCount(String sampleCount) {
+        _sampleCount = Utils.parseAsInt("sampleCount", sampleCount, _sampleCount);
+    }
 
     public ExchangeServer(String myInfoStr, MsgCoder coder,
                           InstrumentsCache instrumentsCache, TraderManager traderManager, InternalTimer timer) {
@@ -152,6 +160,10 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
         _instrumentsCache.forEach((securityID, instrument) -> {
             _matchersBySecurityId.put(securityID, new Matcher(this, _activeOrders, instrument));
         });
+
+        if (_sampleCount > 0) {
+            _esl = new ExchangeStatsLogger(_warmupCount, _sampleCount);
+        }
 
         _sink.setIdleStrategy(_idleStrategy);
         _sink.setPinToCpu(_pinToCpu);
@@ -195,7 +207,7 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
                     symbol, side, ordType, timeInForce, price, qty, shownQty,
                     lastQty, lastPx, leavesQty, cumQty, avgPx, text);
 
-            if (execType == Val_ExecType_New || (execType == Val_ExecType_Rejected && origClOrdID == null)) {
+            if (_esl != null && (execType == Val_ExecType_New || (execType == Val_ExecType_Rejected && origClOrdID == null))) {
                 int d = _esl.onAckNakOut(clOrdID);
                 fixMessage.setD10(d);
             }
@@ -263,7 +275,7 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
                 } else if (MsgType_UserRequest.equals(fixMsgType)) {
                     handleUserRequest(key, fix);
                 } else if (MsgType_NewOrderSingle.equals(fixMsgType)) {
-                    _esl.onReqIn(fix.getFields().getString(Tag_ClOrdID));
+                    if (_esl != null) _esl.onReqIn(fix.getFields().getString(Tag_ClOrdID));
                     handleNewOrderSingle(key, fix);
                 } else if (MsgType_OrderCancelRequest.equals(fixMsgType)) {
                     handleOrderCancelRequest(key, fix);
