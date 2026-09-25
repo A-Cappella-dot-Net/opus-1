@@ -284,7 +284,8 @@ public class OrderManagerService implements IOrderManagerService {
 				response.setExecId(++_execId);
 
 				if ((_osl != null) && (response.getReqType() == ADD && (response.getStatus() == MadrigalOrdStatus.ACK || response.getStatus() == MadrigalOrdStatus.NAK))) {
-					_osl.onAckNakOut(response.getOrdId());
+					int d = _osl.onAckNakOut(response.getOrdId());
+					response.setTsNanos(d);
 				}
 
 				_client.publish(response);

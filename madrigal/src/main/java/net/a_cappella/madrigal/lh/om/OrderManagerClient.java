@@ -17,6 +17,7 @@
 package net.a_cappella.madrigal.lh.om;
 
 import net.a_cappella.continuo.managed.ObjectManager;
+import net.a_cappella.continuo.utils.ClientStatsLogger;
 import net.a_cappella.continuo.utils.Utils;
 import net.a_cappella.madrigal.common.constants.*;
 import net.a_cappella.madrigal.common.obj.FinalizeOrderObj;
@@ -34,7 +35,7 @@ import java.util.Set;
 import static net.a_cappella.madrigal.common.constants.MadrigalOrdStatus.FILL;
 import static net.a_cappella.madrigal.common.constants.MadrigalReqType.*;
 
-public abstract class OrderManagerClient {
+public class OrderManagerClient {
     private static final Logger log = LoggerFactory.getLogger(OrderManagerClient.class);
 
     private final PrestoClient _client;
@@ -51,13 +52,27 @@ public abstract class OrderManagerClient {
     }
 	private StringDelayer _cacheCleaner;
 
+    private ClientStatsLogger _csl;
+    private int _warmupCount;
+    public void setWarmupCount(int warmupCount) {
+        _warmupCount = warmupCount;
+    }
+    private int _sampleCount;
+    public void setSampleCount(int sampleCount) {
+        _sampleCount = sampleCount;
+    }
+
     public OrderManagerClient(PrestoClient client, String ecn) {
         _client = client;
         _ecn = ecn;
     }
 
     public void start() {
-    	_cacheCleaner = new CacheCleaner(_cleanerDelayMillis);
+        if (_sampleCount > 0) {
+            _csl = new ClientStatsLogger(_warmupCount, _sampleCount);
+        }
+
+        _cacheCleaner = new CacheCleaner(_cleanerDelayMillis);
         _cacheCleaner.start();
 
         try {
@@ -98,7 +113,12 @@ public abstract class OrderManagerClient {
         }
     }
 
-    public abstract void onOrderResponse(OrderObj response);
+    public void onOrderResponse(OrderObj response) {
+        if ((_csl != null) && (response.getReqType() == ADD) && (response.getStatus() == MadrigalOrdStatus.ACK || response.getStatus() == MadrigalOrdStatus.NAK)) {
+            String ordId = response.getOrdId();
+            _csl.onAckNakIn(ordId, (int) response.getTsNanos());
+        }
+    }
 
     public String addOrder(String uid, String ecn, String ordId,
                           String instrId, MadrigalSide side, MadrigalOrdType ordType, MadrigalTimeInForce tif,
@@ -118,6 +138,8 @@ public abstract class OrderManagerClient {
 	        order.setAddRequest(ecn, uid, ordId, ver, clOrdId, instrId, ordType, tif, side, price, orderQty, shownQty, randomMax);
 	        order.setUseNative(useNative);
 			_client.serialize(order);
+
+            if (_csl != null) _csl.onReqOut(ordId);
 
 	        if (log.isDebugEnabled())
 	            log.info("SUMMARY {} {} {} {} {}@{} {} {}", clOrdId, instrId, ADD, side, (int)order.getOrderQty(), Utils.frc(order.getPrice()), ordType, tif);

@@ -35,6 +35,9 @@
         </constructor-arg>
         <constructor-arg index="6" value="${midFeed.fixed.delay}" />
         <constructor-arg index="7" value="${midFeed.random.range.delay}" />
+
+        <property name="warmupCount" value="${warmup.count}"/>
+        <property name="sampleCount" value="${sample.count}"/>
     </bean>
 
     <!-- import resource="jmx.xml"/ -->
