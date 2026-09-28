@@ -137,9 +137,10 @@ public class OrderManagerClient {
 	    	String clOrdId = ordId + "-" + ver;
 	        order.setAddRequest(ecn, uid, ordId, ver, clOrdId, instrId, ordType, tif, side, price, orderQty, shownQty, randomMax);
 	        order.setUseNative(useNative);
-			_client.serialize(order);
 
             if (_csl != null) _csl.onReqOut(ordId);
+
+            _client.serialize(order);
 
 	        if (log.isDebugEnabled())
 	            log.info("SUMMARY {} {} {} {} {}@{} {} {}", clOrdId, instrId, ADD, side, (int)order.getOrderQty(), Utils.frc(order.getPrice()), ordType, tif);

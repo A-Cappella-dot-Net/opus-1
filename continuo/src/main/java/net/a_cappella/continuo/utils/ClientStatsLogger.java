@@ -33,7 +33,8 @@ public class ClientStatsLogger {
     private final Map<String, TimeStamps> _map = new HashMap<>();
 
     private final StatsReporter _reporter;
-    private final LatencyRecorder _d;
+    private final LatencyRecorder _d10;
+    private final LatencyRecorder _drt;
 
     public ClientStatsLogger(int warmupCount, int sampleCount) {
         this(warmupCount, sampleCount, HIGHEST_TRACKABLE_VALUE, NUMBER_OF_SIGNIFICANT_VALUE_DIGITS);
@@ -41,7 +42,8 @@ public class ClientStatsLogger {
 
     public ClientStatsLogger(int warmupCount, int sampleCount, long highestTrackableValue, int significantValueDigits) {
         _reporter = new StatsReporter("ClientStatsReporter");
-        _d = new LatencyRecorder("d", _reporter, warmupCount, sampleCount, highestTrackableValue, significantValueDigits);
+        _d10 = new LatencyRecorder("d10", _reporter, warmupCount, sampleCount, highestTrackableValue, significantValueDigits);
+        _drt = new LatencyRecorder("drt", _reporter, warmupCount, sampleCount, highestTrackableValue, significantValueDigits);
         ShutdownHook.registerShutdownAction(this::flushAndStop);
     }
 
@@ -53,14 +55,16 @@ public class ClientStatsLogger {
         TimeStamps ts = _map.remove(ordId);
         if (ts != null) {
             long t1 = System.nanoTime();
-            _d.record(t1 - ts._t0 - d);
+            _d10.record(t1 - ts._t0 - d);
+            _drt.record(t1 - ts._t0);
         } else {
             log.error("could not find ordId {}", ordId);
         }
     }
 
     private void flushAndStop() {
-        _d.flush();
+        _d10.flush();
+        _drt.flush();
         _reporter.stop();
     }
 
