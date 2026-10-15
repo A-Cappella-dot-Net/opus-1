@@ -401,7 +401,7 @@ public class Utils {
     public static IdleStrategy getIdleStrategy(Object idleStrategyObj, String defaultIdleStrategy) {
         IdleStrategy idleStrategy = getIdleStrategy(idleStrategyObj);
         if (idleStrategy == null) {
-            log.error("Unknown idleStrategy " + idleStrategyObj + ". Defaulting to '" + defaultIdleStrategy + "'");
+            log.warn("Unknown idleStrategy " + idleStrategyObj + ". Defaulting to '" + defaultIdleStrategy + "'");
             idleStrategy = getIdleStrategy(defaultIdleStrategy);
         }
         return idleStrategy;
