@@ -57,7 +57,7 @@
         <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.cembalo.ExchangeServer">
-        <level value="DEBUG" />
+        <level value="INFO" />
     </logger>
 
     <!-- ============================== -->

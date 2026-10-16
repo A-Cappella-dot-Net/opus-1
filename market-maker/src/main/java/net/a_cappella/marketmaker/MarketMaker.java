@@ -108,7 +108,7 @@ public class MarketMaker {
 		if (!_mgr.isLoggedIn()) return;
 		if (_contStatus == MadrigalInstrStatus.CLOSED) return;
 
-		log.info("handling midFeed {}", midFeed);
+		if (log.isDebugEnabled()) log.info("handling midFeed {}", midFeed);
 		_mid = midFeed.getMid();
 		if (Utils.doubleCmp(_mid, _bidSide._mid) < 0) {
 	        _bidSide.handleMidChange(_mid);
@@ -120,7 +120,7 @@ public class MarketMaker {
 	}
 
 	public void handleEcnPrice(EcnPriceObj ecnPrice) {
-		log.info("handling ecnPrice {}", ecnPrice);
+		if (log.isDebugEnabled()) log.info("handling ecnPrice {}", ecnPrice);
 		_bidSidePx = ecnPrice.getBid0();
 		_bidSideQty = ecnPrice.getBidSize0();
 		_askSidePx = ecnPrice.getOffer0();
@@ -168,7 +168,7 @@ public class MarketMaker {
 				sanitized = px > _bidSidePx + EPSILON;
 			}
 		}
-		if (!sanitized || log.isDebugEnabled()) {
+		if (!sanitized && log.isDebugEnabled()) {
 			log.info("sanitizing {} {} ({}-{}) => {}", side, px, Utils.frc(_bidSidePx), Utils.frc(_askSidePx), sanitized);
 		}
 		return sanitized;
