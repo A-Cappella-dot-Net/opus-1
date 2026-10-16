@@ -21,6 +21,7 @@
     <bean name="settings" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
         <property name="locations">
             <list>
+                <value>file:../config/config.properties</value>
                 <value>file:./config/config.properties</value>
                 <value>file:./config/config.${env}.properties</value>
                 <value>file:./config/config${instance}.properties</value>
