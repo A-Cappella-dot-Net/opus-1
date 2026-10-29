@@ -77,7 +77,22 @@ CLASSPATH=${APP_HOME}/app:${APP_HOME}/lib/*:${APP_HOME}/lib/dependencies/*
 
 ${JAVACMD} -version
 
-COMMAND="${JAVACMD} -Duser.dir=${APP_HOME} ${VM_ARGS} -cp ${CLASSPATH} net.a_cappella.continuo.Main ${SPRING_XML}"
+# --- Onload acceleration (Solarflare kernel-bypass) --------------------------
+# Accelerates the LH<->exchange TCP leg. For a same-host run, Onload's user-space
+# loopback stack (EF_TCP_*_LOOPBACK) replaces the kernel loopback path.
+# Set USE_ONLOAD=0 to start without Onload (plain-kernel baseline for A/B).
+USE_ONLOAD=${USE_ONLOAD:-1}
+if [ "${USE_ONLOAD}" = "1" ] ; then
+	export EF_TCP_CLIENT_LOOPBACK=4
+	export EF_TCP_SERVER_LOOPBACK=2
+	ONLOAD_PREFIX="onload --profile=latency "
+	echo "Onload: ON  (${ONLOAD_PREFIX}EF_TCP_CLIENT_LOOPBACK=${EF_TCP_CLIENT_LOOPBACK} EF_TCP_SERVER_LOOPBACK=${EF_TCP_SERVER_LOOPBACK})"
+else
+	ONLOAD_PREFIX=""
+	echo "Onload: OFF (plain-kernel baseline)"
+fi
+
+COMMAND="${ONLOAD_PREFIX}${JAVACMD} -Duser.dir=${APP_HOME} ${VM_ARGS} -cp ${CLASSPATH} net.a_cappella.continuo.Main ${SPRING_XML}"
 echo ${COMMAND}
 
 eval "${COMMAND} &echo \$! > ${PID_FILE}" > ${LOG_NAME} 2>&1

@@ -161,27 +161,25 @@ Each process logs its placement at startup — confirm in the app log:
 
 ---
 
-## Host variant: scorilo (old kernel, NUMA, real Solarflare NIC)
+## Host variant: scorilo (NUMA, real Solarflare NIC)
 
 scorilo differs from duras in three ways that change the plan. Status as of
-2026-09-29: OS-level isolation applied and persistent; app-level NUMA binding still
-open.
+2026-10-25: upgraded to Ubuntu 26.04 / kernel 7.0 — see "scorilo on Ubuntu 26.04"
+below, which supersedes the 18.04-era notes in this section (kept for history).
+App-level NUMA binding is still open.
 
-**1. Kernel can't do tickless/RCU-offload.** scorilo runs Ubuntu 18.04 / kernel
-4.15, whose config has `# CONFIG_NO_HZ_FULL is not set` and no `CONFIG_RCU_NOCB` at
-all (only `NO_HZ_IDLE`). So **`isolcpus` is the only isolation primitive available** —
-`nohz_full` and `rcu_nocbs` are no-ops here. Isolated *busy* cores keep the periodic
-tick (HZ=250 → ~250/s); isolated *idle* cores still go tickless via `NO_HZ_IDLE`.
-Getting true tickless needs a newer kernel (duras's 6.8 has it, i.e. Ubuntu 24.04),
-but that's gated by Onload's supported-kernel matrix and is low-value while the data
-path uses Onload kernel-bypass anyway. Don't upgrade the distro just for `nohz_full`.
+**1. (Historical, 18.04 / kernel 4.15) Kernel couldn't do tickless/RCU-offload.**
+That kernel had `# CONFIG_NO_HZ_FULL is not set` and no `CONFIG_RCU_NOCB`, so
+`isolcpus` was the only isolation primitive and isolated busy cores kept the periodic
+tick (HZ=250). **No longer applies:** the 7.0 kernel has `CONFIG_NO_HZ_FULL=y` and
+`CONFIG_RCU_NOCB_CPU=y`, and scorilo now uses `nohz_full`/`rcu_nocbs` like duras.
 
 **2. NUMA — the NIC is on node0.** 32 cores, 2 sockets: node0 = CPU 0–15 (holds both
 `sfc` cards), node1 = CPU 16–31. All hot threads must live on **node0**, co-located
 with the card; node1 is a QPI hop from the NIC and useless for this workload. Use
 node0 cores 2–7 for the hot threads (mirrors duras's map exactly). The existing
-`isolcpus=2-7,26-31` also isolates 26–31 on node1 — confirmed idle/wasted; drop it on
-a future cmdline edit.
+`isolcpus=2-7,26-31` also isolates 26–31 on node1 — idle for the hot path, but
+**deliberately kept** (reserved for tests); do not shorten the list.
 
 **3. Real NIC → IRQ steering matters and must be made persistent.** But note the
 baseline test is host-local loopback, so it does **not** traverse the card — the IRQ
@@ -257,8 +255,157 @@ then land on 0/1, off 2–7.
   node0 with the hot threads and NIC. The LOC delta showed housekeeping busy on node1
   (16–25), i.e. the JVMs currently span both sockets → cross-QPI heap access. Launch
   flag only, no code change. Verify: node1 cores 16–25 go quiet afterward.
-- **Verify sfc IRQ steering** once a cable/link + traffic exist (see caveat above).
-- **Reclaim node1 isolation** — drop `26-31` from `isolcpus` on a future cmdline edit.
+- **Verify sfc IRQ steering under traffic.** The link to duras is now up (25 Gb/s), so
+  check that active `sfc1` queues land on CPUs 0/1 (`effective_affinity_list`) during
+  a run (see caveat above). Onload bypass traffic fires few kernel IRQs, so test with
+  kernel traffic too.
+- **Investigate the Onload latency tail** (≥99.9% step to ~8–9 µs, 125 µs max in the
+  sockperf baseline): compare `LOC`/`/proc/interrupts` deltas on the pinned cores of
+  both scorilo and duras during a run to find which host and source (timer, IRQ, SMI).
+- **Run the trading system over the sfc link** (exchange on one host, LH + market
+  maker on the other, Aeron `interface=10.10.10.0/24`, under `onload`) and compare with
+  the loopback baseline.
+- **Clean up leftovers on duras** (harmless): the old `~/onload` source tree
+  (commit `9f330e70`) and `/usr/src/onload-7.1.0.265*`.
+- **Node1 isolation (`26-31`)** — intentionally kept for tests; not an open item.
+
+---
+
+## scorilo on Ubuntu 26.04 (kernel 7.0): upgrade, TuneD, TSC skew, Onload
+
+Done 2026-10-25. scorilo went 18.04 → 20.04 → 22.04 → 24.04 → 26.04.1 with
+`do-release-upgrade` (no direct 18→26 path; each LTS must be fully
+`apt full-upgrade`d and rebooted before the next hop; 26.04 is offered once 26.04.1
+is out, no `-d` needed). Answers used: restart services automatically = yes; keep the
+local version of every modified config file (`sshd_config`, `/etc/default/grub`,
+`/etc/tuned/bootcmdline`). Before the first hop, `onload-dkms` and `sfc-dkms` were
+purged so DKMS wouldn't try to rebuild them for every intermediate kernel; the stock
+kernel then drove the X2522 (`sfc0`/`sfc1`) from 20.04 on.
+
+### TuneD profile (`/etc/tuned/profiles/madrigal-lowlat/tuned.conf`)
+
+The profile is **self-contained** (not `include=network-latency`) because it must not
+inherit `tsc=reliable` (see next section). `isolcpus=2-7,26-31` stays hand-set in
+`/etc/default/grub` (which already carries `$tuned_params`); the profile adds the rest:
+
+```ini
+[main]
+summary=Madrigal low-latency: network-latency settings minus tsc=reliable, tickless + RCU offload on the isolated cores
+include=latency-performance
+
+[variables]
+isolated_cores=2-7,26-31
+
+[vm]
+transparent_hugepages=never
+
+[sysctl]
+net.core.busy_read=50
+net.core.busy_poll=50
+net.ipv4.tcp_fastopen=3
+kernel.numa_balancing=0
+kernel.hung_task_timeout_secs = 600
+kernel.nmi_watchdog = 0
+vm.stat_interval = 10
+kernel.timer_migration = 0
+
+[bootloader]
+cmdline_madrigal=skew_tick=1 rcupdate.rcu_normal_after_boot=1 nohz_full=${isolated_cores} rcu_nocbs=${isolated_cores}
+
+[rtentsk]
+```
+
+Apply with `sudo tuned-adm profile madrigal-lowlat` and reboot. Expected
+`/proc/cmdline`: `isolcpus=2-7,26-31 skew_tick=1 rcupdate.rcu_normal_after_boot=1
+nohz_full=2-7,26-31 rcu_nocbs=2-7,26-31`; `tuned-adm verify` passes. irqbalance is no
+longer installed; `steer-sfc-irqs.service` survived the upgrade (now steers 50 IRQs).
+
+### TSC skew between sockets — do NOT use `tsc=reliable` on scorilo
+
+The BIOS leaves socket 1 (CPUs 16–31) ~6000–9000 s behind socket 0 on the TSC (value
+differs on every cold boot; kernel logs `[Firmware Bug]: TSC ADJUST`). `tsc=reliable`
+(set by the stock `network-latency` profile) makes the kernel skip the TSC sync test
+that repairs this, so `CLOCK_MONOTONIC`/`System.nanoTime()` jump when a thread crosses
+sockets, and Onload logged `WARNING: cpu_khz computed to be <garbage>`. Without
+`tsc=reliable` the kernel logs `TSC ADJUST compensate: CPU16 observed … warp` at boot,
+the clocksource stays `tsc`, and the offsets drop to a few µs. Check after any
+kernel/BIOS/profile change with a per-CPU `rdtsc` pin test (read TSC on CPU0, CPU n,
+CPU0 again; offset = b − (a+d)/2; all CPUs should be within a few thousand ticks).
+Hot threads stay on node0 regardless, so this mostly protects anything that strays
+onto node1 — another reason for the `numactl` node0 binding.
+
+### Onload on kernel 7.0
+
+Built from git master (`a9451255`, 9.2 line — the README's supported range is kernels
+6.1–7.0 on the head of the tree; tags lag), as DEB packages with DKMS:
+
+```bash
+sudo apt install -y build-essential git dkms linux-headers-$(uname -r) libcap-dev \
+  libpcap-dev libmnl-dev libnl-3-dev libnl-route-3-dev libssl-dev \
+  debhelper dh-dkms devscripts fakeroot dpkg-dev dh-python python3-all pybuild-plugin-pyproject
+git clone https://github.com/Xilinx-CNS/onload.git && cd onload
+./scripts/onload_mkpackage          # rm leftover onload-*.tgz first if re-running
+sudo apt install -y ./onload-dkms_*.deb ./onload-user_*.deb ./onload-dev_*.deb
+sudo onload_tool reload             # first load without rebooting
+```
+
+The DKMS package builds Onload's own `sfc`, `sfc_char`, `sfc_resource` and `onload`
+modules (replacing the in-kernel `sfc`) and rebuilds them on kernel updates. Modules
+auto-load at boot. Verified: `onload_stackdump` lists a stack for a socket bound on an
+`sfc1` address under `onload python3 …` (so the card's licence is accepted) and shows
+`khz: 2095147`.
+
+**duras uses the same build.** Its old manual `onload_install` (commit `9f330e70`) had
+no modules for newer kernels (6.8.0-147) after a kernel update. It was replaced on
+2026-10-25: `sudo onload_uninstall`, then the same three `.deb` files (copied from
+scorilo with `scp`) installed with `apt`; DKMS now rebuilds the modules per kernel.
+Back-to-back link: scorilo `sfc1` = `10.10.10.172/24`, duras `sfc1` = `10.10.10.162/24`
+(persistent via duras's `/etc/netplan/99_config.yaml`), 25 Gb/s full duplex,
+ping RTT ~15–50 µs. After `onload_tool reload` an interface can come back
+administratively down on duras — `sudo ip link set sfc1 up`.
+
+### Reference baseline: sockperf UDP ping-pong over the sfc link (kernel vs Onload)
+
+Measured 2026-10-25 between scorilo (client) and duras (server), direct 25 Gb/s link
+(`10.10.10.172` ↔ `10.10.10.162`), `madrigal-lowlat` profile on scorilo, Onload build
+`0~a945125` on both ends. Both processes pinned to isolated core 2 (node0 on scorilo).
+`sockperf` reports **one-way** latency (half the round trip); 64-byte messages, 20 s:
+
+```bash
+# server (duras)
+[onload --profile=latency] taskset -c 2 sockperf server -i 10.10.10.162 -p 11111
+# client (scorilo)
+[onload --profile=latency] taskset -c 2 sockperf ping-pong -i 10.10.10.162 -p 11111 -m 64 -t 20
+```
+
+| One-way latency | Kernel | Onload (`--profile=latency`) |
+|---|---|---|
+| Average (std-dev) | 4.33 µs (0.50) | **1.11 µs** (0.28) |
+| Median | 4.28 µs | 1.09 µs |
+| Minimum | 4.06 µs | 1.02 µs |
+| 99th percentile | 4.65 µs | 1.23 µs |
+| 99.9th percentile | 12.0 µs | 8.3 µs |
+| 99.99th percentile | 12.8 µs | 9.3 µs |
+| Worst observation | 163 µs | 125 µs |
+| Messages in 20 s | 2.3 M | 8.9 M |
+
+Conclusions:
+- Onload cuts the median from ~4.3 µs to ~1.1 µs (≈4×) and raises message rate by the
+  same factor; 0 drops/duplicates/reordering in both runs. This confirms the full
+  chain works: scorilo and duras Onload builds, card licence, tuning, cabling.
+- The plain-kernel path is already good (4.3 µs) thanks to `busy_read`/`busy_poll`,
+  the performance governor and isolated cores.
+- The body of the Onload distribution is very tight (25th–99th percentile within
+  1.075–1.23 µs). The tail is not: a regular step to ~8–9 µs at ≥99.9% and rare
+  spikes (125 µs max). The kernel run shows a similar step (12 µs at 99.9%), so it is
+  not caused by Onload. Not yet investigated; if it matters, compare `LOC` and
+  `/proc/interrupts` deltas on the pinned cores of **both** hosts while the test runs
+  to find which side (timer, IRQ, SMI) causes it.
+- Always confirm the `oo:<app>[pid]: Using Onload …` banner appears on both sides —
+  without it the run is not accelerated and the numbers mean nothing.
+
+Harmless dmesg noise: `pcie_tph_get_cpu_st error(-22)`; `ethtool`
+prints `netlink error: Operation not permitted` without sudo.
 
 ---
 
@@ -325,5 +472,9 @@ endpoint connected.
 - GC was never the STW culprit (ZGC STW ≤108 µs); the residual sub-ms tail on duras
   was safepoint time-to-safepoint. Cutting GC/safepoint frequency (bigger heap) is
   the next lever, separate from isolation.
+- `tsc=reliable` (from `network-latency`) is only safe on hosts whose TSCs are really
+  synchronized (duras, single socket). On multi-socket scorilo the BIOS leaves a
+  per-boot TSC offset between sockets that only the kernel's sync test repairs — see
+  "TSC skew between sockets".
 - `/proc/cmdline` is the source of truth for what's active — not `/etc/default/grub`,
   since TuneD composes several sources.
