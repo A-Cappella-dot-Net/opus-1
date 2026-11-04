@@ -359,6 +359,16 @@ auto-load at boot. Verified: `onload_stackdump` lists a stack for a socket bound
 no modules for newer kernels (6.8.0-147) after a kernel update. It was replaced on
 2026-10-25: `sudo onload_uninstall`, then the same three `.deb` files (copied from
 scorilo with `scp`) installed with `apt`; DKMS now rebuilds the modules per kernel.
+**duras upgraded to Ubuntu 26.04.1 (kernel 7.0.0-42) on 2026-10-30**, single hop from
+24.04.5 (first fully updated 24.04.2 → 24.04.5), same prompt answers as scorilo. The
+tuned profile (`/etc/tuned/madrigal-lowlat/`, old path, includes `network-latency` with
+`tsc=reliable` — fine on single-socket duras) and the netplan config survived
+unchanged; DKMS rebuilt Onload for 7.0 during the upgrade. On duras DKMS installed the
+modules uncompressed into `/lib/modules/7.0.0-42-generic/extra/` (not `updates/dkms/*.zst`
+as on scorilo) and `dkms status` says "Differences between built and installed
+modules" — harmless: running and on-disk `srcversion` match and `dmesg` shows
+`Onload 0~a945125`.
+
 Back-to-back link: scorilo `sfc1` = `10.10.10.172/24`, duras `sfc1` = `10.10.10.162/24`
 (persistent via duras's `/etc/netplan/99_config.yaml`), 25 Gb/s full duplex,
 ping RTT ~15–50 µs. After `onload_tool reload` an interface can come back
@@ -388,6 +398,23 @@ Measured 2026-10-25 between scorilo (client) and duras (server), direct 25 Gb/s 
 | 99.99th percentile | 12.8 µs | 9.3 µs |
 | Worst observation | 163 µs | 125 µs |
 | Messages in 20 s | 2.3 M | 8.9 M |
+
+**Re-run after duras moved to Ubuntu 26.04 / kernel 7.0.0-42** (both hosts now on
+7.0, same Onload build, same commands, both sides showed the `Using Onload` banner):
+
+| One-way latency, Onload | duras on 6.8 (above) | both on 7.0 |
+|---|---|---|
+| Average (std-dev) | 1.105 µs (0.28) | 1.106 µs (0.38) |
+| Median | 1.091 µs | 1.077 µs |
+| Minimum | 1.018 µs | 1.003 µs |
+| 99th percentile | 1.227 µs | 1.268 µs |
+| 99.9th percentile | 8.3 µs | 8.6 µs |
+| 99.99th percentile | 9.3 µs | 10.6 µs |
+| Worst observation | 125 µs | 19 µs |
+
+No regression from the 6.8 → 7.0 move on duras. The 99.9% step to ~8–9 µs is still
+there (so it is not a 6.8-only artifact); the lower worst case is probably just a
+quieter 20 s sample, since single maxima are noisy.
 
 Conclusions:
 - Onload cuts the median from ~4.3 µs to ~1.1 µs (≈4×) and raises message rate by the
