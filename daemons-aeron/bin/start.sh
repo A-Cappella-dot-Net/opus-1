@@ -1,16 +1,13 @@
 #!/bin/bash
 
 # Loopback mode (can be overridden from the environment):
-#   0: NONE     - no Onload environment variables are exported
 #   1: SOFTWARE - software loopback
 #   2: HARDWARE - hardware loopback (needs full-feature firmware variant)
 #   3: IPC      - IPC loopback (set AeronClient._useIpcLoopback to true)
-USE_LOOPBACK=${USE_LOOPBACK:-0}
+#   any other value: NONE - no Onload environment variables are exported
+USE_LOOPBACK=${USE_LOOPBACK:-3}
 
 case "${USE_LOOPBACK}" in
-	0)
-		# NONE: nothing exported
-		;;
 	1|2|3)
 		# NOTE: for best performance use the ultra-low-latency firmware variant
 		#
@@ -41,8 +38,7 @@ case "${USE_LOOPBACK}" in
 		fi
 		;;
 	*)
-		echo "Invalid USE_LOOPBACK=${USE_LOOPBACK}; expected 0 (NONE), 1 (SOFTWARE), 2 (HARDWARE) or 3 (IPC)" >&2
-		exit 1
+		# NONE (any other value): nothing exported
 		;;
 esac
 
