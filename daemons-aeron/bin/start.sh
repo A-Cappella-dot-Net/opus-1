@@ -5,6 +5,9 @@
 #   2: HARDWARE - hardware loopback (needs full-feature firmware variant)
 #   3: IPC      - IPC loopback (set AeronClient._useIpcLoopback to true)
 #   any other value: NONE - no Onload environment variables are exported
+# Note: must be in sync with config/config.properties use.ipc.loopback
+# i.e., use.ipc.loopback=true  <=> USE_LOOPBACK=3
+#   and use.ipc.loopback=false <=> USE_LOOPBACK!=3
 USE_LOOPBACK=${USE_LOOPBACK:-3}
 
 case "${USE_LOOPBACK}" in
