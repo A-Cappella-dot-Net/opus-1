@@ -57,7 +57,7 @@ cd ${APP_HOME}
 INSTANCE=$1
 SPRING_XML=$2
 
-. ${APP_HOME}/bin/setenv.sh
+. ${APP_HOME}/../config/bin/setenv.sh
 
 PROPERTIES_FILE=config/config.properties
 if [ ! -f ${PROPERTIES_FILE} ] ; then
