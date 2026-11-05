@@ -45,9 +45,19 @@ public class AeronDaemon extends CollectiveMember {
         _mediaDriverProps = mediaDriverProps;
     }
 
-    private IdleStrategy _conductorIdleStrategy = net.a_cappella.continuo.utils.Utils.getIdleStrategy("backoff");
+    private IdleStrategy _sharedIdleStrategy = net.a_cappella.continuo.utils.Utils.getIdleStrategy("nop");
+    public void setSharedIdleStrategy(Object sharedIdleStrategy) {
+        _sharedIdleStrategy = net.a_cappella.continuo.utils.Utils.getIdleStrategy(sharedIdleStrategy, "nop");
+    }
+
+    private IdleStrategy _sharedNetworkIdleStrategy = net.a_cappella.continuo.utils.Utils.getIdleStrategy("nop");
+    public void setSharedNetworkIdleStrategy(Object sharedNetworkIdleStrategy) {
+        _sharedNetworkIdleStrategy = net.a_cappella.continuo.utils.Utils.getIdleStrategy(sharedNetworkIdleStrategy, "nop");
+    }
+
+    private IdleStrategy _conductorIdleStrategy = net.a_cappella.continuo.utils.Utils.getIdleStrategy("nop");
     public void setConductorIdleStrategy(Object conductorIdleStrategy) {
-        _conductorIdleStrategy = net.a_cappella.continuo.utils.Utils.getIdleStrategy(conductorIdleStrategy, "backoff");
+        _conductorIdleStrategy = net.a_cappella.continuo.utils.Utils.getIdleStrategy(conductorIdleStrategy, "nop");
     }
 
     private IdleStrategy _receiverIdleStrategy = net.a_cappella.continuo.utils.Utils.NO_OP_IDLE_STRATEGY;
@@ -82,6 +92,8 @@ public class AeronDaemon extends CollectiveMember {
             final MediaDriver.Context ctx = new MediaDriver.Context()
                     .termBufferSparseFile(false)
                     .threadingMode(_threadingMode)
+                    .sharedIdleStrategy(_sharedIdleStrategy)
+                    .sharedNetworkIdleStrategy(_sharedNetworkIdleStrategy)
                     .conductorIdleStrategy(_conductorIdleStrategy)
                     .receiverIdleStrategy(_receiverIdleStrategy)
                     .senderIdleStrategy(_senderIdleStrategy);

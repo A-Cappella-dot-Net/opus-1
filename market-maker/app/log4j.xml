@@ -70,7 +70,7 @@
         <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.madrigal.lh.om.OrderManagerClient">
-        <level value="DEBUG" />
+        <level value="INFO" />
     </logger>
     <logger name="net.a_cappella.marketmaker.MarketMaker">
         <level value="INFO" />

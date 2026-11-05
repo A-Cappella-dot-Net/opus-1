@@ -17,6 +17,7 @@
 package net.a_cappella.marketmaker;
 
 import net.a_cappella.continuo.utils.Delayer;
+import net.a_cappella.continuo.utils.Utils;
 import net.a_cappella.madrigal.common.constants.MadrigalOrdType;
 import net.a_cappella.madrigal.common.constants.MadrigalSide;
 import net.a_cappella.madrigal.common.constants.MadrigalTimeInForce;
@@ -68,6 +69,15 @@ public class MarketMakerManager {
 
     private final Map<String, MarketMaker> _mmsByInstrId = new HashMap<>();
 
+	private volatile int _warmupCount;
+	public void setWarmupCount(String warmupCount) {
+		_warmupCount = Utils.parseAsInt("warmupCount", warmupCount, _warmupCount);
+	}
+	private volatile int _sampleCount;
+	public void setSampleCount(String sampleCount) {
+		_sampleCount = Utils.parseAsInt("sampleCount", sampleCount, _sampleCount);
+	}
+
     public MarketMakerManager(PrestoClient client, IIdGenerator idGen,
     						  String ecn, String uid, String usrPwd, List<String> instruments,
     						  int midFeedFixedDelay, int midFeedRandomRangeDelay) {
@@ -96,6 +106,8 @@ public class MarketMakerManager {
     }
 
     public void start() {
+		_omClient.setWarmupCount(_warmupCount);
+		_omClient.setSampleCount(_sampleCount);
     	_client.addSnippet(() -> {
     		runOnTLT();
     		return -1; // run only once
@@ -192,8 +204,9 @@ public class MarketMakerManager {
         }
 
         @Override
-        public void onOrderResponse(OrderObj er) {
-        	handleOrderResponse(er);
+        public void onOrderResponse(OrderObj response) {
+			super.onOrderResponse(response);
+        	handleOrderResponse(response);
         }
     }
 

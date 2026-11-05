@@ -33,10 +33,10 @@ scp -p %APPS_HOME%\test-madrigal\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/
 
 scp -p %APPS_HOME%\test-presto\build\dist\*.gz %TARGET_MACHINE%:/opt/madrigal/releases
 
-rem config: backup remote dir, copy, finish
-ssh %TARGET_MACHINE% "tr -d '\r' | bash -s -- /opt/madrigal/releases/config" < "%APPS_HOME%\bin\remote\backup.sh"
-scp -rp %APPS_HOME%\config\* %TARGET_MACHINE%:/opt/madrigal/releases/config
-ssh %TARGET_MACHINE% "tr -d '\r' | bash -s -- /opt/madrigal/releases/config" < "%APPS_HOME%\bin\remote\finish.sh"
+rem common: backup remote dir, copy, finish
+ssh %TARGET_MACHINE% "tr -d '\r' | bash -s -- /opt/madrigal/releases/common" < "%APPS_HOME%\bin\remote\backup.sh"
+scp -rp %APPS_HOME%\common\* %TARGET_MACHINE%:/opt/madrigal/releases/common
+ssh %TARGET_MACHINE% "tr -d '\r' | bash -s -- /opt/madrigal/releases/common" < "%APPS_HOME%\bin\remote\finish.sh"
 
 rem bin: backup remote dir, copy only the .sh files, finish
 ssh %TARGET_MACHINE% "tr -d '\r' | bash -s -- /opt/madrigal/bin" < "%APPS_HOME%\bin\remote\backup.sh"

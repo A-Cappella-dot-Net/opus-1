@@ -10,6 +10,7 @@ if [ "$VM_VERSION" == "8" ]; then
 elif [ "$VM_VERSION" == "21" ]; then
     JAVA_HOME="/usr/lib/jvm/java21"
     GC_ARGS="-XX:SoftMaxHeapSize=$SOFT_HEAP_SIZE -XX:+UseZGC -XX:+ZGenerational -XX:+UseLargePages -XX:+AlwaysPreTouch -Xlog:gc*:file="
+#    GC_ARGS="-XX:SoftMaxHeapSize=$SOFT_HEAP_SIZE -XX:+UseZGC -XX:+ZGenerational -XX:+UseLargePages -XX:+AlwaysPreTouch -Xlog:gc*,safepoint:file="
 fi
 
 export JAVA_HOME

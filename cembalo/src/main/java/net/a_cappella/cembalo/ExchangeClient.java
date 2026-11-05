@@ -24,6 +24,11 @@ import net.a_cappella.cembalo.fix.FixFields;
 import net.a_cappella.cembalo.fix.FixMessage;
 import net.a_cappella.cembalo.fix.FixRepeatingGroup;
 import net.a_cappella.cembalo.generator.Dictionary;
+import static net.a_cappella.cembalo.constants.ExchangeConstants.TYPE_FIX_MESSAGE;
+import static net.a_cappella.cembalo.constants.MktStatus.CLOSED;
+import static net.a_cappella.cembalo.constants.MktStatus.OPEN;
+import static net.a_cappella.cembalo.generated.FixConstants.*;
+
 import net.a_cappella.continuo.ShutdownHook;
 import net.a_cappella.continuo.collective.AppInfo;
 import net.a_cappella.continuo.collective.ConnInfo;
@@ -31,6 +36,7 @@ import net.a_cappella.continuo.managed.ObjectManager;
 import net.a_cappella.continuo.msg.Msg;
 import net.a_cappella.continuo.msg.MsgCoder;
 import net.a_cappella.continuo.socket.BaseClientPipe;
+import net.a_cappella.continuo.utils.OrderStatsLogger;
 import net.a_cappella.continuo.utils.Utils;
 import org.agrona.concurrent.IdleStrategy;
 import org.slf4j.Logger;
@@ -91,6 +97,8 @@ public class ExchangeClient {
     public void setIdleStrategy(Object idleStrategyObj) {
         _idleStrategy = Utils.getIdleStrategy(idleStrategyObj, "backoff");
     }
+
+    protected OrderStatsLogger _osl;
 
     public ExchangeClient(MsgCoder coder, String connInfoStr, Dictionary dictionary) {
         _coder = coder;
@@ -200,13 +208,14 @@ public class ExchangeClient {
         }
     }
 
-    public void sendNewOrderSingle(String uid, String clOrdID, String symbol, OrdType ordType, TimeInForce tif, Side side, double px, double qtyShown, double qty) {
+    public void sendNewOrderSingle(String uid, String clOrdID, String symbol, OrdType ordType, TimeInForce tif, Side side, double px, double qtyShown, double qty, String ordId) {
 //		log.info("sending NOS("+uid+","+clOrdID+","+symbol+","+tif+","+side+","+px+","+qtyShown+","+qty+")");
         FixMessage fixMessage = null;
         try {
             fixMessage = ObjectManager.getInstance().acquire(TYPE_FIX_MESSAGE);
             fixMessage.newOrderSingle(uid, clOrdID, symbol, ordType, tif, side, px, qtyShown, qty);
             if (log.isDebugEnabled()) log.info("sending "+fixMessage);
+            if (_osl != null) _osl.onReqOut(ordId);
             _pipe.sendMsg(fixMessage);
         } catch (Exception e) {
             log.error("", e);
@@ -421,6 +430,12 @@ public class ExchangeClient {
             double avgPx = fields.getFloat(Tag_AvgPx);
             long transactTime = Utils.parseMillis(fields.getString(Tag_TransactTime));
             String text = fields.getString(Tag_Text);
+
+            if ((_osl != null) && (execType == Val_ExecType_New || (execType == Val_ExecType_Rejected && origClOrdId == null))) {
+                int verPos = clOrdId.indexOf("-");
+                String ordId = clOrdId.substring(0, verPos);
+                _osl.onAckNakIn(ordId, fixMessage.getD10());
+            }
 
             _listener.onExecutionReport(
                     execId, ecnOrdId, clOrdId, origClOrdId,

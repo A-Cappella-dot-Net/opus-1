@@ -8,11 +8,11 @@ if [ ! -e "../services" ] ; then
     mkdir "../services"
 fi
 
-# global config lives in ../releases/config; expose it under services too
-if [ -d "../services/config" ] && [ ! -L "../services/config" ] ; then
-    echo "WARNING: ../services/config is a real directory, not a symlink; remove it to enable the link" >&2
+# global common dir lives in ../releases/common; expose it under services too
+if [ -d "../services/common" ] && [ ! -L "../services/common" ] ; then
+    echo "WARNING: ../services/common is a real directory, not a symlink; remove it to enable the link" >&2
 else
-    ln -sfn ../releases/config ../services/config
+    ln -sfn ../releases/common ../services/common
 fi
 
 for FILEPATH in ../releases/*.tar.gz ; do

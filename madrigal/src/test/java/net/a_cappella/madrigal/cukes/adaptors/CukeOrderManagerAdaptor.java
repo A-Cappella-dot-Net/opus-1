@@ -46,7 +46,7 @@ public class CukeOrderManagerAdaptor implements IOrderManagerAdaptor {
 	@Override
 	public void sendNewOrderSingle(String uid, String clOrdID, String symbol,
                                    MadrigalOrdType ordType, MadrigalTimeInForce tif, MadrigalSide side,
-                                   double px, double qtyShown, double qty) {
+                                   double px, double qtyShown, double qty, String ordId) {
     	CukeEcnOrder order = new CukeEcnOrder(uid, clOrdID, symbol, ordType, tif, side, px, qty, qtyShown);
     	if (log.isDebugEnabled()) log.debug("sendNewOrderSingle "+order);
 		_ecnOrdersMap.put(clOrdID, order);

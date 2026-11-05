@@ -18,56 +18,7 @@ package net.a_cappella.cembalo;
 
 import static net.a_cappella.cembalo.constants.ExchangeConstants.TYPE_FIX_MESSAGE;
 import static net.a_cappella.cembalo.constants.ExchangeConstants.TYPE_TIMER_MSG;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_MarketDataRequest;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_MarketDataRequestReject;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_NewOrderSingle;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_OrderCancelReplaceRequest;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_OrderCancelRequest;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_SecurityList;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_SecurityListRequest;
-import static net.a_cappella.cembalo.generated.FixConstants.MsgType_UserRequest;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_AggregatedBook;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_ClOrdID;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MDReqID;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MDUpdateType;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MarketDepth;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_MaxShow;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_OrdType;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_OrderID;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_OrderQty;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_OrigClOrdID;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_Password;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_Price;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_SecurityListRequestType;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_SecurityReqID;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_SecurityRequestResult;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_Side;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_SubscriptionRequestType;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_Symbol;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_Text;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_TimeInForce;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_UserRequestID;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_UserRequestType;
-import static net.a_cappella.cembalo.generated.FixConstants.Tag_Username;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_AggregatedBook_Aggregated;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_CxlRejReason_Other;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_CxlRejReason_UnknownOrder;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_CxlRejResponseTo_OrderCancelReplaceRequest;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_CxlRejResponseTo_OrderCancelRequest;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_ExecType_Rejected;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_MDUpdateType_Full;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_OrdRejReason_Other;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_OrdRejReason_UnknownSymbol;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_OrdStatus_Rejected;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_SecurityListRequestType_AllSecurities;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_SecurityRequestResult_InvalidRequest;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_SecurityRequestResult_ValidRequest;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_SubscriptionRequestType_SnapshotAndSubscribe;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_UserRequestType_LogOffUser;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_UserRequestType_LogOnUser;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_UserStatus_LoggedIn;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_UserStatus_NotLoggedIn;
-import static net.a_cappella.cembalo.generated.FixConstants.Val_UserStatus_Other;
+import static net.a_cappella.cembalo.generated.FixConstants.*;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -86,6 +37,7 @@ import net.a_cappella.continuo.msg.Msg;
 import net.a_cappella.continuo.msg.MsgCoder;
 import net.a_cappella.continuo.socket.BaseClientPipe;
 import net.a_cappella.continuo.socket.BaseServerSink;
+import net.a_cappella.continuo.utils.ExchangeStatsLogger;
 import net.a_cappella.continuo.utils.Utils;
 import org.agrona.concurrent.IdleStrategy;
 import org.slf4j.Logger;
@@ -178,6 +130,16 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
         _idleStrategy = Utils.getIdleStrategy(idleStrategyObj, "backoff");
     }
 
+    private ExchangeStatsLogger _esl;
+    private int _warmupCount;
+    public void setWarmupCount(String warmupCount) {
+        _warmupCount = Utils.parseAsInt("warmupCount", warmupCount, _warmupCount);
+    }
+    private int _sampleCount;
+    public void setSampleCount(String sampleCount) {
+        _sampleCount = Utils.parseAsInt("sampleCount", sampleCount, _sampleCount);
+    }
+
     public ExchangeServer(String myInfoStr, MsgCoder coder,
                           InstrumentsCache instrumentsCache, TraderManager traderManager, InternalTimer timer) {
         _instrumentsCache = instrumentsCache;
@@ -198,6 +160,10 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
         _instrumentsCache.forEach((securityID, instrument) -> {
             _matchersBySecurityId.put(securityID, new Matcher(this, _activeOrders, instrument));
         });
+
+        if (_sampleCount > 0) {
+            _esl = new ExchangeStatsLogger(_warmupCount, _sampleCount);
+        }
 
         _sink.setIdleStrategy(_idleStrategy);
         _sink.setPinToCpu(_pinToCpu);
@@ -241,6 +207,10 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
                     symbol, side, ordType, timeInForce, price, qty, shownQty,
                     lastQty, lastPx, leavesQty, cumQty, avgPx, text);
 
+            if (_esl != null && (execType == Val_ExecType_New || (execType == Val_ExecType_Rejected && origClOrdID == null))) {
+                int d = _esl.onAckNakOut(clOrdID);
+                fixMessage.setD10(d);
+            }
             if (_sink.sendMsg(key, fixMessage)) {
                 fixMessage.stopUsing();
             } else {
@@ -305,6 +275,7 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
                 } else if (MsgType_UserRequest.equals(fixMsgType)) {
                     handleUserRequest(key, fix);
                 } else if (MsgType_NewOrderSingle.equals(fixMsgType)) {
+                    if (_esl != null) _esl.onReqIn(fix.getFields().getString(Tag_ClOrdID));
                     handleNewOrderSingle(key, fix);
                 } else if (MsgType_OrderCancelRequest.equals(fixMsgType)) {
                     handleOrderCancelRequest(key, fix);

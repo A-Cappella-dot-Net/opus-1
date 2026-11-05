@@ -26,6 +26,13 @@
         <constructor-arg index="1" ref="pubHelper" />
         <constructor-arg index="2" value="${tracker.list.size}" />
         <constructor-arg index="3" value="${tracker.cell.buffer.size}" />
+
+        <property name="useIpcLoopback" value="${use.ipc.loopback}"/>
+        <property name="multicastChannel" value="${multicast.channel}"/>
+        <property name="unicastChannel" value="${unicast.channel}"/>
+        <property name="channelType" value="${channel.type}"/>
+        <property name="pubStream" value="${pub.stream}"/>
+        <property name="subStream" value="${sub.stream}"/>
     </bean>
 
     <bean name="service" class="net.a_cappella.presto.serializer.SerializerService" init-method="init" >
