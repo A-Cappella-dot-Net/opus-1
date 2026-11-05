@@ -17,7 +17,7 @@ set APP_HOME=%CD%
 set "INSTANCE=%~1"
 SET "SPRING_XML=%~2"
 
-call "%APP_HOME%\..\config\bin\setenv.cmd"
+call "%APP_HOME%\..\common\bin\setenv.cmd"
 
 set "PROPERTIES_FILE=config\config.properties"
 if not exist "%PROPERTIES_FILE%" (

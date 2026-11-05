@@ -5,7 +5,7 @@
 #   2: HARDWARE - hardware loopback (needs full-feature firmware variant)
 #   3: IPC      - IPC loopback (set AeronClient._useIpcLoopback to true)
 #   any other value: NONE - no Onload environment variables are exported
-# Note: must be in sync with config/config.properties use.ipc.loopback
+# Note: must be in sync with common/config.properties use.ipc.loopback
 # i.e., use.ipc.loopback=true  <=> USE_LOOPBACK=3
 #   and use.ipc.loopback=false <=> USE_LOOPBACK!=3
 USE_LOOPBACK=${USE_LOOPBACK:-3}
@@ -57,7 +57,7 @@ cd ${APP_HOME}
 INSTANCE=$1
 SPRING_XML=$2
 
-. ${APP_HOME}/../config/bin/setenv.sh
+. ${APP_HOME}/../common/bin/setenv.sh
 
 PROPERTIES_FILE=config/config.properties
 if [ ! -f ${PROPERTIES_FILE} ] ; then
