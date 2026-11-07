@@ -18,3 +18,19 @@ export GC_ARGS
 
 echo "JAVA_HOME = $JAVA_HOME"
 echo "GC_ARGS = $GC_ARGS"
+
+# Onload acceleration for the LH<->exchange TCP leg (used by lh and exchange start.sh).
+# Set USE_ONLOAD=0 (from the environment) to start without Onload (plain-kernel baseline for A/B).
+USE_ONLOAD=${USE_ONLOAD:-0}
+export USE_ONLOAD
+
+# Loopback mode (used by daemons-aeron start.sh; can be overridden from the environment):
+#   1: SOFTWARE - software loopback
+#   2: HARDWARE - hardware loopback (needs full-feature firmware variant)
+#   3: IPC      - IPC loopback (set AeronClient._useIpcLoopback to true)
+#   any other value: NONE - no Onload environment variables are exported
+# Note: must be in sync with common/config.properties use.ipc.loopback
+# i.e., use.ipc.loopback=true  <=> USE_LOOPBACK=3
+#   and use.ipc.loopback=false <=> USE_LOOPBACK!=3
+USE_LOOPBACK=${USE_LOOPBACK:-0}
+export USE_LOOPBACK

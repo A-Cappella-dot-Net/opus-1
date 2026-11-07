@@ -252,7 +252,7 @@ public class AeronClient extends CollectiveClient implements PrestoClient {
         log.info("ringBuffer capacity="+_ringBuffer.capacity()+", maxMsgLength="+_ringBuffer.maxMsgLength());
 
         if (_useIpcLoopback) {
-            log.info("Channel {} & stream {}/{}", _ipcChannel, _pubStream, _subStream);
+            log.info("Loopback channel {} & stream {}/{}", _ipcChannel, _pubStream, _subStream);
             _pubIpc_0 = _aeron.addPublication(_ipcChannel, _pubStream);
             _pubIpc_1 = _aeron.addPublication(_ipcChannel, _pubStream+1);
             _pubIpc_2 = _aeron.addPublication(_ipcChannel, _pubStream+2);

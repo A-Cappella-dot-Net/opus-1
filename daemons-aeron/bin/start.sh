@@ -1,15 +1,20 @@
 #!/bin/bash
 
-# Loopback mode (can be overridden from the environment):
-#   1: SOFTWARE - software loopback
-#   2: HARDWARE - hardware loopback (needs full-feature firmware variant)
-#   3: IPC      - IPC loopback (set AeronClient._useIpcLoopback to true)
-#   any other value: NONE - no Onload environment variables are exported
-# Note: must be in sync with common/config.properties use.ipc.loopback
-# i.e., use.ipc.loopback=true  <=> USE_LOOPBACK=3
-#   and use.ipc.loopback=false <=> USE_LOOPBACK!=3
-USE_LOOPBACK=${USE_LOOPBACK:-3}
+#############################################
+# 'start' script
+# Usage: start.sh {instance {springFile.xml}}
+#############################################
 
+APP_HOME="$(dirname "$(dirname "$(readlink -fm "$0")")")"
+
+cd ${APP_HOME}
+
+INSTANCE=$1
+SPRING_XML=$2
+
+. ${APP_HOME}/../common/bin/setenv.sh
+
+# Loopback / Onload environment: USE_LOOPBACK is defined in common/bin/setenv.sh
 case "${USE_LOOPBACK}" in
 	1|2|3)
 		# NOTE: for best performance use the ultra-low-latency firmware variant
@@ -45,19 +50,6 @@ case "${USE_LOOPBACK}" in
 		;;
 esac
 
-#############################################
-# 'start' script
-# Usage: start.sh {instance {springFile.xml}}
-#############################################
-
-APP_HOME="$(dirname "$(dirname "$(readlink -fm "$0")")")"
-
-cd ${APP_HOME}
-
-INSTANCE=$1
-SPRING_XML=$2
-
-. ${APP_HOME}/../common/bin/setenv.sh
 
 PROPERTIES_FILE=config/config.properties
 if [ ! -f ${PROPERTIES_FILE} ] ; then

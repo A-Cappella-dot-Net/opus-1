@@ -80,8 +80,7 @@ ${JAVACMD} -version
 # --- Onload acceleration (Solarflare kernel-bypass) --------------------------
 # Accelerates the LH<->exchange TCP leg. For a same-host run, Onload's user-space
 # loopback stack (EF_TCP_*_LOOPBACK) replaces the kernel loopback path.
-# Set USE_ONLOAD=0 to start without Onload (plain-kernel baseline for A/B).
-USE_ONLOAD=${USE_ONLOAD:-1}
+# USE_ONLOAD (default and override) is defined in common/bin/setenv.sh.
 if [ "${USE_ONLOAD}" = "1" ] ; then
 	export EF_TCP_CLIENT_LOOPBACK=4
 	export EF_TCP_SERVER_LOOPBACK=2
