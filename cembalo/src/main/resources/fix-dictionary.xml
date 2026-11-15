@@ -40,6 +40,7 @@
                 <value>151=LeavesQty|F</value>
                 <value>167=SecurityType|s|FUT=Future,OPT=Option,TBOND=USTreasuryBond,TNOTE=USTreasuryNote,TBILL=USTreasuryBill</value>
                 <value>210=MaxShow|F</value>
+                <value>211=PegOffsetValue|F</value>
                 <value>223=CouponRate|F</value>
                 <value>231=ContractMultiplier|F</value>
                 <value>262=MDReqID|S</value>
@@ -63,12 +64,15 @@
                 <value>559=SecurityListRequestType|I|0=Symbol,4=All securities</value>
                 <value>560=SecurityRequestResult|I|0=Valid request,1=Invalid request,2=No instruments found,3=Not authorized,4=Temporarily unavailable,5=Not supported</value>
                 <value>715=ClearingBusinessDate|D</value>
+                <value>836=PegOffsetType|I|0=Price,1=Basis Points,2=Ticks,3=Price Tier</value>
+                <value>838=PegRoundDirection|I|1=More Aggressive,2=More Passive</value>
                 <value>893=LastFragment|C|N=Not last,Y=Last</value>
                 <value>923=UserRequestID|S</value>
                 <value>924=UserRequestType|I|1=LogOnUser,2=LogOffUser</value>
                 <value>926=UserStatus|I|1=Logged in,2=Not logged in,3=User not recognized,4=Password incorrect,6=Other</value>
                 <value>927=UserStatusText|s</value>
                 <value>969=MinPriceIncrement|F</value>
+                <value>1094=PegPriceType|I|2=Mid Price,4=Market,5=Primary</value>
                 <value>1607=SecurityRejectReason|I|1=Invalid instrument,2=Already exists,3=Not supported</value>
                 <value>5147=MDBook|C|A=Open,B=Close,C=Continuous</value>
                 <value>5148=MDBookPhase|C|A=Closed,B=All,C=OnlyNew,D=NonMatching,E=Matching</value>

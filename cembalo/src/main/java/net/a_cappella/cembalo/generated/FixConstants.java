@@ -1,22 +1,6 @@
-/*
- * Copyright (c) 2026. Vladimir Ivanov
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package net.a_cappella.cembalo.generated;
 
-// File: net.a_cappella.cembalo.generated.FixConstants was machine generated on Sat Aug 09 13:43:16 UTC 2025. Do not modify.
+// File: net.a_cappella.cembalo.generated.FixConstants was machine generated on Sun Nov 15 12:42:25 UTC 2026. Do not modify.
 
 public class FixConstants {
 
@@ -139,6 +123,7 @@ public class FixConstants {
 	public static final String Val_SecurityType_USTreasuryNote = "TNOTE";
 
 	public static final int Tag_MaxShow = 210;
+	public static final int Tag_PegOffsetValue = 211;
 	public static final int Tag_CouponRate = 223;
 	public static final int Tag_ContractMultiplier = 231;
 	public static final int Tag_MDReqID = 262;
@@ -218,6 +203,18 @@ public class FixConstants {
 
 	public static final int Tag_ClearingBusinessDate = 715;
 
+	public static final int Tag_PegOffsetType = 836;
+	public static final int Val_PegOffsetType_Price = 0;
+	public static final int Val_PegOffsetType_BasisPoints = 1;
+	public static final int Val_PegOffsetType_Ticks = 2;
+	public static final int Val_PegOffsetType_PriceTier = 3;
+
+
+	public static final int Tag_PegRoundDirection = 838;
+	public static final int Val_PegRoundDirection_MoreAggressive = 1;
+	public static final int Val_PegRoundDirection_MorePassive = 2;
+
+
 	public static final int Tag_LastFragment = 893;
 	public static final char Val_LastFragment_NotLast = 'N';
 	public static final char Val_LastFragment_Last = 'Y';
@@ -238,6 +235,12 @@ public class FixConstants {
 
 	public static final int Tag_UserStatusText = 927;
 	public static final int Tag_MinPriceIncrement = 969;
+
+	public static final int Tag_PegPriceType = 1094;
+	public static final int Val_PegPriceType_MidPrice = 2;
+	public static final int Val_PegPriceType_Market = 4;
+	public static final int Val_PegPriceType_Primary = 5;
+
 
 	public static final int Tag_SecurityRejectReason = 1607;
 	public static final int Val_SecurityRejectReason_InvalidInstrument = 1;
