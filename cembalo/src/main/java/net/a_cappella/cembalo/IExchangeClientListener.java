@@ -33,11 +33,12 @@ public interface IExchangeClientListener {
 
     void onUserResponse(String ecnUid, UserStatus status, String text);
 
+    /** @param peggedPrice the PeggedPrice (tag 839): the price a pegged order is currently pegged at; NaN if it is parked or not a pegged order */
     void onExecutionReport(String execId, String ecnOrdId, String clOrdId, String origClOrdId,
                            char execType, char ordStatus, int ordRejReason,
                            String symbol, char side, double price, char ordType, char timeInForce,
                            double lastQty, double lastPx, double leavesQty, double cumQty, double avgPx, String text,
-                           long transactTime);
+                           long transactTime, double peggedPrice);
     void onOrderCancelReject(
             String execId, String ecnOrdId, String clOrdId, String origClOrdId,
             char ordStatus, char cxlRejResponseTo, int cxlRejReason, String text,

@@ -44,7 +44,7 @@ public class ContinuousLevel {
 
     public void add(Order ord) {
         _sumOrders.add(ord);
-        _shownQty += Math.min(ord._leavesQty, ord._shownSize);
+        _shownQty += ord.displayQty();
     }
 
     public void remove(int i) {
@@ -53,7 +53,7 @@ public class ContinuousLevel {
 
     public void remove(Order ord) {
         _sumOrders.remove(ord);
-        _shownQty -= Math.min(ord._leavesQty, ord._shownSize);
+        _shownQty -= ord.displayQty();
     }
 
     public boolean remove(SelectionKey selectionKey) {
@@ -61,8 +61,10 @@ public class ContinuousLevel {
     }
 
     public void replace(Order ord, double deltaLeaves, double oShownQty, double oLeavesQty, double nShownQty, double nLeavesQty) {
-        double deltaShown = Math.min(nLeavesQty, nShownQty) - Math.min(oLeavesQty, oShownQty);
-        _shownQty += deltaShown;
+        if (!ord.isHidden()) {
+            double deltaShown = Math.min(nLeavesQty, nShownQty) - Math.min(oLeavesQty, oShownQty);
+            _shownQty += deltaShown;
+        }
         _sumOrders.replaceSameLevel(ord, deltaLeaves, oShownQty<nShownQty);
     }
 
@@ -77,6 +79,19 @@ public class ContinuousLevel {
 
     public boolean hasNoOrders() {
         return _sumOrders.hasNoOrders();
+    }
+
+    /** A level made only of hidden orders is not part of the Market Data. */
+    public boolean hasDisplayedOrders() {
+        return _sumOrders.hasDisplayedOrders();
+    }
+
+    /** Pegged orders peg only to the orders that are not pegged themselves. */
+    public boolean hasNonPeggedOrders() {
+        for (int i=0; i<_sumOrders.count(); i++) {
+            if (!_sumOrders.getOrder(i).isPegged()) return true;
+        }
+        return false;
     }
 
     public String toString() {

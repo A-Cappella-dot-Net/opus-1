@@ -49,13 +49,14 @@ import net.a_cappella.cembalo.beans.InstrumentStatus;
 import net.a_cappella.cembalo.beans.MarketDataSnapshot;
 import net.a_cappella.cembalo.fix.FixFields;
 import net.a_cappella.cembalo.fix.FixMessage;
+import net.a_cappella.cembalo.fix.FixOrderRequestDecoder;
 import net.a_cappella.cembalo.message.TimerMsgs;
 import net.a_cappella.cembalo.timer.ITimerEventListener;
 import net.a_cappella.cembalo.timer.InternalTimer;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 
-public class ExchangeServer implements ITimerEventListener, IExchangeServer {
+public class ExchangeServer implements ITimerEventListener, IExchangeServer, IOrderRequestHandler {
     private static final Logger log = LoggerFactory.getLogger(ExchangeServer.class);
 
     private int _connectionTimeoutMillis = 200;
@@ -200,12 +201,23 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
                                     long orderID, String clOrdID, String origClOrdID, char execType, char ordStatus, int ordRejReason,
                                     String symbol, char side, char ordType, char timeInForce, double price, double qty, double shownQty,
                                     double lastQty, double lastPx, double leavesQty, double cumQty, double avgPx, String text) {
+        sendExecutionReport(key, uid, orderID, clOrdID, origClOrdID, execType, ordStatus, ordRejReason,
+                symbol, side, ordType, timeInForce, price, qty, shownQty,
+                lastQty, lastPx, leavesQty, cumQty, avgPx, text, Double.NaN, 0);
+    }
+
+    @Override
+    public void sendExecutionReport(final SelectionKey key, String uid,
+                                    long orderID, String clOrdID, String origClOrdID, char execType, char ordStatus, int ordRejReason,
+                                    String symbol, char side, char ordType, char timeInForce, double price, double qty, double shownQty,
+                                    double lastQty, double lastPx, double leavesQty, double cumQty, double avgPx, String text,
+                                    double peggedPrice, int execRestatementReason) {
         FixMessage fixMessage = ObjectManager.getInstance().acquire(TYPE_FIX_MESSAGE);
         if (fixMessage != null) {
             fixMessage.executionReport(uid, ++_execId,
                     orderID, clOrdID, origClOrdID, execType, ordStatus, ordRejReason,
                     symbol, side, ordType, timeInForce, price, qty, shownQty,
-                    lastQty, lastPx, leavesQty, cumQty, avgPx, text);
+                    lastQty, lastPx, leavesQty, cumQty, avgPx, text, peggedPrice, execRestatementReason);
 
             if (_esl != null && (execType == Val_ExecType_New || (execType == Val_ExecType_Rejected && origClOrdID == null))) {
                 int d = _esl.onAckNakOut(clOrdID);
@@ -389,46 +401,17 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
             }
         }
 
+        // the order requests are decoded and handed back to the ExchangeServer, see IOrderRequestHandler
         private void handleNewOrderSingle(final SelectionKey key, final FixMessage nos) {
-            FixFields nosFields = nos.getFields();
-            String uid = nosFields.getString(Tag_Username);
-            String clOrdID = nosFields.getString(Tag_ClOrdID);
-            String symbol = nosFields.getString(Tag_Symbol);
-            char ordType = nosFields.getChar(Tag_OrdType);
-            char tif = nosFields.getChar(Tag_TimeInForce);
-            char side = nosFields.getChar(Tag_Side);
-            double px = nosFields.getFloat(Tag_Price);
-            double qtyShown = nosFields.getFloat(Tag_MaxShow);
-            double qty = nosFields.getFloat(Tag_OrderQty);
-            ExchangeServer.this.handleNewOrderSingle(key, uid, clOrdID, symbol, ordType, tif, side, px, qtyShown, qty);
+            FixOrderRequestDecoder.newOrderSingle(key, nos, ExchangeServer.this);
         }
 
         private void handleOrderCancelRequest(final SelectionKey key, final FixMessage ocr) {
-            FixFields ocrFields = ocr.getFields();
-            String uid = ocrFields.getString(Tag_Username);
-            String origClOrdID = ocrFields.getString(Tag_OrigClOrdID);
-            long orderID = ocrFields.getInt(Tag_OrderID);
-            String clOrdID = ocrFields.getString(Tag_ClOrdID);
-            String symbol = ocrFields.getString(Tag_Symbol);
-            char side = ocrFields.getChar(Tag_Side);
-            double qty = ocrFields.getFloat(Tag_OrderQty);
-            ExchangeServer.this.handleOrderCancelRequest(key, uid, origClOrdID, orderID, clOrdID, symbol, side, qty);
+            FixOrderRequestDecoder.orderCancelRequest(key, ocr, ExchangeServer.this);
         }
 
         private void handleOrderCancelReplaceRequest(final SelectionKey key, final FixMessage ocrr) {
-            FixFields ocrrFields = ocrr.getFields();
-            String uid = ocrrFields.getString(Tag_Username);
-            String origClOrdID = ocrrFields.getString(Tag_OrigClOrdID);
-            long orderID = ocrrFields.getInt(Tag_OrderID);
-            String clOrdID = ocrrFields.getString(Tag_ClOrdID);
-            String symbol = ocrrFields.getString(Tag_Symbol);
-            char ordType = ocrrFields.getChar(Tag_OrdType);
-            char side = ocrrFields.getChar(Tag_Side);
-            char tif = ocrrFields.getChar(Tag_TimeInForce);
-            double px = ocrrFields.getFloat(Tag_Price);
-            double qtyShown = ocrrFields.getFloat(Tag_MaxShow);
-            double qty = ocrrFields.getFloat(Tag_OrderQty);
-            ExchangeServer.this.handleOrderCancelReplaceRequest(key, uid, origClOrdID, orderID, clOrdID, symbol, px, qtyShown, qty, ordType, side, tif);
+            FixOrderRequestDecoder.orderCancelReplaceRequest(key, ocrr, ExchangeServer.this);
         }
 
         private void handleTimerMessage(TimerMsgs msg) {
@@ -497,6 +480,11 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
 
 
     public void handleNewOrderSingle(final SelectionKey key, String uid, String clOrdID, String securityID, char ordType, char tif, char side, double px, double qtyShown, double qty) {
+        handleNewOrderSingle(key, uid, clOrdID, securityID, ordType, tif, side, px, qtyShown, qty, null);
+    }
+
+    @Override
+    public void handleNewOrderSingle(final SelectionKey key, String uid, String clOrdID, String securityID, char ordType, char tif, char side, double px, double qtyShown, double qty, PegInstruction peg) {
         if (!isLoggedIn(uid, key)) {
             sendExecutionReport(key, uid, 0, clOrdID, null, Val_ExecType_Rejected, Val_OrdStatus_Rejected, Val_OrdRejReason_Other,
                     securityID, side, ordType, tif, px, qty, qtyShown, Double.NaN, Double.NaN, qty, 0.0, Double.NaN, "Trader not logged in");
@@ -509,9 +497,10 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
             return;
         }
 
-        matcher.handleNewOrderSingle(key, uid, clOrdID, securityID, ordType, tif, side, px, qtyShown, qty);
+        matcher.handleNewOrderSingle(key, uid, clOrdID, securityID, ordType, tif, side, px, qtyShown, qty, peg);
     }
 
+    @Override
     public void handleOrderCancelRequest(final SelectionKey key, String uid, String origClOrdID, long orderID, String clOrdID, String securityID, char side, double qty) {
         if (!isLoggedIn(uid, key)) {
             sendOrderCancelReject(key, uid, orderID, clOrdID, origClOrdID,
@@ -538,6 +527,7 @@ public class ExchangeServer implements ITimerEventListener, IExchangeServer {
         matcher.handleOrderCancelRequest(key, uid, origClOrdID, orderID, clOrdID, securityID, side, qty, order);
     }
 
+    @Override
     public void handleOrderCancelReplaceRequest(final SelectionKey key, String uid, String origClOrdID, long orderID, String clOrdID, String securityID, double px, double qtyShown, double qty, char ordType, char side, char tif) {
         if (!isLoggedIn(uid, key)) {
             sendOrderCancelReject(key, uid, orderID, clOrdID, origClOrdID,

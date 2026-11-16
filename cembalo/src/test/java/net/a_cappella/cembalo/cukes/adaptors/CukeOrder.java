@@ -17,6 +17,7 @@
 package net.a_cappella.cembalo.cukes.adaptors;
 
 import io.cucumber.java.DataTableType;
+import net.a_cappella.cembalo.PegInstruction;
 import net.a_cappella.continuo.utils.Utils;
 
 import java.util.Map;
@@ -24,6 +25,7 @@ import java.util.Objects;
 
 import static net.a_cappella.cembalo.CukeUtils.parseDouble;
 import static net.a_cappella.cembalo.CukeUtils.parseDoubleNaN;
+import static net.a_cappella.cembalo.generated.FixConstants.*;
 
 public class CukeOrder {
     private long ordId;
@@ -36,6 +38,12 @@ public class CukeOrder {
     private String side;
     private String ordType;
     private String tif;
+
+    private String pegPriceType;
+    private String pegRoundDirection;
+    private String pegOffsetValue;
+    private String pegOffsetType;
+    private String pegScope;
 
     @DataTableType
     public static CukeOrder dttCukeOrder(Map<String, String> entry) {
@@ -51,7 +59,39 @@ public class CukeOrder {
         co.shownQty = parseDouble(entry.get("shownQty"));
         co.qty = parseDouble(entry.get("qty"));
         co.price = parseDoubleNaN(entry.get("price"));
+
+        // optional peg instructions; a missing or empty one takes its default value, as it does when missing in the FIX message
+        co.pegPriceType = entry.get("pegPriceType");
+        co.pegRoundDirection = entry.get("pegRoundDirection");
+        co.pegOffsetValue = entry.get("pegOffsetValue");
+        co.pegOffsetType = entry.get("pegOffsetType");
+        co.pegScope = entry.get("pegScope");
         return co;
+    }
+
+    /** @return the peg instructions if this is a pegged order, null otherwise */
+    public PegInstruction getPeg() {
+        if (!"Pegged".equals(ordType)) return null;
+        return new PegInstruction(
+                pegValue(pegPriceType, PegInstruction.DEFAULT_PRICE_TYPE, "MidPrice", Val_PegPriceType_MidPrice, "Market", Val_PegPriceType_Market, "Primary", Val_PegPriceType_Primary),
+                pegValue(pegRoundDirection, PegInstruction.DEFAULT_ROUND_DIRECTION, "MoreAggressive", Val_PegRoundDirection_MoreAggressive, "MorePassive", Val_PegRoundDirection_MorePassive),
+                isEmpty(pegOffsetValue) ? PegInstruction.DEFAULT_OFFSET_VALUE : parseDoubleNaN(pegOffsetValue),
+                pegValue(pegOffsetType, PegInstruction.DEFAULT_OFFSET_TYPE, "Price", Val_PegOffsetType_Price, "BasisPoints", Val_PegOffsetType_BasisPoints, "Ticks", Val_PegOffsetType_Ticks, "PriceTier", Val_PegOffsetType_PriceTier),
+                pegValue(pegScope, PegInstruction.DEFAULT_SCOPE, "Local", Val_PegScope_Local)
+        );
+    }
+
+    private static boolean isEmpty(String str) {
+        return str == null || str.trim().isEmpty();
+    }
+
+    // namesAndValues: name1, fixValue1, name2, fixValue2... Anything else is taken as the raw FIX value.
+    private static int pegValue(String str, int defaultValue, Object... namesAndValues) {
+        if (isEmpty(str)) return defaultValue;
+        for (int i = 0; i < namesAndValues.length; i += 2) {
+            if (namesAndValues[i].equals(str.trim())) return (Integer) namesAndValues[i+1];
+        }
+        return Integer.parseInt(str.trim());
     }
 
     public String getUid() {

@@ -215,9 +215,7 @@ public class AuctionOrderBook extends AccumulatingOrderBook<AuctionLevel> {
             sumBids.reset();
             sumBids = level._contSumBids;
             if (sumBids != null) {
-                for (int j=0; j<sumBids.count(); j++) {
-                    stillToFill = match(sumBids.getOrder(j), price, stillToFill, false, _isOpenAuction);
-                }
+                stillToFill = matchContinuousOrders(sumBids, price, stillToFill);
                 sumBids.reset();
             }
         }
@@ -232,14 +230,24 @@ public class AuctionOrderBook extends AccumulatingOrderBook<AuctionLevel> {
             sumOffers.reset();
             sumOffers = level._contSumOffers;
             if (sumOffers != null) {
-                for (int j=0; j<sumOffers.count(); j++) {
-                    stillToFill = match(sumOffers.getOrder(j), price, stillToFill, false, _isOpenAuction);
-                }
+                stillToFill = matchContinuousOrders(sumOffers, price, stillToFill);
                 sumOffers.reset();
             }
         }
 
+        _continuousOrderBook.onAuctionCompleted(_isOpenAuction, NO_MATCH_IN_AUCTION);
         _server.sendMdsToAllSubscribers(_continuousOrderBook.getSnapshot());
+    }
+
+    private double matchContinuousOrders(SummarizedOrders sumOrders, double price, double stillToFill) {
+        int j = 0;
+        while (j<sumOrders.count()) {
+            Order o = sumOrders.getOrder(j);
+            stillToFill = match(o, price, stillToFill, false, _isOpenAuction);
+            // an order of the continuous book that is canceled leaves the very list we are going through
+            if (j<sumOrders.count() && sumOrders.getOrder(j)==o) j++;
+        }
+        return stillToFill;
     }
 
     private double match(Order o, double price, double stillToFill, boolean isAuctionOrder, boolean transferToContinuous) {
@@ -249,7 +257,7 @@ public class AuctionOrderBook extends AccumulatingOrderBook<AuctionLevel> {
             } else if (transferToContinuous) {
                 _continuousOrderBook.match(o);
             } else {
-                _continuousOrderBook.cancelOrder(o, NO_MATCH_IN_AUCTION);
+                _continuousOrderBook.cancelUnmatchedInAuction(o, NO_MATCH_IN_AUCTION);
             }
         } else { // matched > 0.0
             double lastQty;
@@ -262,14 +270,14 @@ public class AuctionOrderBook extends AccumulatingOrderBook<AuctionLevel> {
 
                 _server.sendExecutionReport(o._selectionKey, o._user, o._orderID, o._clOrdID, null,
                         Val_ExecType_Trade, Val_OrdStatus_PartiallyFilled, 0, _securityID, Side.toFix(o._side), OrdType.toFix(o._ordType), TimeInForce.toFix(o._tif),
-                        o._price, o._size, o._shownSize,
-                        lastQty, price, o._leavesQty, o._cumQty, o._avgPx, null);
+                        o.clientPrice(), o._size, o._shownSize,
+                        lastQty, price, o._leavesQty, o._cumQty, o._avgPx, null, o.peggedPrice(), 0);
                 if (isAuctionOrder) {
                     cancel(o, NO_MATCH_IN_AUCTION);
                 } else if (transferToContinuous) {
                     _continuousOrderBook.match(o);
                 } else {
-                    _continuousOrderBook.cancelOrder(o, NO_MATCH_IN_AUCTION);
+                    _continuousOrderBook.cancelUnmatchedInAuction(o, NO_MATCH_IN_AUCTION);
                 }
             } else { // oQty <= matched => full fill
                 _activeOrders.remove(o);
@@ -281,8 +289,8 @@ public class AuctionOrderBook extends AccumulatingOrderBook<AuctionLevel> {
 
                 _server.sendExecutionReport(o._selectionKey, o._user, o._orderID, o._clOrdID, null,
                         Val_ExecType_Trade, Val_OrdStatus_Filled, 0, _securityID, Side.toFix(o._side), OrdType.toFix(o._ordType), TimeInForce.toFix(o._tif),
-                        o._price, o._size, o._shownSize,
-                        lastQty, price, o._leavesQty, o._cumQty, o._avgPx, null);
+                        o.clientPrice(), o._size, o._shownSize,
+                        lastQty, price, o._leavesQty, o._cumQty, o._avgPx, null, o.peggedPrice(), 0);
             }
             stillToFill -= lastQty;
         }

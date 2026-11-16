@@ -209,11 +209,16 @@ public class ExchangeClient {
     }
 
     public void sendNewOrderSingle(String uid, String clOrdID, String symbol, OrdType ordType, TimeInForce tif, Side side, double px, double qtyShown, double qty, String ordId) {
+        sendNewOrderSingle(uid, clOrdID, symbol, ordType, tif, side, px, qtyShown, qty, ordId, null);
+    }
+
+    /** @param peg the peg instructions of a pegged order (null = the exchange defaults); px is then optional (NaN) and acts as a cap */
+    public void sendNewOrderSingle(String uid, String clOrdID, String symbol, OrdType ordType, TimeInForce tif, Side side, double px, double qtyShown, double qty, String ordId, PegInstruction peg) {
 //		log.info("sending NOS("+uid+","+clOrdID+","+symbol+","+tif+","+side+","+px+","+qtyShown+","+qty+")");
         FixMessage fixMessage = null;
         try {
             fixMessage = ObjectManager.getInstance().acquire(TYPE_FIX_MESSAGE);
-            fixMessage.newOrderSingle(uid, clOrdID, symbol, ordType, tif, side, px, qtyShown, qty);
+            fixMessage.newOrderSingle(uid, clOrdID, symbol, ordType, tif, side, px, qtyShown, qty, peg);
             if (log.isDebugEnabled()) log.info("sending "+fixMessage);
             if (_osl != null) _osl.onReqOut(ordId);
             _pipe.sendMsg(fixMessage);
@@ -430,6 +435,7 @@ public class ExchangeClient {
             double avgPx = fields.getFloat(Tag_AvgPx);
             long transactTime = Utils.parseMillis(fields.getString(Tag_TransactTime));
             String text = fields.getString(Tag_Text);
+            double peggedPrice = fields.getFloat(Tag_PeggedPrice, Double.NaN);
 
             if ((_osl != null) && (execType == Val_ExecType_New || (execType == Val_ExecType_Rejected && origClOrdId == null))) {
                 int verPos = clOrdId.indexOf("-");
@@ -442,7 +448,7 @@ public class ExchangeClient {
                     execType, ordStatus, ordRejReason,
                     symbol, side, price, ordType, timeInForce,
                     lastQty, lastPx, leavesQty, cumQty, avgPx, text,
-                    transactTime);
+                    transactTime, peggedPrice);
         }
 
         private void onOrderCancelReject(FixMessage fixMessage) {

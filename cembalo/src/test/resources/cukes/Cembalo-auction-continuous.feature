@@ -663,3 +663,44 @@ Feature: Cembalo - Auction and Continuous Orders
       | bidQ0 | bid0  | ask0  | askQ0 |
       | 0.0   | NaN   | NaN   | 0.0   |
 
+
+  Scenario: Continuous orders and Close Auction - all the non matched orders of a price level are canceled
+    When a new order is received
+      | uid  | secId     | ordId | clOrdId | ordType | tif | side | shownQty | qty | price |
+      | id01 | 912828Q45 |     1 | 00001-0 | Limit   | DAY | Buy  | 5.0      | 5.0 | 101.0 |
+      | id02 | 912828Q45 |     2 | 00002-0 | Limit   | DAY | Buy  | 5.0      | 5.0 | 101.0 |
+      | id03 | 912828Q45 |     3 | 00003-0 | Limit   | DAY | Buy  | 5.0      | 5.0 | 101.0 |
+      | id04 | 912828Q45 |     4 | 00004-0 | Limit   | DAY | Sell | 5.0      | 5.0 | 103.0 |
+    And the close order book receives an auction timer event
+    Then all execution reports sent back to clients are
+      | uid  | ordId | clOrdId | secId     | ordType | tif | side | shownQty | qty | price | execType | ordStatus | lastQty | lastPx | leavesQty | cumQty | avgPx | text                |
+      | id01 |     1 | 00001-0 | 912828Q45 | Limit   | DAY | Buy  | 5.0      | 5.0 | 101.0 | New      | New       | 0.0     | NaN    | 5.0       | 0.0    | NaN   |                     |
+      | id02 |     2 | 00002-0 | 912828Q45 | Limit   | DAY | Buy  | 5.0      | 5.0 | 101.0 | New      | New       | 0.0     | NaN    | 5.0       | 0.0    | NaN   |                     |
+      | id03 |     3 | 00003-0 | 912828Q45 | Limit   | DAY | Buy  | 5.0      | 5.0 | 101.0 | New      | New       | 0.0     | NaN    | 5.0       | 0.0    | NaN   |                     |
+      | id04 |     4 | 00004-0 | 912828Q45 | Limit   | DAY | Sell | 5.0      | 5.0 | 103.0 | New      | New       | 0.0     | NaN    | 5.0       | 0.0    | NaN   |                     |
+      | id01 |     1 | 00001-0 | 912828Q45 | Limit   | DAY | Buy  | 5.0      | 5.0 | 101.0 | Canceled | Canceled  | 0.0     | NaN    | 5.0       | 0.0    | NaN   | No match in auction |
+      | id02 |     2 | 00002-0 | 912828Q45 | Limit   | DAY | Buy  | 5.0      | 5.0 | 101.0 | Canceled | Canceled  | 0.0     | NaN    | 5.0       | 0.0    | NaN   | No match in auction |
+      | id03 |     3 | 00003-0 | 912828Q45 | Limit   | DAY | Buy  | 5.0      | 5.0 | 101.0 | Canceled | Canceled  | 0.0     | NaN    | 5.0       | 0.0    | NaN   | No match in auction |
+      | id04 |     4 | 00004-0 | 912828Q45 | Limit   | DAY | Sell | 5.0      | 5.0 | 103.0 | Canceled | Canceled  | 0.0     | NaN    | 5.0       | 0.0    | NaN   | No match in auction |
+    And the continuous order book for 912828Q45 is empty
+    And a market data snapshot for 912828Q45 is sent to subscribers
+      | bidQ0 | bid0  | ask0  | askQ0 |
+      | 0.0   | NaN   | NaN   | 0.0   |
+
+
+  Scenario: Continuous orders and Close Auction - a continuous order filled in the auction leaves the continuous order book
+    When a new order is received
+      | uid  | secId     | ordId | clOrdId | ordType | tif     | side | shownQty | qty | price |
+      | id01 | 912828Q45 |     1 | 00001-0 | Limit   | DAY     | Buy  | 5.0      | 5.0 | 102.0 |
+      | id02 | 912828Q45 |     2 | 00002-0 | Limit   | AtClose | Sell | 0.0      | 5.0 | 102.0 |
+    And the close order book receives an auction timer event
+    Then all execution reports sent back to clients are
+      | uid  | ordId | clOrdId | secId     | ordType | tif     | side | shownQty | qty | price | execType | ordStatus | lastQty | lastPx | leavesQty | cumQty | avgPx | text |
+      | id01 |     1 | 00001-0 | 912828Q45 | Limit   | DAY     | Buy  | 5.0      | 5.0 | 102.0 | New      | New       | 0.0     | NaN    | 5.0       | 0.0    | NaN   |      |
+      | id02 |     2 | 00002-0 | 912828Q45 | Limit   | AtClose | Sell | 0.0      | 5.0 | 102.0 | New      | New       | 0.0     | NaN    | 5.0       | 0.0    | NaN   |      |
+      | id01 |     1 | 00001-0 | 912828Q45 | Limit   | DAY     | Buy  | 5.0      | 5.0 | 102.0 | Trade    | Filled    | 5.0     | 102.0  | 0.0       | 5.0    | 102.0 |      |
+      | id02 |     2 | 00002-0 | 912828Q45 | Limit   | AtClose | Sell | 0.0      | 5.0 | 102.0 | Trade    | Filled    | 5.0     | 102.0  | 0.0       | 5.0    | 102.0 |      |
+    And the continuous order book for 912828Q45 is empty
+    And a market data snapshot for 912828Q45 is sent to subscribers
+      | bidQ0 | bid0  | ask0  | askQ0 |
+      | 0.0   | NaN   | NaN   | 0.0   |

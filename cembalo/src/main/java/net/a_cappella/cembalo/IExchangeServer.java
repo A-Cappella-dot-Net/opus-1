@@ -29,6 +29,16 @@ public interface IExchangeServer {
             long orderID, String clOrdID, String origClOrdID, char execType, char ordStatus, int ordRejReason,
             String symbol, char side, char ordType, char timeInForce, double price, double qty, double shownQty,
             double lastQty, double lastPx, double leavesQty, double cumQty, double avgPx, String text);
+    /**
+     * @param peggedPrice the price a pegged order is currently pegged at; NaN if it is parked or not a pegged order
+     * @param execRestatementReason the reason of a Restated execution report; 0 for any other execution report
+     */
+    void sendExecutionReport(
+            final SelectionKey key, String uid,
+            long orderID, String clOrdID, String origClOrdID, char execType, char ordStatus, int ordRejReason,
+            String symbol, char side, char ordType, char timeInForce, double price, double qty, double shownQty,
+            double lastQty, double lastPx, double leavesQty, double cumQty, double avgPx, String text,
+            double peggedPrice, int execRestatementReason);
     void sendOrderCancelReject(
             final SelectionKey key, String uid,
             long orderID, String clOrdID, String origClOrdID, char ordStatus,

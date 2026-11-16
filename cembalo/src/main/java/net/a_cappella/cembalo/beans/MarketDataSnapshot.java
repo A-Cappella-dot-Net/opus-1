@@ -69,6 +69,20 @@ public class MarketDataSnapshot {
         _offerEntries[level]._price = px;
         _offerEntries[level]._size = size;
     }
+    /** @return true if a subscriber would see the same order book in both snapshots, whatever their timestamps */
+    public boolean hasSameEntries(MarketDataSnapshot other) {
+        if (_marketDepth != other._marketDepth) return false;
+        for (int i=0; i<_marketDepth; i++) {
+            if (!sameEntry(_bidEntries[i], other._bidEntries[i])) return false;
+            if (!sameEntry(_offerEntries[i], other._offerEntries[i])) return false;
+        }
+        return true;
+    }
+    private static boolean sameEntry(MarketDataSnapshotEntry a, MarketDataSnapshotEntry b) {
+        if (a._size != b._size) return false;
+        return a._price == b._price || (Double.isNaN(a._price) && Double.isNaN(b._price));
+    }
+
     public void setTsx(long tsx) {
         _tsx = tsx;
     }

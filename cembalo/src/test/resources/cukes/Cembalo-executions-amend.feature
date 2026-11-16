@@ -1462,3 +1462,33 @@ Feature: Cembalo - Executions on Amend
       | Sell   | Buy  | 104.0   | 103.0   | 102.5   | 102.0   | 58.0   | 58.0  | 102.429824561 || 16.0    | 102.0  | 11.0    | 102.5  | 6.0     | 103.0  | 104.0  | 58.0    | NaN    | 0.0     | NaN    | 0.0     || 0.0     | NaN    | 102.0  | 1.0     |
       | Buy    | Sell | 100.0   | 101.0   | 101.5   | 102.0   | 58.0   | 58.0  | 101.570175438 || 0.0     | NaN    | 0.0     | NaN    | 58.0    | 100.0  | 101.0  | 6.0     | 101.5  | 11.0    | 102.0  | 16.0    || 1.0     | 102.0  | NaN    | 0.0     |
 
+
+  Scenario: A partially filled order is amended and executes again - its executions add up
+    When a new order is received
+      | uid | secId     | ordId | clOrdId | ordType | tif | side | shownQty | qty  | price |
+      | id1 | 912828Q45 |     1 | 00001-0 | Limit   | DAY | Buy  | 10.0     | 10.0 | 101.0 |
+      | id2 | 912828Q45 |     2 | 00002-0 | Limit   | DAY | Sell | 4.0      | 4.0  | 101.0 |
+      | id3 | 912828Q45 |     3 | 00003-0 | Limit   | DAY | Sell | 3.0      | 3.0  | 102.0 |
+    Then all execution reports sent back to clients are
+      | uid | ordId | clOrdId | secId     | ordType | tif | side | shownQty | qty  | price | execType | ordStatus       | lastQty | lastPx | leavesQty | cumQty | avgPx | text |
+      | id1 |     1 | 00001-0 | 912828Q45 | Limit   | DAY | Buy  | 10.0     | 10.0 | 101.0 | New      | New             | 0.0     | NaN    | 10.0      | 0.0    | NaN   |      |
+      | id2 |     2 | 00002-0 | 912828Q45 | Limit   | DAY | Sell | 4.0      | 4.0  | 101.0 | New      | New             | 0.0     | NaN    | 4.0       | 0.0    | NaN   |      |
+      | id1 |     1 | 00001-0 | 912828Q45 | Limit   | DAY | Buy  | 10.0     | 10.0 | 101.0 | Trade    | PartiallyFilled | 4.0     | 101.0  | 6.0       | 4.0    | 101.0 |      |
+      | id2 |     2 | 00002-0 | 912828Q45 | Limit   | DAY | Sell | 4.0      | 4.0  | 101.0 | Trade    | Filled          | 4.0     | 101.0  | 0.0       | 4.0    | 101.0 |      |
+      | id3 |     3 | 00003-0 | 912828Q45 | Limit   | DAY | Sell | 3.0      | 3.0  | 102.0 | New      | New             | 0.0     | NaN    | 3.0       | 0.0    | NaN   |      |
+
+  # the new price makes the order executable: lastQty and lastPx are those of the new execution, cumQty and avgPx those of the order
+    When a replacement request is received
+      | ordId | clOrdId | shownQty | qty  | price | ordType |
+      |     1 | 00001-1 |     10.0 | 10.0 | 102.0 | Limit   |
+    Then all execution reports sent back to clients are
+      | uid | ordId | clOrdId | secId     | ordType | tif | side | shownQty | qty  | price | execType | ordStatus       | lastQty | lastPx | leavesQty | cumQty | avgPx              | text |
+      | id1 |     1 | 00001-1 | 912828Q45 | Limit   | DAY | Buy  | 10.0     | 10.0 | 102.0 | Replaced | Replaced        | 0.0     | NaN    | 6.0       | 4.0    | 101.0              |      |
+      | id3 |     3 | 00003-0 | 912828Q45 | Limit   | DAY | Sell | 3.0      | 3.0  | 102.0 | Trade    | Filled          | 3.0     | 102.0  | 0.0       | 3.0    | 102.0              |      |
+      | id1 |     1 | 00001-1 | 912828Q45 | Limit   | DAY | Buy  | 10.0     | 10.0 | 102.0 | Trade    | PartiallyFilled | 3.0     | 102.0  | 3.0       | 7.0    | 101.42857142857143 |      |
+    And a market data snapshot for 912828Q45 is sent to subscribers
+      | bidQ0 | bid0  | ask0  | askQ0 |
+      | 3.0   | 102.0 | NaN   | 0.0   |
+    And the continuous orders for 912828Q45 and side Buy at level 0 with price 102.0 and leaves 3.0 and shown 3.0 are
+      | uid | ordId | clOrdId | secId     | ordType | tif | side | shownQty | qty  | lastQty | lastPx | leavesQty | cumQty | avgPx              |
+      | id1 |     1 | 00001-1 | 912828Q45 | Limit   | DAY | Buy  | 10.0     | 10.0 | 3.0     | 102.0  | 3.0       | 7.0    | 101.42857142857143 |

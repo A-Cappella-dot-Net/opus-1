@@ -36,7 +36,7 @@
                 <value>107=SecurityDesc|s</value>
                 <value>110=MinQty|F</value>
                 <value>146=NoRelatedSym|I</value>
-                <value>150=ExecType|C|0=New,3=DoneForDay,4=Canceled,5=Replaced,6=PendingCancel,8=Rejected,A=PendingNew,E=PendingReplace,F=Trade,I=OrderStatus</value>
+                <value>150=ExecType|C|0=New,3=DoneForDay,4=Canceled,5=Replaced,6=PendingCancel,8=Rejected,A=PendingNew,D=Restated,E=PendingReplace,F=Trade,I=OrderStatus</value>
                 <value>151=LeavesQty|F</value>
                 <value>167=SecurityType|s|FUT=Future,OPT=Option,TBOND=USTreasuryBond,TNOTE=USTreasuryNote,TBILL=USTreasuryBill</value>
                 <value>210=MaxShow|F</value>
@@ -56,6 +56,7 @@
                 <value>277=TradeCondition|s|P=Imbalance More Buyers,Q=Imbalance More Sellers,PQ=Balanced</value>
                 <value>281=MDReqRejReason|C|0=Unknown symbol,1=Duplicate MDReqID,5=Unsupported MarketDepth</value>
                 <value>320=SecurityReqID|S</value>
+                <value>378=ExecRestatementReason|I|3=Repricing of order</value>
                 <value>393=TotNoRelatedSym|I</value>
                 <value>434=CxlRejResponseTo|C|1=OrderCancelRequest,2=OrderCancelReplaceRequest</value>
                 <value>541=MaturityDate|D</value>
@@ -66,6 +67,8 @@
                 <value>715=ClearingBusinessDate|D</value>
                 <value>836=PegOffsetType|I|0=Price,1=Basis Points,2=Ticks,3=Price Tier</value>
                 <value>838=PegRoundDirection|I|1=More Aggressive,2=More Passive</value>
+                <value>839=PeggedPrice|F</value>
+                <value>840=PegScope|I|1=Local</value>
                 <value>893=LastFragment|C|N=Not last,Y=Last</value>
                 <value>923=UserRequestID|S</value>
                 <value>924=UserRequestType|I|1=LogOnUser,2=LogOffUser</value>
@@ -105,9 +108,9 @@
     <bean name="messages-list" class="java.util.ArrayList">
         <constructor-arg>
             <list>
-                <value>8=ExecutionReport|37,11,41,17,150,39,103,1,Instrument,54,40,44,59,32,31,151,14,75,60,210</value>
+                <value>8=ExecutionReport|37,11,41,17,150,39,103,1,Instrument,54,40,44,59,32,31,151,14,75,60,210,839,378</value>
                 <value>9=OrderCancelReject|37,11,41,39,1,75,60,434,102</value>
-                <value>D=NewOrderSingle|11,1,Instrument,54,OrderQtyData,40,44,59,210</value>
+                <value>D=NewOrderSingle|11,1,Instrument,54,OrderQtyData,40,44,59,210,1094,838,211,836,840</value>
                 <value>F=OrderCancelRequest|41,37,11,1,Instrument,54,60,OrderQtyData</value>
                 <value>G=OrderCancelReplaceRequest|37,41,11,1,Instrument,54,60,OrderQtyData,40,44,59,210</value>
                 <value>H=OrderStatusRequest|37,11,1,Instrument,54</value>

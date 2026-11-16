@@ -101,6 +101,30 @@ public class CembaloStepDefs {
         }
     }
 
+    // sets the scene: same as receiving the orders, but what they produced is of no interest to the scenario
+    @Given("^the following orders were received earlier$")
+    public void theFollowingOrdersWereReceivedEarlier(List<CukeOrder> cukeOrders) {
+        for (CukeOrder cukeOrder : cukeOrders) {
+            _server.aNewOrderIsReceived(cukeOrder);
+        }
+        _server.discardAllMessagesSentSoFar();
+    }
+
+    // FIX layer: the columns are named after the FIX fields, the cells hold the raw FIX values, an empty cell means the field is not sent
+    @When("^(?:an|a) (NewOrderSingle|OrderCancelRequest|OrderCancelReplaceRequest) FIX message is received$")
+    public void aFixMessageIsReceived(String fixMsgName, List<Map<String, String>> entries) {
+        for (Map<String, String> entry : entries) {
+            _server.aFixMessageIsReceived(fixMsgName, entry);
+        }
+    }
+
+    @When("^a new order is sent by an exchange client$")
+    public void aNewOrderIsSentByAnExchangeClient(List<CukeOrder> cukeOrders) {
+        for (CukeOrder cukeOrder : cukeOrders) {
+            _server.aNewOrderIsSentByAnExchangeClient(cukeOrder);
+        }
+    }
+
     @When("^a replacement request is received$")
     public void aReplacementRequestIsReceived(List<CukeOrder> cukeOrders) {
         for (CukeOrder cukeOrder : cukeOrders) {
@@ -146,6 +170,21 @@ public class CembaloStepDefs {
     @Then("^all continuous orders for (.+) are$")
     public void allContinuousOrdersForAndSideAtLevelWithPriceAndLeavesAndShownAre(String secId, List<CukeBookOrder> cukeOrders) {
         _server.allContinuousOrdersForAndSideAtLevelWithPriceAndLeavesAndShownAre(secId, cukeOrders);
+    }
+
+    @Then("^order (\\d+) is pegged at (.+)$")
+    public void orderIsPeggedAt(long ordId, double price) {
+        _server.orderIsPeggedAt(ordId, price);
+    }
+
+    @Then("^order (\\d+) is parked$")
+    public void orderIsParked(long ordId) {
+        _server.orderIsParked(ordId);
+    }
+
+    @Then("^order (\\d+) is not active$")
+    public void orderIsNotActive(long ordId) {
+        _server.orderIsNotActive(ordId);
     }
 
     @Then("^no execution reports are sent$")

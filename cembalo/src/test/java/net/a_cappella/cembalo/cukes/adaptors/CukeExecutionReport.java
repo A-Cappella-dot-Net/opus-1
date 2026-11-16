@@ -49,6 +49,8 @@ public class CukeExecutionReport {
     private final String execType;
     private final String ordStatus;
     private final String text;
+    private final double peggedPx; // the PeggedPrice, NaN unless the order is pegged and in the order book
+    private final int restatementReason; // the ExecRestatementReason, 0 unless this is a Restated execution report
 
     @DataTableType
     public static CukeExecutionReport dttCukeExecutionReport(Map<String, String> entry) {
@@ -70,7 +72,9 @@ public class CukeExecutionReport {
                 parseDouble(entry.get("cumQty")),
                 parseDouble(entry.get("leavesQty")),
                 parseDoubleNaN(entry.get("avgPx")),
-                entry.get("text")
+                entry.get("text"),
+                parseDoubleNaN(entry.get("peggedPx")),
+                (int) parseDouble(entry.get("restatementReason"))
         );
     }
 
@@ -80,7 +84,7 @@ public class CukeExecutionReport {
             String side, double shownQty, double qty, double price,
             String execType, String ordStatus,
             double lastQty, double lastPx, double cumQty, double leavesQty, double avgPx,
-            String text) {
+            String text, double peggedPx, int restatementReason) {
 
         this.uid = uid;
         this.ordId = ordId;
@@ -104,6 +108,8 @@ public class CukeExecutionReport {
         this.avgPx = avgPx;
 
         this.text = nullToEmpty(text);
+        this.peggedPx = peggedPx;
+        this.restatementReason = restatementReason;
     }
 
 
@@ -131,6 +137,8 @@ public class CukeExecutionReport {
         result = prime * result + (int) (temp ^ (temp >>> 32));
         temp = Double.doubleToLongBits(avgPx);
         result = prime * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(peggedPx);
+        result = prime * result + (int) (temp ^ (temp >>> 32));
 
         result = prime * result + ((uid == null) ? 0 : uid.hashCode());
         result = prime * result + ((clOrdId == null) ? 0 : clOrdId.hashCode());
@@ -141,6 +149,7 @@ public class CukeExecutionReport {
         result = prime * result + ((execType == null) ? 0 : execType.hashCode());
         result = prime * result + ((ordStatus == null) ? 0 : ordStatus.hashCode());
         result = prime * result + ((text == null) ? 0 : text.hashCode());
+        result = prime * result + restatementReason;
         return result;
     }
 
@@ -175,6 +184,8 @@ public class CukeExecutionReport {
         if (!Utils.doubleEquals(avgPx, other.avgPx)) return false;
 
         if (!Objects.equals(text, other.text)) return false;
+        if (!Utils.doubleEquals(peggedPx, other.peggedPx)) return false;
+        if (restatementReason != other.restatementReason) return false;
 
         return true;
     }
@@ -186,6 +197,6 @@ public class CukeExecutionReport {
                 ordType+" "+tif+" "+secId+" "+side+" "+
                 shownQty+"/"+qty+"@"+price+" "+
                 execType+" "+ordStatus+" "+
-                lastQty+"@"+lastPx+"/"+leavesQty+"/"+cumQty+"@"+avgPx+" "+text+"}";
+                lastQty+"@"+lastPx+"/"+leavesQty+"/"+cumQty+"@"+avgPx+" "+text+(Double.isNaN(peggedPx) ? "" : " pegged@"+peggedPx)+(restatementReason==0 ? "" : " restated:"+restatementReason)+"}";
     }
 }

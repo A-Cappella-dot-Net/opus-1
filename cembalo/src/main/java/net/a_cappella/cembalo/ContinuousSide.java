@@ -47,6 +47,21 @@ public class ContinuousSide {
         _levels.remove(level);
     }
 
+    /** @return the best price among the orders that are not pegged, i.e., the price pegged orders refer to; NaN if there is none */
+    public double bestNonPeggedPrice() {
+        for (int i=0; i<_levels.size(); i++) {
+            ContinuousLevel continuousLevel = _levels.get(i);
+            if (continuousLevel.hasNonPeggedOrders()) return continuousLevel.getPrice();
+        }
+        return Double.NaN;
+    }
+
+    public void removeEmptyLevels() {
+        for (int i=_levels.size()-1; i>=0; i--) {
+            if (_levels.get(i).hasNoOrders()) _levels.remove(i);
+        }
+    }
+
     public boolean removeOrders(SelectionKey selectionKey) {
         boolean stackChanged = false;
 

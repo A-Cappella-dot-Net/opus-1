@@ -22,6 +22,9 @@ import net.a_cappella.cembalo.beans.MarketDataSnapshot;
 import net.a_cappella.cembalo.constants.*;
 import net.a_cappella.cembalo.constants.Operation;
 import net.a_cappella.cembalo.cukes.adaptors.*;
+import net.a_cappella.cembalo.fix.FixFields;
+import net.a_cappella.cembalo.fix.FixMessage;
+import net.a_cappella.cembalo.fix.FixOrderRequestDecoder;
 import net.a_cappella.cembalo.message.TimerMsg;
 import net.a_cappella.cembalo.message.TimerMsgs;
 
@@ -32,10 +35,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static net.a_cappella.cembalo.generated.FixConstants.MsgType_NewOrderSingle;
+import static net.a_cappella.cembalo.generated.FixConstants.MsgType_OrderCancelReplaceRequest;
+import static net.a_cappella.cembalo.generated.FixConstants.MsgType_OrderCancelRequest;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
-public class ExchangeServerMock implements IExchangeServer {
+public class ExchangeServerMock implements IExchangeServer, IOrderRequestHandler {
     private static final double EPSILON = 0.00000001;
 
     private final SelectionKey _key = mock(SelectionKey.class);
@@ -65,12 +71,25 @@ public class ExchangeServerMock implements IExchangeServer {
                                     double price, double qty, double shownQty,
                                     double lastQty, double lastPx, double leavesQty, double cumQty, double avgPx,
                                     String text) {
+        sendExecutionReport(key, uid, orderID, clOrdID, origClOrdID, execType, ordStatus, ordRejReason,
+                symbol, side, ordType, timeInForce, price, qty, shownQty,
+                lastQty, lastPx, leavesQty, cumQty, avgPx, text, Double.NaN, 0);
+    }
+
+    @Override
+    public void sendExecutionReport(SelectionKey key,
+                                    String uid, long orderID, String clOrdID, String origClOrdID,
+                                    char execType, char ordStatus, int ordRejReason,
+                                    String symbol, char side, char ordType, char timeInForce,
+                                    double price, double qty, double shownQty,
+                                    double lastQty, double lastPx, double leavesQty, double cumQty, double avgPx,
+                                    String text, double peggedPrice, int execRestatementReason) {
         CukeExecutionReport cukeOrder = new CukeExecutionReport(
                 uid, orderID, clOrdID, symbol, OrdType.toString(ordType), TimeInForce.toString(timeInForce),
                 Side.toString(side), shownQty, qty, price,
                 ExecType.toString(execType), OrdStatus.toString(ordStatus),
                 lastQty, lastPx, cumQty, leavesQty, avgPx,
-                text
+                text, peggedPrice, execRestatementReason
         );
         _erList.add(cukeOrder);
     }
@@ -191,9 +210,16 @@ public class ExchangeServerMock implements IExchangeServer {
 
         Order ord = matcher.handleNewOrderSingle(_key, cukeOrder.getUid(), cukeOrder.getClOrdId(), cukeOrder.getSecId(),
                 OrdType.toFix(cukeOrder.getOrdType()), TimeInForce.toFix(cukeOrder.getTif()), Side.toFix(cukeOrder.getSide()),
-                cukeOrder.getPrice(), cukeOrder.getShownQty(), cukeOrder.getQty());
+                cukeOrder.getPrice(), cukeOrder.getShownQty(), cukeOrder.getQty(), cukeOrder.getPeg());
 
         assertEquals(cukeOrder.getOrdId(), (ord==null) ? 0 : ord._orderID, "OrdId");
+    }
+
+    public void discardAllMessagesSentSoFar() {
+        _erList.clear();
+        _rejList.clear();
+        _mdsMap.clear();
+        _imbalanceBySecId.clear();
     }
 
     public void aReplacementRequestIsReceived(CukeOrder cukeOrder) {
@@ -309,6 +335,54 @@ public class ExchangeServerMock implements IExchangeServer {
         for (int i = 0; i < size; i++) {
             assertEquals(cukeOrders.get(i), actualOrders.get(i), "Orders at index " + i);
         }
+    }
+
+    public void orderIsPeggedAt(long ordId, double price) {
+        Order ord = _activeOrders.get(ordId);
+        assertNotNull(ord, "Unknown order "+ordId);
+        assertTrue(ord.isPegged(), "Order "+ordId+" is not a pegged order");
+        assertFalse(ord.isParked(), "Order "+ordId+" is parked");
+        assertEquals(price, ord._price, EPSILON, "pegged price of order "+ordId);
+
+        // the order must also rest at the price level of its pegged price
+        ContinuousOrderBook continuousOrderBook = _matcherBySecId.get(ord._securityID)._continuousOrderBook;
+        boolean isBuy = ord._side == Side.Buy;
+        int levels = (isBuy) ? continuousOrderBook.bidLevels() : continuousOrderBook.offerLevels();
+        for (int i=0; i<levels; i++) {
+            ContinuousLevel continuousLevel = (isBuy) ? continuousOrderBook.bidsAtLevel(i) : continuousOrderBook.offersAtLevel(i);
+            for (int j=0; j<continuousLevel.ordersCount(); j++) {
+                if (continuousLevel.get(j) == ord) {
+                    assertEquals(price, continuousLevel.getPrice(), 0.0, "price level of order "+ordId);
+                    return;
+                }
+            }
+        }
+        fail("Order "+ordId+" is not in the order book");
+    }
+
+    public void orderIsParked(long ordId) {
+        Order ord = _activeOrders.get(ordId);
+        assertNotNull(ord, "Unknown order "+ordId);
+        assertTrue(ord.isParked(), "Order "+ordId+" is not parked, it is pegged at "+ord._price);
+
+        // a parked order is not in the order book
+        ContinuousOrderBook continuousOrderBook = _matcherBySecId.get(ord._securityID)._continuousOrderBook;
+        for (int i=0; i<continuousOrderBook.bidLevels(); i++) {
+            ContinuousLevel continuousLevel = continuousOrderBook.bidsAtLevel(i);
+            for (int j=0; j<continuousLevel.ordersCount(); j++) {
+                assertNotSame(ord, continuousLevel.get(j), "Parked order "+ordId+" is in the order book");
+            }
+        }
+        for (int i=0; i<continuousOrderBook.offerLevels(); i++) {
+            ContinuousLevel continuousLevel = continuousOrderBook.offersAtLevel(i);
+            for (int j=0; j<continuousLevel.ordersCount(); j++) {
+                assertNotSame(ord, continuousLevel.get(j), "Parked order "+ordId+" is in the order book");
+            }
+        }
+    }
+
+    public void orderIsNotActive(long ordId) {
+        assertNull(_activeOrders.get(ordId), "Order "+ordId+" is still active");
     }
 
     public void noExecutionReportsAreSent() {
@@ -436,5 +510,64 @@ public class ExchangeServerMock implements IExchangeServer {
 
     public void userLogsOut(String uid) {
         _activeOrders.handleUserLogoff(_key, uid, order -> _matcherBySecId.get(order._securityID).cancelOrder(order));
+    }
+
+
+
+    // ---------------------------------------- FIX layer ----------------------------------------
+    // The order requests below arrive as FIX messages: they go over the wire (encode/decode), they are
+    // decoded by FixOrderRequestDecoder, the decoder the ExchangeServer uses, and they end up in the
+    // IOrderRequestHandler methods of this mock, which pass them to the matcher as the ExchangeServer does.
+
+    public void aFixMessageIsReceived(String fixMsgName, Map<String, String> entry) {
+        switch (fixMsgName) {
+            case "NewOrderSingle":
+                FixOrderRequestDecoder.newOrderSingle(_key, CukeFixMessage.overTheWire(CukeFixMessage.build(MsgType_NewOrderSingle, entry)), this);
+                break;
+            case "OrderCancelRequest":
+                FixOrderRequestDecoder.orderCancelRequest(_key, CukeFixMessage.overTheWire(CukeFixMessage.build(MsgType_OrderCancelRequest, entry)), this);
+                break;
+            case "OrderCancelReplaceRequest":
+                FixOrderRequestDecoder.orderCancelReplaceRequest(_key, CukeFixMessage.overTheWire(CukeFixMessage.build(MsgType_OrderCancelReplaceRequest, entry)), this);
+                break;
+            default:
+                fail("Unknown FIX message "+fixMsgName);
+        }
+    }
+
+    // the NewOrderSingle is built the way the ExchangeClient builds it
+    public void aNewOrderIsSentByAnExchangeClient(CukeOrder cukeOrder) {
+        cukeOrder.adjustShownQty();
+
+        FixMessage fixMessage = new FixMessage(new FixFields());
+        fixMessage.newOrderSingle(cukeOrder.getUid(), cukeOrder.getClOrdId(), cukeOrder.getSecId(),
+                OrdType.fromFix(OrdType.toFix(cukeOrder.getOrdType())), TimeInForce.fromFix(TimeInForce.toFix(cukeOrder.getTif())), Side.fromFix(Side.toFix(cukeOrder.getSide())),
+                cukeOrder.getPrice(), cukeOrder.getShownQty(), cukeOrder.getQty(), cukeOrder.getPeg());
+
+        FixOrderRequestDecoder.newOrderSingle(_key, CukeFixMessage.overTheWire(fixMessage), this);
+    }
+
+    @Override
+    public void handleNewOrderSingle(SelectionKey key, String uid, String clOrdID, String securityID,
+                                     char ordType, char tif, char side, double px, double qtyShown, double qty, PegInstruction peg) {
+        Matcher matcher = _matcherBySecId.get(securityID);
+        assertNotNull(matcher, "Unknown instrument "+securityID);
+        matcher.handleNewOrderSingle(key, uid, clOrdID, securityID, ordType, tif, side, px, qtyShown, qty, peg);
+    }
+
+    @Override
+    public void handleOrderCancelRequest(SelectionKey key, String uid, String origClOrdID, long orderID, String clOrdID, String securityID,
+                                         char side, double qty) {
+        Order ord = _activeOrders.get(orderID);
+        assertNotNull(ord, "Unknown order "+orderID);
+        _matcherBySecId.get(ord._securityID).handleOrderCancelRequest(key, uid, origClOrdID, orderID, clOrdID, ord._securityID, side, qty, ord);
+    }
+
+    @Override
+    public void handleOrderCancelReplaceRequest(SelectionKey key, String uid, String origClOrdID, long orderID, String clOrdID, String securityID,
+                                                double px, double qtyShown, double qty, char ordType, char side, char tif) {
+        Order ord = _activeOrders.get(orderID);
+        assertNotNull(ord, "Unknown order "+orderID);
+        _matcherBySecId.get(ord._securityID).handleOrderCancelReplaceRequest(key, uid, origClOrdID, orderID, clOrdID, ord._securityID, px, qtyShown, qty, ordType, side, tif, ord);
     }
 }

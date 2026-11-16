@@ -16,17 +16,22 @@
 
 package net.a_cappella.cembalo;
 
+import static net.a_cappella.cembalo.generated.FixConstants.Val_ExecRestatementReason_RepricingOfOrder;
 import static net.a_cappella.cembalo.generated.FixConstants.Val_ExecType_Canceled;
 import static net.a_cappella.cembalo.generated.FixConstants.Val_ExecType_New;
 import static net.a_cappella.cembalo.generated.FixConstants.Val_ExecType_Replaced;
+import static net.a_cappella.cembalo.generated.FixConstants.Val_ExecType_Restated;
 import static net.a_cappella.cembalo.generated.FixConstants.Val_ExecType_Trade;
 import static net.a_cappella.cembalo.generated.FixConstants.Val_OrdStatus_Canceled;
 import static net.a_cappella.cembalo.generated.FixConstants.Val_OrdStatus_Filled;
 import static net.a_cappella.cembalo.generated.FixConstants.Val_OrdStatus_New;
 import static net.a_cappella.cembalo.generated.FixConstants.Val_OrdStatus_PartiallyFilled;
 import static net.a_cappella.cembalo.generated.FixConstants.Val_OrdStatus_Replaced;
+import static net.a_cappella.cembalo.generated.FixConstants.Val_PegPriceType_Market;
+import static net.a_cappella.cembalo.generated.FixConstants.Val_PegPriceType_Primary;
 
 import java.nio.channels.SelectionKey;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -62,18 +67,42 @@ public class ContinuousOrderBook {
 
     private final AccumulatingOrderBook<AccumulatingLevel> _accumulatingOrderBook;
 
+    // Pegged orders. A pegged order follows a reference price given by the orders in this book that are
+    // not pegged themselves: the best price on its own side (Primary peg), the best price on the opposite
+    // side (Market peg) or the midpoint between the two (Mid Price peg).
+    // Whenever the reference price changes the order leaves its price level and re-enters the order book
+    // at the new pegged price as if it were a new order: it is matched if it became executable, and it
+    // rests behind the orders that are already there otherwise.
+    // A pegged order whose pegged price would go beyond its cap is held at its cap: it rests there, in the
+    // order book, until the price to peg at is back within the cap.
+    // A pegged order with no reference price to peg to is 'parked': it stays active, but out of the order
+    // book, until its reference price becomes available.
+    // The owner of the order is not told when the order is repriced. A Restated execution report tells it
+    // when the order stops or resumes following its reference price, see restated().
+    private final Instrument _instrument;
+    private final List<Order> _peggedOrders = new ArrayList<>(); // all active pegged orders (resting or parked), sorted by arrival time
+    private final List<Order> _repricedOrders = new ArrayList<>(); // scratch list, see repegOnce()
+    private final MarketDataSnapshot _mdsBefore; // the order book as it was shown before a pegged order changed
+    private boolean _pegPriceAtLimit; // second result of pegPrice()
+
     public ContinuousOrderBook(IExchangeServer server, ActiveOrders activeOrders, Instrument instrument) {
         _server = server;
         _activeOrders = activeOrders;
+        _instrument = instrument;
         _securityID = instrument.getSecId();
         _ordering = instrument.getOrdering();
         _mds = new MarketDataSnapshot(_securityID, instrument.getMaxLevels());
+        _mdsBefore = new MarketDataSnapshot(_securityID, instrument.getMaxLevels());
         _is = new InstrumentStatus(_securityID, Book.CONTINUOUS_BK);
         _accumulatingOrderBook = new AccumulatingOrderBook<>(server, instrument, (px) -> new AccumulatingLevel(px));
     }
 
     public boolean isOpen() {
         return _is._status == InstrStatus.OPEN;
+    }
+
+    public boolean isMatching() {
+        return _is._phase == InstrPhase.MATCHING;
     }
 
     public void handleTimerMessage(TimerMsg msg) {
@@ -119,7 +148,8 @@ public class ContinuousOrderBook {
         order._clOrdID = clOrdID;
         order._origClOrdID = origClOrdID;
 
-        if (_is._phase == InstrPhase.NON_MATCHING) {
+        // pegged orders are only accepted in the matching phase, hence they are never in the accumulating order book
+        if (_is._phase == InstrPhase.NON_MATCHING && !order.isPegged()) {
             _accumulatingOrderBook.replaceOrder(order, px, qty, qtyShown, OrdType.fromFix(ordType));
         } else {
             MarketDataSnapshot mds = replaceOrder(order, px, qtyShown, qty);
@@ -135,7 +165,7 @@ public class ContinuousOrderBook {
         order._clOrdID = clOrdID;
         order._origClOrdID = origClOrdID;
 
-        if (_is._phase == InstrPhase.NON_MATCHING) {
+        if (_is._phase == InstrPhase.NON_MATCHING && !order.isPegged()) {
             _accumulatingOrderBook.cancelOrder(order);
         } else {
             MarketDataSnapshot mds = cancelOrder(order, null);
@@ -147,28 +177,51 @@ public class ContinuousOrderBook {
 
     /* efficient when there are relatively few active orders per connection */
     public MarketDataSnapshot removeOrder(Order ord) {
+        if (ord.isPegged()) {
+            fillSnapshot(_mdsBefore);
+            removePeggedOrder(ord);
+            return afterPeggedOrderChange();
+        }
+
         ContinuousLevel continuousLevel = findLevel(ord);
         if (continuousLevel==null) return null;
 
         remove(ord, continuousLevel);
-        return getSnapshot();
+        return afterBookChange(getSnapshot());
     }
 
     /* efficient when there are many active orders per connection; not used ATM */
     public MarketDataSnapshot removeOrders(SelectionKey selectionKey) {
+        for (int i=_peggedOrders.size()-1; i>=0; i--) {
+            if (selectionKey.equals(_peggedOrders.get(i)._selectionKey)) _peggedOrders.remove(i);
+        }
         boolean stackChanged = _bidSide.removeOrders(selectionKey) | _offerSide.removeOrders(selectionKey);
-        return (stackChanged) ? getSnapshot() : null;
+        return (stackChanged) ? afterBookChange(getSnapshot()) : null;
     }
 
     public MarketDataSnapshot getSnapshot() {
-        _mds.reset(_securityID, System.currentTimeMillis());
-        for (int i=0; i<_bidSide.levelsCount(); i++) {
-            _mds.setBid(i, _bidSide.priceAtDepth(i), _bidSide.sizeAtDepth(i));
+        return fillSnapshot(_mds);
+    }
+
+    // Only the price levels with displayed orders are part of the Market Data: a level made only of
+    // hidden orders (Mid Price pegged orders) is skipped, and hidden orders do not add to the level size.
+    private MarketDataSnapshot fillSnapshot(MarketDataSnapshot mds) {
+        mds.reset(_securityID, System.currentTimeMillis());
+        int depth = 0;
+        for (int i=0; i<_bidSide.levelsCount() && depth<mds._marketDepth; i++) {
+            ContinuousLevel continuousLevel = _bidSide.level(i);
+            if (continuousLevel.hasDisplayedOrders()) {
+                mds.setBid(depth++, continuousLevel.getPrice(), continuousLevel.getShownQty());
+            }
         }
-        for (int i=0; i<_offerSide.levelsCount(); i++) {
-            _mds.setOffer(i, _offerSide.priceAtDepth(i), _offerSide.sizeAtDepth(i));
+        depth = 0;
+        for (int i=0; i<_offerSide.levelsCount() && depth<mds._marketDepth; i++) {
+            ContinuousLevel continuousLevel = _offerSide.level(i);
+            if (continuousLevel.hasDisplayedOrders()) {
+                mds.setOffer(depth++, continuousLevel.getPrice(), continuousLevel.getShownQty());
+            }
         }
-        return _mds;
+        return mds;
     }
 
     public InstrumentStatus getStatus() {
@@ -343,13 +396,26 @@ public class ContinuousOrderBook {
 
     @VisibleForTesting
     public MarketDataSnapshot addOrder(Order ord) {
+        if (ord.isPegged()) {
+            // the order is given its pegged price first: the acknowledgement reports it
+            fillSnapshot(_mdsBefore);
+            double px = pegPrice(ord, _bidSide.bestNonPeggedPrice(), _offerSide.bestNonPeggedPrice());
+            setPegPrice(ord, px, _pegPriceAtLimit);
+        }
         _server.sendExecutionReport(ord._selectionKey, ord._user, ord._orderID, ord._clOrdID, null, Val_ExecType_New, Val_OrdStatus_New, 0,
-                ord._securityID, Side.toFix(ord._side), OrdType.toFix(ord._ordType), TimeInForce.toFix(ord._tif), ord._price, ord._size, ord._shownSize, 0.0, Double.NaN, ord._size, 0.0, Double.NaN, null);
-        return match(ord);
+                ord._securityID, Side.toFix(ord._side), OrdType.toFix(ord._ordType), TimeInForce.toFix(ord._tif), ord.clientPrice(), ord._size, ord._shownSize, 0.0, Double.NaN, ord._size, 0.0, Double.NaN, null, ord.peggedPrice(), 0);
+        if (ord.isPegged()) {
+            return addPeggedOrder(ord);
+        }
+        return afterBookChange(match(ord));
     }
 
     @VisibleForTesting
     public MarketDataSnapshot replaceOrder(Order ord, double nPx, double nShownQty, double nQty) {
+        if (ord.isPegged()) {
+            return replacePeggedOrder(ord, nPx, nShownQty, nQty);
+        }
+
         ContinuousLevel continuousLevel = findLevel(ord);
         if (continuousLevel==null) return null;
 
@@ -396,17 +462,60 @@ public class ContinuousOrderBook {
             mds = match(ord);
         }
 
-        return mds;
+        return afterBookChange(mds);
     }
 
     @VisibleForTesting
     public MarketDataSnapshot cancelOrder(Order ord, String text) {
+        if (ord.isPegged()) {
+            fillSnapshot(_mdsBefore);
+            removePeggedOrder(ord);
+            cancel(ord, text);
+            return afterPeggedOrderChange();
+        }
+
         ContinuousLevel continuousLevel = findLevel(ord);
         if (continuousLevel==null) return null;
 
         remove(ord, continuousLevel);
         cancel(ord, text);
-        return getSnapshot();
+        return afterBookChange(getSnapshot());
+    }
+
+    /**
+     * Cancels an order that was not matched in an auction. As opposed to {@link #cancelOrder(Order, String)},
+     * the pegged orders are not repriced: the auction is still going through the orders of this book.
+     */
+    public void cancelUnmatchedInAuction(Order ord, String text) {
+        if (ord.isPegged()) {
+            removePeggedOrder(ord);
+        } else {
+            ContinuousLevel continuousLevel = findLevel(ord);
+            if (continuousLevel==null) return;
+            remove(ord, continuousLevel);
+        }
+        cancel(ord, text);
+    }
+
+    /** To be called by an auction order book once its auction is over, before the Market Data is published. */
+    public void onAuctionCompleted(boolean isOpenAuction, String text) {
+        if (isOpenAuction) {
+            // orders may have been transferred to this order book
+            repegAll();
+        } else {
+            // all orders of this order book took part in the close auction and were either filled or canceled;
+            // what is left are the pegged orders that were parked, which have no price to take part with
+            for (int i=0; i<_peggedOrders.size(); i++) {
+                Order ord = _peggedOrders.get(i);
+                if (ord._leavesQty>0.0) {
+                    if (!ord.isParked()) removeFromBook(ord);
+                    cancel(ord, text);
+                }
+            }
+            _peggedOrders.clear();
+            _bidSide.removeEmptyLevels();
+            _offerSide.removeEmptyLevels();
+        }
     }
 
     private void remove(Order ord, ContinuousLevel continuousLevel) {
@@ -423,12 +532,233 @@ public class ContinuousOrderBook {
 
 
 
+    // ---------------------------------------- pegged orders ----------------------------------------
 
+    // the order comes with its pegged price, and _mdsBefore is set, see addOrder()
+    private MarketDataSnapshot addPeggedOrder(Order ord) {
+        if (ord.isParked()) { // no reference price
+            if (ord._tif==TimeInForce.IOC) {
+                cancel(ord, COULD_NOT_MATCH_IOC_ORDER);
+            } else {
+                _peggedOrders.add(ord);
+                restated(ord);
+            }
+            return null;
+        }
 
+        match(ord);
+        if (ord._tif!=TimeInForce.IOC && ord._leavesQty>0.0) {
+            _peggedOrders.add(ord); // the order rests
+            if (ord._pegAtLimit) restated(ord);
+        }
+        return afterPeggedOrderChange();
+    }
 
+    private MarketDataSnapshot replacePeggedOrder(Order ord, double nCap, double nShownQty, double nQty) {
+        fillSnapshot(_mdsBefore);
 
+        double oPx = ord._price; // NaN if parked
+        double oShownQty = ord._shownSize;
+        double oLeavesQty = ord._leavesQty;
 
+        double deltaQty = nQty - ord._size;
+        double nLeavesQty = oLeavesQty + deltaQty;
 
+        boolean filled = nLeavesQty<=0;
+
+        // the price the order is pegged at given its new cap; the acknowledgement reports it
+        ord._pegCap = nCap;
+        double nPx = (filled) ? Double.NaN : pegPrice(ord, _bidSide.bestNonPeggedPrice(), _offerSide.bestNonPeggedPrice());
+        boolean nAtLimit = !filled && _pegPriceAtLimit;
+
+        _server.sendExecutionReport(ord._selectionKey, ord._user, ord._orderID, ord._clOrdID, ord._origClOrdID,
+                Val_ExecType_Replaced, (filled) ? Val_OrdStatus_Filled : Val_OrdStatus_Replaced,
+                0, _securityID, Side.toFix(ord._side), OrdType.toFix(ord._ordType), TimeInForce.toFix(ord._tif),
+                nCap, nQty, nShownQty,
+                0.0, Double.NaN, nLeavesQty, ord._cumQty, ord._avgPx, null, nPx, 0);
+
+        if (filled) {
+            removePeggedOrder(ord);
+            _activeOrders.remove(ord);
+        } else {
+            ContinuousLevel continuousLevel = (ord.isParked()) ? null : levelOf(ord);
+
+            if (continuousLevel!=null && oPx==nPx) {
+                // same pegged price: the order is amended in place
+                ord._size = nQty;
+                ord._shownSize = nShownQty;
+                ord._leavesQty = nLeavesQty;
+                ord._lastPx = Double.NaN;
+                ord._lastQty = 0.0;
+                continuousLevel.replace(ord, deltaQty, oShownQty, oLeavesQty, nShownQty, nLeavesQty);
+                if (setPegPrice(ord, nPx, nAtLimit)) restated(ord);
+            } else {
+                // the new cap changes the pegged price: the order re-enters the order book
+                if (continuousLevel!=null) remove(ord, continuousLevel);
+                ord._size = nQty;
+                ord._shownSize = nShownQty;
+                ord._leavesQty = nLeavesQty;
+                ord._lastPx = Double.NaN;
+                ord._lastQty = 0.0;
+                if (setPegPrice(ord, nPx, nAtLimit)) restated(ord);
+                if (!ord.isParked()) match(ord);
+            }
+        }
+
+        return afterPeggedOrderChange();
+    }
+
+    /**
+     * Also sets _pegPriceAtLimit, i.e., whether the price had to be held at the limit price of the order.
+     * @return the price the order is to be pegged at given the reference prices, i.e., the best bid
+     * and the best offer of the orders that are not pegged; NaN if the order has no reference price
+     */
+    private double pegPrice(Order ord, double refBid, double refOffer) {
+        PegInstruction peg = ord._peg;
+        boolean isBuy = ord._side==Side.Buy;
+        _pegPriceAtLimit = false;
+
+        double refPx;
+        switch (peg._priceType) {
+            case Val_PegPriceType_Primary: refPx = (isBuy) ? refBid : refOffer; break;
+            case Val_PegPriceType_Market: refPx = (isBuy) ? refOffer : refBid; break;
+            default: refPx = (refBid + refOffer) / 2.0; break; // Mid Price
+        }
+        if (Double.isNaN(refPx)) return Double.NaN;
+
+        // when ordering by price, a higher price makes a buy more aggressive and a sell more passive;
+        // it is the other way around when ordering by yield
+        boolean higherIsMoreAggressive = isBuy == (_ordering==Instrument.ORDERING_PRICE);
+
+        double px = refPx + peg.offset(refPx, _instrument.getMinPriceIncrement());
+        px = _instrument.roundToPriceIncrement(px, higherIsMoreAggressive == peg.isRoundMoreAggressive());
+
+        // the optional Price of a pegged order is an absolute cap: the order never goes beyond it
+        double cap = ord._pegCap;
+        if (!Double.isNaN(cap)) {
+            double cappedPx = (higherIsMoreAggressive) ? Math.min(px, cap) : Math.max(px, cap);
+            _pegPriceAtLimit = cappedPx!=px;
+            px = cappedPx;
+        }
+        return px;
+    }
+
+    /**
+     * Gives a pegged order the pegged price that was just calculated for it.
+     * @return true if the order has to be restated to its owner: it was parked or unparked, or it started
+     * or stopped being held at its limit. An order that is merely repriced is not restated.
+     */
+    private boolean setPegPrice(Order ord, double px, boolean atLimit) {
+        boolean restate = ord.isParked()!=Double.isNaN(px) || ord._pegAtLimit!=atLimit;
+        ord._price = px;
+        ord._pegAtLimit = atLimit;
+        return restate;
+    }
+
+    /** To be called after the order book changed because of an order that is not pegged. */
+    private MarketDataSnapshot afterBookChange(MarketDataSnapshot mds) {
+        if (_peggedOrders.isEmpty()) return mds;
+        return (repegAll()) ? getSnapshot() : mds;
+    }
+
+    /**
+     * To be called after a pegged order was added, amended or removed, with _mdsBefore holding the Market
+     * Data as it was before. The Market Data is published only if it changed: hidden and parked orders
+     * must not be given away by snapshots that show no change.
+     */
+    private MarketDataSnapshot afterPeggedOrderChange() {
+        repegAll();
+        MarketDataSnapshot mds = getSnapshot();
+        return (mds.hasSameEntries(_mdsBefore)) ? null : mds;
+    }
+
+    /** @return true if at least one pegged order was repriced */
+    private boolean repegAll() {
+        boolean repriced = false;
+        // a repriced order may trade, and that may change the reference prices: repeat until it settles
+        while (repegOnce()) {
+            repriced = true;
+        }
+        return repriced;
+    }
+
+    private boolean repegOnce() {
+        if (_peggedOrders.isEmpty()) return false;
+
+        double refBid = _bidSide.bestNonPeggedPrice();
+        double refOffer = _offerSide.bestNonPeggedPrice();
+
+        // first all the orders whose pegged price changed leave the order book...
+        _repricedOrders.clear();
+        for (int i=0; i<_peggedOrders.size(); i++) {
+            Order ord = _peggedOrders.get(i);
+            double oPx = ord._price;
+            double nPx = pegPrice(ord, refBid, refOffer);
+            boolean nAtLimit = _pegPriceAtLimit;
+            if (oPx==nPx || (Double.isNaN(oPx) && Double.isNaN(nPx))) {
+                // the order stays where it is, yet it may have started or stopped being held at its limit
+                if (setPegPrice(ord, nPx, nAtLimit)) restated(ord);
+                continue;
+            }
+
+            if (!ord.isParked()) removeFromBook(ord);
+            boolean restate = setPegPrice(ord, nPx, nAtLimit);
+            _repricedOrders.add(ord);
+            if (restate) restated(ord);
+        }
+
+        // ...and only then they re-enter it, in arrival order, at their new price (unless they are now parked)
+        for (int i=0; i<_repricedOrders.size(); i++) {
+            Order ord = _repricedOrders.get(i);
+            if (!ord.isParked()) match(ord);
+        }
+
+        return !_repricedOrders.isEmpty();
+    }
+
+    /**
+     * Sends the Restated execution report that tells the owner of a pegged order that the order stopped
+     * or resumed following its reference price:
+     * - it reached its limit price and is held there, or the price to peg at is back within the limit;
+     * - it was parked for lack of a reference price, or unparked.
+     * The Price is the limit price (the cap, if any) of an order that is held at its limit or parked,
+     * and the pegged price of an order that follows its reference price again. The PeggedPrice is the
+     * price the order rests at; an order that is parked has none.
+     */
+    private void restated(Order ord) {
+        _server.sendExecutionReport(ord._selectionKey, ord._user, ord._orderID, ord._clOrdID, null,
+                Val_ExecType_Restated, (ord._cumQty>0.0) ? Val_OrdStatus_PartiallyFilled : Val_OrdStatus_New,
+                0, _securityID, Side.toFix(ord._side), OrdType.toFix(ord._ordType), TimeInForce.toFix(ord._tif),
+                (ord.isParked()) ? ord.clientPrice() : ord._price, ord._size, ord._shownSize,
+                0.0, Double.NaN, ord._leavesQty, ord._cumQty, ord._avgPx, null,
+                ord.peggedPrice(), Val_ExecRestatementReason_RepricingOfOrder);
+    }
+
+    private void removePeggedOrder(Order ord) {
+        _peggedOrders.remove(ord);
+        if (!ord.isParked()) removeFromBook(ord);
+    }
+
+    private void removeFromBook(Order ord) {
+        ContinuousLevel continuousLevel = levelOf(ord);
+        if (continuousLevel!=null) remove(ord, continuousLevel);
+    }
+
+    private ContinuousLevel levelOf(Order ord) {
+        if (ord._side==Side.Buy) {
+            return _bidSide.findLevel(ord, _ordering==Instrument.ORDERING_PRICE);
+        } else {
+            return _offerSide.findLevel(ord, _ordering==Instrument.ORDERING_YIELD);
+        }
+    }
+
+    /** The order left the order book for good. */
+    private void done(Order ord) {
+        _activeOrders.remove(ord);
+        if (ord.isPegged()) _peggedOrders.remove(ord);
+    }
+
+    // -----------------------------------------------------------------------------------------------
 
 
 
@@ -438,8 +768,8 @@ public class ContinuousOrderBook {
         ord._lastPx = Double.NaN;
         ord._lastQty = 0.0;
         _server.sendExecutionReport(ord._selectionKey, ord._user, ord._orderID, ord._clOrdID, ord._origClOrdID,
-                Val_ExecType_Canceled, Val_OrdStatus_Canceled, 0, _securityID, Side.toFix(ord._side), OrdType.toFix(ord._ordType), TimeInForce.toFix(ord._tif), ord._price,
-                ord._size, ord._shownSize, ord._lastQty, ord._lastPx, ord._leavesQty, ord._cumQty, ord._avgPx, text);
+                Val_ExecType_Canceled, Val_OrdStatus_Canceled, 0, _securityID, Side.toFix(ord._side), OrdType.toFix(ord._ordType), TimeInForce.toFix(ord._tif), ord.clientPrice(),
+                ord._size, ord._shownSize, ord._lastQty, ord._lastPx, ord._leavesQty, ord._cumQty, ord._avgPx, text, ord.peggedPrice(), 0);
     }
 
     private boolean isExecutable(Order ord) {
@@ -465,6 +795,11 @@ public class ContinuousOrderBook {
         // remove the matched orders from the order book
         // update the order leavesQty amount
 
+        // an order that re-enters the order book (a pegged order that was repriced, an amended order)
+        // may already have executions: this sweep is reported on its own, and then added to them
+        double pCumQty = ord._cumQty;
+        double pAvgPx = ord._avgPx;
+
         ord._lastQty = ord._cumQty = 0.0;
         ord._lastPx = ord._avgPx = Double.NaN;
 
@@ -483,15 +818,15 @@ public class ContinuousOrderBook {
                 for (int i=0; i<tob.ordersCount(); i++) {
                     Order o = tob.get(i);
                     if (o._leavesQty>0.0) {
-                        double oShownQty = Math.min(o._leavesQty, o._shownSize);
+                        double oShownQty = o.displayQty();
 
-                        double fillQty = Math.min(ord._leavesQty, oShownQty);
+                        double fillQty = Math.min(ord._leavesQty, o.matchableQty());
                         double fillPx = tob.getPrice();
 
                         ord.fill(fillQty, fillPx, true); // first fill of 'ord' possibly over multiple price levels
                         o.fill(fillQty, fillPx, false); // 'o' fill is at only one price level
 
-                        double nShownQty = Math.min(o._leavesQty, o._shownSize);
+                        double nShownQty = o.displayQty();
                         tob.fill(fillQty, nShownQty - oShownQty);
 
                         if (o._leavesQty>0.0) {
@@ -508,8 +843,8 @@ public class ContinuousOrderBook {
                     char ordStatus = (o._leavesQty<=0.0)?Val_OrdStatus_Filled:Val_OrdStatus_PartiallyFilled;
                     _server.sendExecutionReport(o._selectionKey, o._user, o._orderID, o._clOrdID, null,
                             Val_ExecType_Trade, ordStatus, 0, _securityID, Side.toFix(o._side), OrdType.toFix(o._ordType), TimeInForce.toFix(o._tif),
-                            o._price, o._size, o._shownSize,
-                            o._lastQty, o._lastPx, o._leavesQty, o._cumQty, o._avgPx, null);
+                            o.clientPrice(), o._size, o._shownSize,
+                            o._lastQty, o._lastPx, o._leavesQty, o._cumQty, o._avgPx, null, o.peggedPrice(), 0);
                 }
             }
 
@@ -517,7 +852,7 @@ public class ContinuousOrderBook {
                 Order o = tob.get(i);
                 if (o._leavesQty<=0.0) {
                     tob.remove(i);
-                    _activeOrders.remove(o);
+                    done(o);
                 }
             }
             if (tob.hasNoOrders()) {
@@ -525,13 +860,18 @@ public class ContinuousOrderBook {
             }
         }
 
+        if (pCumQty>0.0) {
+            ord._avgPx = (ord._cumQty>0.0) ? (pCumQty*pAvgPx + ord._cumQty*ord._avgPx) / (pCumQty + ord._cumQty) : pAvgPx;
+            ord._cumQty += pCumQty;
+        }
+
         char ordStatus = (ord._leavesQty<=0.0)?Val_OrdStatus_Filled:Val_OrdStatus_PartiallyFilled;
         _server.sendExecutionReport(ord._selectionKey, ord._user, ord._orderID, ord._clOrdID, null,
                 Val_ExecType_Trade, ordStatus, 0, _securityID, Side.toFix(ord._side), OrdType.toFix(ord._ordType), TimeInForce.toFix(ord._tif),
-                ord._price, ord._size, ord._shownSize,
-                ord._lastQty, ord._lastPx, ord._leavesQty, ord._cumQty, ord._avgPx, null);
+                ord.clientPrice(), ord._size, ord._shownSize,
+                ord._lastQty, ord._lastPx, ord._leavesQty, ord._cumQty, ord._avgPx, null, ord.peggedPrice(), 0);
         if (ord._leavesQty<=0.0) {
-            _activeOrders.remove(ord);
+            done(ord);
         }
     }
 

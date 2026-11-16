@@ -216,11 +216,17 @@ public class FixFields extends Msg {
     public long getInt(int tag) {
         return _intFields.get(tag);
     }
+    public long getInt(int tag, long defaultValue) {
+        return _intFields.containsKey(tag) ? _intFields.get(tag) : defaultValue;
+    }
     public void putInt(int tag, long value) {
         _intFields.put(tag, value);
     }
     public double getFloat(int tag) {
         return _floatFields.get(tag);
+    }
+    public double getFloat(int tag, double defaultValue) {
+        return _floatFields.containsKey(tag) ? _floatFields.get(tag) : defaultValue;
     }
     public void putFloat(int tag, double value) {
         _floatFields.put(tag, value);

@@ -36,7 +36,7 @@ public class Order {
     public TimeInForce _tif;
     public Side _side;
 
-    public double _price;
+    public double _price; // for pegged orders: the current pegged price (NaN while parked)
     public double _shownSize;
     public double _size;
 
@@ -45,6 +45,10 @@ public class Order {
     public double _leavesQty;
     public double _cumQty;
     public double _avgPx;
+
+    public PegInstruction _peg; // null unless this is a pegged order
+    public double _pegCap = Double.NaN; // the optional Price (tag 44) of a pegged order; NaN = no cap
+    public boolean _pegAtLimit; // the price to peg at is beyond the cap: the order is held at its cap until the price is back within it
 
     public Order(SelectionKey key, String uid, long orderID, String clOrdID, String securityID, char ordType, char tif, char side, double qtyShown, double qty, double px) {
         _selectionKey = key;
@@ -63,6 +67,51 @@ public class Order {
         _leavesQty = qty;
         _cumQty = 0.0;
         _avgPx = Double.NaN;
+    }
+
+    /**
+     * Turns this order into a pegged order. The price the order was created with becomes the cap,
+     * i.e., the absolute limit the pegged price never goes beyond, and the order remains parked
+     * (no price, not in the order book) until the order book assigns it a pegged price.
+     */
+    public void peg(PegInstruction peg) {
+        _peg = peg;
+        _pegCap = _price;
+        _price = Double.NaN;
+    }
+
+    public boolean isPegged() {
+        return _peg != null;
+    }
+
+    /** A parked order is a pegged order with no reference price to peg to: it is active, but it is not in the order book. */
+    public boolean isParked() {
+        return _peg != null && Double.isNaN(_price);
+    }
+
+    /** Hidden orders are matched like any other order, but they are not shown in the Market Data. */
+    public boolean isHidden() {
+        return _peg != null && _peg.isHidden();
+    }
+
+    /** The Price (tag 44) as the client knows it: the limit price or, for pegged orders, the optional cap. */
+    public double clientPrice() {
+        return (_peg == null) ? _price : _pegCap;
+    }
+
+    /** The PeggedPrice (tag 839): the price a pegged order is currently pegged at; NaN if it is parked or not a pegged order. */
+    public double peggedPrice() {
+        return (_peg == null) ? Double.NaN : _price;
+    }
+
+    /** The quantity this order contributes to the Market Data. */
+    public double displayQty() {
+        return isHidden() ? 0.0 : Math.min(_leavesQty, _shownSize);
+    }
+
+    /** The quantity that can be matched in one round at the order's price level. */
+    public double matchableQty() {
+        return isHidden() ? _leavesQty : Math.min(_leavesQty, _shownSize);
     }
 
     public String validate(String securityID, char sideChar) {
@@ -104,6 +153,6 @@ public class Order {
     }
 
     public String toString() {
-        return "{"+_orderID+" "+_shownSize+"/"+_size+"@"+_price+" "+_cumQty+":"+_leavesQty+"}";
+        return "{"+_orderID+" "+_shownSize+"/"+_size+"@"+_price+" "+_cumQty+":"+_leavesQty+((_peg == null) ? "" : " "+_peg+" cap "+_pegCap)+"}";
     }
 }

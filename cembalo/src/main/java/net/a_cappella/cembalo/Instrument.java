@@ -84,6 +84,27 @@ public class Instrument {
         return null;
     }
 
+    /**
+     * Aligns a computed price (as opposed to one received from a client) to the price increments of
+     * this instrument. A price that is already aligned is only normalized; any other price is rounded
+     * up or down to the adjacent increment.
+     */
+    public double roundToPriceIncrement(double px, boolean up) {
+        double numPxIncrements = px / minPriceIncrement;
+        double rounded = Math.rint(numPxIncrements);
+        if (Math.abs(numPxIncrements - rounded) > EPSILON) {
+            rounded = (up) ? Math.ceil(numPxIncrements) : Math.floor(numPxIncrements);
+        }
+        // The order book compares prices for equality, so a computed price must be the very same double
+        // a client would send for that price. Dividing by the (integral) number of increments per unit
+        // is correctly rounded, just like parsing the decimal price is; multiplying by the increment is not.
+        double incrementsPerUnit = Math.rint(1.0 / minPriceIncrement);
+        if (incrementsPerUnit >= 1.0 && Math.abs(incrementsPerUnit * minPriceIncrement - 1.0) <= EPSILON) {
+            return rounded / incrementsPerUnit;
+        }
+        return rounded * minPriceIncrement;
+    }
+
     @Override
     public String toString() {
         return

@@ -25,10 +25,11 @@ import static net.a_cappella.cembalo.generated.FixConstants.Val_ExecType_Pending
 import static net.a_cappella.cembalo.generated.FixConstants.Val_ExecType_PendingReplace;
 import static net.a_cappella.cembalo.generated.FixConstants.Val_ExecType_Rejected;
 import static net.a_cappella.cembalo.generated.FixConstants.Val_ExecType_Replaced;
+import static net.a_cappella.cembalo.generated.FixConstants.Val_ExecType_Restated;
 import static net.a_cappella.cembalo.generated.FixConstants.Val_ExecType_Trade;
 
 public enum ExecType {
-    New, DoneForDay, Canceled, Replaced, PendingCancel, Rejected, PendingNew, PendingReplace, Trade, OrderStatus;
+    New, DoneForDay, Canceled, Replaced, PendingCancel, Rejected, PendingNew, PendingReplace, Trade, OrderStatus, Restated;
 
     public static char toFix(ExecType value) {
         switch (value) {
@@ -42,6 +43,7 @@ public enum ExecType {
             case PendingReplace: return Val_ExecType_PendingReplace;
             case Trade: return Val_ExecType_Trade;
             case OrderStatus: return Val_ExecType_OrderStatus;
+            case Restated: return Val_ExecType_Restated;
         }
         return '?';
     }
@@ -58,6 +60,7 @@ public enum ExecType {
             case "PendingReplace": return Val_ExecType_PendingReplace;
             case "Trade": return Val_ExecType_Trade;
             case "OrderStatus": return Val_ExecType_OrderStatus;
+            case "Restated": return Val_ExecType_Restated;
         }
         return '?';
     }
@@ -74,6 +77,7 @@ public enum ExecType {
             case Val_ExecType_PendingReplace: return PendingReplace;
             case Val_ExecType_Trade: return Trade;
             case Val_ExecType_OrderStatus: return OrderStatus;
+            case Val_ExecType_Restated: return Restated;
         }
         return New;
     }

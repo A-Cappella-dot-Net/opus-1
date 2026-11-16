@@ -26,11 +26,21 @@ public class SummarizedOrders {
 
     public void add(Order ord) {
         _leavesQty += ord._leavesQty;
-        _orders.add(ord);
+        enqueue(ord);
     }
     public void add(Order ord, double qty) {
         _leavesQty += qty;
-        _orders.add(ord);
+        enqueue(ord);
+    }
+
+    // Displayed orders have priority over the hidden ones resting at the same price:
+    // a hidden order goes to the end of the queue, a displayed one goes ahead of all hidden orders.
+    private void enqueue(Order ord) {
+        int i = _orders.size();
+        if (!ord.isHidden()) {
+            while (i>0 && _orders.get(i-1).isHidden()) i--;
+        }
+        _orders.add(i, ord);
     }
 
     public void remove(Order ord) {
@@ -65,7 +75,7 @@ public class SummarizedOrders {
         _leavesQty += delta;
         if (moveToEndOfQueue) {
             _orders.remove(ord);
-            _orders.add(ord);
+            enqueue(ord);
         } // else in place
     }
 
@@ -79,6 +89,11 @@ public class SummarizedOrders {
 
     public boolean hasNoOrders() {
         return _orders.isEmpty();
+    }
+
+    /** Displayed orders are queued ahead of the hidden ones, so it is enough to look at the first order. */
+    public boolean hasDisplayedOrders() {
+        return !_orders.isEmpty() && !_orders.get(0).isHidden();
     }
 
     public Order getOrder(int i) {

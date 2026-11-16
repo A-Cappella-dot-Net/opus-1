@@ -29,6 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.a_cappella.cembalo.beans.MarketDataSnapshot;
+import net.a_cappella.cembalo.constants.Book;
+import net.a_cappella.cembalo.constants.OrdType;
 import net.a_cappella.cembalo.constants.TimeInForce;
 import net.a_cappella.cembalo.message.TimerMsg;
 import net.a_cappella.cembalo.message.TimerMsgs;
@@ -62,7 +64,8 @@ public class Matcher {
             case CONTINUOUS_BK:
                 MarketDataSnapshot mds = _continuousOrderBook.cancelOrder(order, "User logout");
                 if (mds==null) {
-                    log.error("'Active' order "+order+" does not exist in the order book !!! Please investigate.");
+                    // canceling a hidden or a parked pegged order does not change the Market Data: nothing to publish
+                    if (!order.isPegged()) log.error("'Active' order "+order+" does not exist in the order book !!! Please investigate.");
                 } else {
                     _server.sendMdsToAllSubscribers(mds);
                 }
@@ -76,11 +79,30 @@ public class Matcher {
     }
 
     public Order handleNewOrderSingle(final SelectionKey key, String uid, String clOrdID, String securityID, char ordType, char tif, char side, double px, double qtyShown, double qty) {
+        return handleNewOrderSingle(key, uid, clOrdID, securityID, ordType, tif, side, px, qtyShown, qty, null);
+    }
+
+    /**
+     * @param peg the peg instructions of a pegged order; when null a pegged order gets the default ones.
+     *            For a pegged order px is optional (NaN if not specified) and acts as a cap on the pegged price.
+     */
+    public Order handleNewOrderSingle(final SelectionKey key, String uid, String clOrdID, String securityID, char ordType, char tif, char side, double px, double qtyShown, double qty, PegInstruction peg) {
         String invalidErr = _instrument.validate(px, qtyShown, qty);
         if (invalidErr != null) {
             _server.sendExecutionReport(key, uid, 0, clOrdID, null, Val_ExecType_Rejected, Val_OrdStatus_Rejected, Val_OrdRejReason_Other,
                     securityID, side, ordType, tif, px, qty, qtyShown, 0.0, Double.NaN, qty, 0.0, Double.NaN, invalidErr);
             return null;
+        }
+
+        boolean isPegged = OrdType.fromFix(ordType) == OrdType.Pegged;
+        if (isPegged) {
+            if (peg == null) peg = PegInstruction.DEFAULT;
+            invalidErr = validatePegged(tif, peg);
+            if (invalidErr != null) {
+                _server.sendExecutionReport(key, uid, 0, clOrdID, null, Val_ExecType_Rejected, Val_OrdStatus_Rejected, Val_OrdRejReason_Other,
+                        securityID, side, ordType, tif, px, qty, qtyShown, 0.0, Double.NaN, qty, 0.0, Double.NaN, invalidErr);
+                return null;
+            }
         }
 
         Order order = null;
@@ -101,6 +123,7 @@ public class Matcher {
                     return null;
                 }
                 order = new Order(key, uid, _nextOrderID++, clOrdID, securityID, ordType, tif, side, qtyShown, qty, px);
+                if (isPegged) order.peg(peg);
                 _continuousOrderBook.handleNewOrderSingle(key, uid, clOrdID, securityID, ordType, tif, side, px, qtyShown, qty, order);
                 break;
             case OPEN_BK:
@@ -119,12 +142,31 @@ public class Matcher {
         return order;
     }
 
+    // Pegged orders target the continuous book and are only accepted while it is in its matching phase.
+    private String validatePegged(char tif, PegInstruction peg) {
+        if (Order.forOrderBook(TimeInForce.fromFix(tif)) != Book.CONTINUOUS_BK) {
+            return "Pegged orders are only accepted in the continuous book";
+        }
+        if (_continuousOrderBook.isOpen() && !_continuousOrderBook.isMatching()) {
+            return "Pegged orders are only accepted in the continuous matching phase";
+        }
+        return peg.validate();
+    }
+
     public void handleOrderCancelReplaceRequest(final SelectionKey key, String uid, String origClOrdID, long orderID, String clOrdID, String securityID, double px, double qtyShown, double qty, char ordType, char side, char tif, Order order) {
         String invalidErr = _instrument.validate(px, qtyShown, qty);
         if (invalidErr != null) {
             _server.sendOrderCancelReject(key, uid, orderID, clOrdID, origClOrdID,
                     Val_OrdStatus_Rejected, Val_CxlRejResponseTo_OrderCancelReplaceRequest, Val_CxlRejReason_Other,
                     invalidErr);
+            return;
+        }
+
+        // the quantities and the cap of a pegged order can be amended, its nature can not
+        if ((OrdType.fromFix(ordType) == OrdType.Pegged) != order.isPegged()) {
+            _server.sendOrderCancelReject(key, uid, orderID, clOrdID, origClOrdID,
+                    Val_OrdStatus_Rejected, Val_CxlRejResponseTo_OrderCancelReplaceRequest, Val_CxlRejReason_Other,
+                    "Cannot amend to or from a Pegged order");
             return;
         }
 

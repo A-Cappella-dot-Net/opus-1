@@ -1,6 +1,6 @@
 package net.a_cappella.cembalo.generated;
 
-// File: net.a_cappella.cembalo.generated.FixConstants was machine generated on Sun Nov 15 12:42:25 UTC 2026. Do not modify.
+// File: net.a_cappella.cembalo.generated.FixConstants was machine generated on Sun Nov 15 22:07:44 UTC 2026. Do not modify.
 
 public class FixConstants {
 
@@ -109,6 +109,7 @@ public class FixConstants {
 	public static final char Val_ExecType_PendingCancel = '6';
 	public static final char Val_ExecType_Rejected = '8';
 	public static final char Val_ExecType_PendingNew = 'A';
+	public static final char Val_ExecType_Restated = 'D';
 	public static final char Val_ExecType_PendingReplace = 'E';
 	public static final char Val_ExecType_Trade = 'F';
 	public static final char Val_ExecType_OrderStatus = 'I';
@@ -178,6 +179,10 @@ public class FixConstants {
 	public static final char Val_MDReqRejReason_UnsupportedMarketDepth = '5';
 
 	public static final int Tag_SecurityReqID = 320;
+
+	public static final int Tag_ExecRestatementReason = 378;
+	public static final int Val_ExecRestatementReason_RepricingOfOrder = 3;
+
 	public static final int Tag_TotNoRelatedSym = 393;
 
 	public static final int Tag_CxlRejResponseTo = 434;
@@ -213,6 +218,11 @@ public class FixConstants {
 	public static final int Tag_PegRoundDirection = 838;
 	public static final int Val_PegRoundDirection_MoreAggressive = 1;
 	public static final int Val_PegRoundDirection_MorePassive = 2;
+
+	public static final int Tag_PeggedPrice = 839;
+
+	public static final int Tag_PegScope = 840;
+	public static final int Val_PegScope_Local = 1;
 
 
 	public static final int Tag_LastFragment = 893;

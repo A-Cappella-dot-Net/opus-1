@@ -36,6 +36,7 @@ import static net.a_cappella.cembalo.generated.FixConstants.Tag_CumQty;
 import static net.a_cappella.cembalo.generated.FixConstants.Tag_CxlRejReason;
 import static net.a_cappella.cembalo.generated.FixConstants.Tag_CxlRejResponseTo;
 import static net.a_cappella.cembalo.generated.FixConstants.Tag_ExecID;
+import static net.a_cappella.cembalo.generated.FixConstants.Tag_ExecRestatementReason;
 import static net.a_cappella.cembalo.generated.FixConstants.Tag_ExecType;
 import static net.a_cappella.cembalo.generated.FixConstants.Tag_ImbalanceQty;
 import static net.a_cappella.cembalo.generated.FixConstants.Tag_LastPx;
@@ -59,6 +60,12 @@ import static net.a_cappella.cembalo.generated.FixConstants.Tag_OrderID;
 import static net.a_cappella.cembalo.generated.FixConstants.Tag_OrderQty;
 import static net.a_cappella.cembalo.generated.FixConstants.Tag_OrigClOrdID;
 import static net.a_cappella.cembalo.generated.FixConstants.Tag_Password;
+import static net.a_cappella.cembalo.generated.FixConstants.Tag_PegOffsetType;
+import static net.a_cappella.cembalo.generated.FixConstants.Tag_PegOffsetValue;
+import static net.a_cappella.cembalo.generated.FixConstants.Tag_PegPriceType;
+import static net.a_cappella.cembalo.generated.FixConstants.Tag_PegRoundDirection;
+import static net.a_cappella.cembalo.generated.FixConstants.Tag_PegScope;
+import static net.a_cappella.cembalo.generated.FixConstants.Tag_PeggedPrice;
 import static net.a_cappella.cembalo.generated.FixConstants.Tag_Price;
 import static net.a_cappella.cembalo.generated.FixConstants.Tag_QuoteCondition;
 import static net.a_cappella.cembalo.generated.FixConstants.Tag_SecurityListRequestType;
@@ -100,6 +107,7 @@ import net.a_cappella.continuo.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.a_cappella.cembalo.PegInstruction;
 import net.a_cappella.cembalo.beans.Imbalance;
 import net.a_cappella.cembalo.beans.InstrumentStatus;
 import net.a_cappella.cembalo.beans.MarketDataSnapshot;
@@ -272,6 +280,20 @@ public class FixMessage extends Msg {
                                 long orderID, String clOrdID, String origClOrdID, char execType, char ordStatus, int ordRejReason,
                                 String symbol, char side, char ordType, char timeInForce, double price, double qty, double shownQty,
                                 double lastQty, double lastPx, double leavesQty, double cumQty, double avgPx, String text) {
+        executionReport(uid, execId, orderID, clOrdID, origClOrdID, execType, ordStatus, ordRejReason,
+                symbol, side, ordType, timeInForce, price, qty, shownQty,
+                lastQty, lastPx, leavesQty, cumQty, avgPx, text, Double.NaN, 0);
+    }
+
+    /**
+     * @param peggedPrice the price a pegged order is currently pegged at; NaN if it is parked or not a pegged order
+     * @param execRestatementReason the reason of a Restated execution report; 0 for any other execution report
+     */
+    public void executionReport(String uid, long execId,
+                                long orderID, String clOrdID, String origClOrdID, char execType, char ordStatus, int ordRejReason,
+                                String symbol, char side, char ordType, char timeInForce, double price, double qty, double shownQty,
+                                double lastQty, double lastPx, double leavesQty, double cumQty, double avgPx, String text,
+                                double peggedPrice, int execRestatementReason) {
         setFixMsgType(MsgType_ExecutionReport);
         FixFields fields = getFields();
         if (uid!=null) fields.putString(Tag_Username, uid);
@@ -297,6 +319,8 @@ public class FixMessage extends Msg {
 
         if (!Double.isNaN(qty)) fields.putFloat(Tag_OrderQty, qty);
         if (!Double.isNaN(shownQty)) fields.putFloat(Tag_MaxShow, shownQty);
+        if (!Double.isNaN(peggedPrice)) fields.putFloat(Tag_PeggedPrice, peggedPrice);
+        if (execRestatementReason!=0) fields.putInt(Tag_ExecRestatementReason, execRestatementReason);
     }
 
     public void orderCancelReject(String uid, long execId, long orderID, String clOrdID, String origClOrdID, char ordStatus, char cxlRejResponseTo, int cxlRejReason, String text) {
@@ -363,6 +387,19 @@ public class FixMessage extends Msg {
         fixFields.putChar(Tag_TimeInForce, TimeInForce.toFix(tif));
         fixFields.putFloat(Tag_MaxShow, qtyShown);
         fixFields.putFloat(Tag_OrderQty, qty);
+    }
+
+    /** A pegged order: px is optional (NaN if there is no cap), peg holds the peg instructions. */
+    public void newOrderSingle(String uid, String clOrdID, String symbol, OrdType ordType, TimeInForce tif, Side side, double px, double qtyShown, double qty, PegInstruction peg) {
+        newOrderSingle(uid, clOrdID, symbol, ordType, tif, side, px, qtyShown, qty);
+        if (peg != null) {
+            FixFields fixFields = getFields();
+            fixFields.putInt(Tag_PegPriceType, peg._priceType);
+            fixFields.putInt(Tag_PegRoundDirection, peg._roundDirection);
+            fixFields.putFloat(Tag_PegOffsetValue, peg._offsetValue);
+            fixFields.putInt(Tag_PegOffsetType, peg._offsetType);
+            fixFields.putInt(Tag_PegScope, peg._scope);
+        }
     }
 
     public void orderCancelRequest(String uid, String ecnOrdId, String clOrdId, String origClOrdId, String symbol, Side side, double qty) {

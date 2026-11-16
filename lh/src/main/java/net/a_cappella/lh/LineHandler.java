@@ -225,7 +225,12 @@ public class LineHandler extends ExchangeClient implements IExchangeClientListen
 			char execType, char ordStatus, int ordRejReason,
 			String symbol, char side, double price, char ordType, char timeInForce,
 			double lastQty, double lastPx, double leavesQty, double cumQty, double avgPx, String text,
-			long transactTime) {
+			long transactTime, double peggedPrice) {
+		if (execType==Val_ExecType_Restated) {
+			// a pegged order was parked or unparked: the order itself has not changed, and Madrigal has no notion of a pegged price
+			if (log.isDebugEnabled()) log.debug("order "+ecnOrdId+" restated: price="+price+" peggedPrice="+peggedPrice);
+			return;
+		}
 		int verPos = clOrdId.indexOf("-");
 		String ordId = clOrdId.substring(0, verPos);
 		String verStr = clOrdId.substring(verPos+1);
