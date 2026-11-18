@@ -17,5 +17,5 @@
 package net.a_cappella.madrigal.lh.om;
 
 public enum ImmutableType {
-	IOC, SNIPER, NORMAL
+	IOC, SNIPER, PEGGED, NORMAL
 }

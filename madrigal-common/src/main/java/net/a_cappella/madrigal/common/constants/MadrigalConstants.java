@@ -58,6 +58,10 @@ public interface MadrigalConstants {
     String VAL_ERR_STRING_DEL_NOT_SUPPORTED = "DEL not supported for IOC orders";
     String VAL_ERR_STRING_SUPERSEDED = " superseded";
     String VAL_ERR_RESIDUAL_LESS_THAN_MIN_QTY = "residual less than min quantity";
+    String VAL_ERR_STRING_PEG_PRICE_TYPE_NOT_SUPPORTED = "PegPriceType not supported";
+    String VAL_ERR_STRING_PEG_TIF_NOT_SUPPORTED = "Pegged orders must be DAY orders";
+    String VAL_ERR_STRING_PEG_HIDDEN_NOT_SUPPORTED = "Hidden pegged orders are not supported";
+    String VAL_ERR_STRING_PEG_NO_PRICE_INCREMENT = "No price increment for pegged order";
     String VAL_EMPTY_STRING = "";
 
     String LH_ECN_PREFIX = "lh-";

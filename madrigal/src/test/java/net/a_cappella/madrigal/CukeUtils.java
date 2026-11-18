@@ -82,6 +82,11 @@ public class CukeUtils {
         return MadrigalOrdType.valueOf(str);
     }
 
+    public static MadrigalPegPriceType parseMadrigalPegPriceType(String str) {
+        if (str == null) return MadrigalPegPriceType.NULL_VAL;
+        return MadrigalPegPriceType.valueOf(str);
+    }
+
     public static MadrigalOrdStatus parseMadrigalOrdStatus(String str) {
         if (str == null) return null;
         return MadrigalOrdStatus.valueOf(str);

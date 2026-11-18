@@ -52,7 +52,9 @@ public class Immutables {
 		_ordId = order.getOrdId();
 
 		// synthetic
-		if (IOC == _tif) {
+		if (order.isPegged()) {
+			_immutableType = ImmutableType.PEGGED;
+		} else if (IOC == _tif) {
 			_immutableType = ImmutableType.IOC;
 		} else if (order.getShownQty()==0.0) {
 			_immutableType = ImmutableType.SNIPER;

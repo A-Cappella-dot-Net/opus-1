@@ -56,6 +56,8 @@ public class OrderCoder extends AeronCoderImpl<OrderObj> {
         _obj.setOrderQty(DECODER.orderQty());
         _obj.setShownQty(DECODER.shownQty());
         _obj.setRandomMax(DECODER.randomMax());
+        _obj.setPegPriceType(EnumConverters.convert(DECODER.pegPriceType()));
+        _obj.setPegOffsetValue(DECODER.pegOffsetValue());
         _obj.setReqType(EnumConverters.convert(DECODER.reqType()));
         _obj.setUseNative(DECODER.useNative()==SbeBoolean.TRUE);
         _obj.setTs(DECODER.ts());
@@ -100,6 +102,8 @@ public class OrderCoder extends AeronCoderImpl<OrderObj> {
                 .orderQty(_obj.getOrderQty())
                 .shownQty(_obj.getShownQty())
                 .randomMax(_obj.getRandomMax())
+                .pegPriceType(EnumConverters.convert(_obj.getPegPriceType()))
+                .pegOffsetValue(_obj.getPegOffsetValue())
                 .reqType(EnumConverters.convert(_obj.getReqType()))
                 .useNative(_obj.isUseNative()?SbeBoolean.TRUE:SbeBoolean.FALSE)
                 .ts(_obj.getTs())

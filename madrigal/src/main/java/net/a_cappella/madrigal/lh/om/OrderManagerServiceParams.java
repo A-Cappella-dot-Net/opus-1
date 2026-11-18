@@ -38,6 +38,7 @@ public class OrderManagerServiceParams {
 	private SimulatedIocStrategy _simulatedIocStrategy;
 	private SniperStrategy _sniperStrategy;
 	private SimulatedIbgRwtStrategy _simulatedIbgRwtStrategy;
+	private SimulatedPegStrategy _simulatedPegStrategy;
 	private ResumeOnFailoverStrategy _resumeOnFailoverStrategy;
 
 	public OrderManagerServiceParams(IOrderManagerAdaptor adaptor, DelRetryType delRetryType, int delRetryConstant) {
@@ -146,6 +147,9 @@ public class OrderManagerServiceParams {
 	public SimulatedIbgRwtStrategy getSimulatedIbgRwtStrategy() {
 		return _simulatedIbgRwtStrategy;
 	}
+	public SimulatedPegStrategy getSimulatedPegStrategy() {
+		return _simulatedPegStrategy;
+	}
 	public ResumeOnFailoverStrategy getResumeOnFailoverStrategy() {
 		return _resumeOnFailoverStrategy;
 	}
@@ -156,6 +160,7 @@ public class OrderManagerServiceParams {
 		_simulatedIocStrategy = new SimulatedIocStrategy();
 		_simulatedIbgRwtStrategy = new SimulatedIbgRwtStrategy(_conflateRequests, _useDelAddForPriceChange, _strictRwt);
 		_sniperStrategy = new SniperStrategy(_strictRwt);
+		_simulatedPegStrategy = new SimulatedPegStrategy(_strictRwt);
 		_resumeOnFailoverStrategy = new ResumeOnFailoverStrategy(_conflateRequests, _strictRwt);
     }
 
@@ -165,6 +170,8 @@ public class OrderManagerServiceParams {
     		return getIocStrategy(immutables.isUseNative());
     	case SNIPER:
     		return _sniperStrategy;
+    	case PEGGED:
+    		return _simulatedPegStrategy;
     	default:
     		return getIbgRwtStrategy(immutables.isUseNative());
     	}
@@ -177,7 +184,7 @@ public class OrderManagerServiceParams {
 		return _simulatedIocStrategy;
     }
 
-    private IOrderHandlerStrategy getIbgRwtStrategy(boolean useNativeRwt) {
+    public IOrderHandlerStrategy getIbgRwtStrategy(boolean useNativeRwt) {
     	if (useNativeRwt) {
     		return _nativeStrategy;
     	}

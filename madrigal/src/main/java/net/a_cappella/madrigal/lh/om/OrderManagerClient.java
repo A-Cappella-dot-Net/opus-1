@@ -124,6 +124,28 @@ public class OrderManagerClient {
                           String instrId, MadrigalSide side, MadrigalOrdType ordType, MadrigalTimeInForce tif,
                           double price, double orderQty, double shownQty, int randomMax,
                           boolean useNative) {
+        return addOrder(uid, ecn, ordId, instrId, side, ordType, tif, price, orderQty, shownQty, randomMax, useNative, MadrigalPegPriceType.NULL_VAL, (byte) 0);
+    }
+
+    /**
+     * Sends a pegged order.
+     * @param price the limit of the order, i.e., the price the order never goes beyond; NaN if there is none
+     * @param pegPriceType what the order is pegged to: MARKET or PRIMARY
+     * @param pegOffsetValue signed number of ticks added to the price the order is pegged to
+     */
+    public String addPeggedOrder(String uid, String ecn, String ordId,
+                          String instrId, MadrigalSide side, MadrigalTimeInForce tif,
+                          double price, double orderQty, double shownQty,
+                          boolean useNative,
+                          MadrigalPegPriceType pegPriceType, byte pegOffsetValue) {
+        return addOrder(uid, ecn, ordId, instrId, side, MadrigalOrdType.PEGGED, tif, price, orderQty, shownQty, 0, useNative, pegPriceType, pegOffsetValue);
+    }
+
+    private String addOrder(String uid, String ecn, String ordId,
+                          String instrId, MadrigalSide side, MadrigalOrdType ordType, MadrigalTimeInForce tif,
+                          double price, double orderQty, double shownQty, int randomMax,
+                          boolean useNative,
+                          MadrigalPegPriceType pegPriceType, byte pegOffsetValue) {
     	if (_orderCache.containsKey(ordId)) {
             log.error("Ignoring duplicate order {}...", ordId);
             return null;
@@ -136,6 +158,7 @@ public class OrderManagerClient {
 	    	int ver = 0;
 	    	String clOrdId = ordId + "-" + ver;
 	        order.setAddRequest(ecn, uid, ordId, ver, clOrdId, instrId, ordType, tif, side, price, orderQty, shownQty, randomMax);
+	        order.setPeg(pegPriceType, pegOffsetValue);
 	        order.setUseNative(useNative);
 
             if (_csl != null) _csl.onReqOut(ordId);

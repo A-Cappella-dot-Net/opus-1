@@ -25,6 +25,7 @@ import net.a_cappella.madrigal.common.constants.MadrigalMode;
 import net.a_cappella.madrigal.common.constants.MadrigalOrdStatus;
 import net.a_cappella.madrigal.common.constants.MadrigalOrdType;
 import net.a_cappella.madrigal.common.constants.MadrigalOrderBook;
+import net.a_cappella.madrigal.common.constants.MadrigalPegPriceType;
 import net.a_cappella.madrigal.common.constants.MadrigalReqType;
 import net.a_cappella.madrigal.common.constants.MadrigalSide;
 import net.a_cappella.madrigal.common.constants.MadrigalTimeInForce;
@@ -39,6 +40,7 @@ import sbe.generated.SbeMarketStatusEnum;
 import sbe.generated.SbeModeEnum;
 import sbe.generated.SbeOrdStatusEnum;
 import sbe.generated.SbeOrdTypeEnum;
+import sbe.generated.SbePegPriceTypeEnum;
 import sbe.generated.SbeReqTypeEnum;
 import sbe.generated.SbeSideEnum;
 import sbe.generated.SbeTimeInForceEnum;
@@ -195,6 +197,21 @@ public class EnumConverters {
             case MARKET: return MadrigalOrdType.MARKET;
             case PEGGED: return MadrigalOrdType.PEGGED;
             default: return MadrigalOrdType.NULL_VAL;
+        }
+    }
+
+	public static SbePegPriceTypeEnum convert(MadrigalPegPriceType pegPriceType) {
+        switch (pegPriceType) {
+            case MARKET: return SbePegPriceTypeEnum.MARKET;
+            case PRIMARY: return SbePegPriceTypeEnum.PRIMARY;
+            default: return SbePegPriceTypeEnum.NULL_VAL;
+        }
+    }
+	public static MadrigalPegPriceType convert(SbePegPriceTypeEnum pegPriceType) {
+        switch (pegPriceType) {
+            case MARKET: return MadrigalPegPriceType.MARKET;
+            case PRIMARY: return MadrigalPegPriceType.PRIMARY;
+            default: return MadrigalPegPriceType.NULL_VAL;
         }
     }
 

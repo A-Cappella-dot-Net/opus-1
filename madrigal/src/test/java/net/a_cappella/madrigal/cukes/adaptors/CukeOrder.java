@@ -49,6 +49,8 @@ public class CukeOrder {
     private MadrigalOrdType ordType;
     private MadrigalTimeInForce timeInForce;
     private MadrigalSide side;
+    private MadrigalPegPriceType pegPriceType = MadrigalPegPriceType.NULL_VAL;
+    private byte pegOffsetValue;
 
 	// ids
     private int ver;
@@ -99,6 +101,8 @@ public class CukeOrder {
 		co.ordType = parseMadrigalOrdType(entry.get("ordType"));
 		co.timeInForce = parseMadrigalTimeInForce(entry.get("timeInForce"));
 		co.side = parseMadrigalSide(entry.get("side"));
+		co.pegPriceType = parseMadrigalPegPriceType(entry.get("pegPriceType"));
+		co.pegOffsetValue = (byte) parseInt(entry.get("pegOffsetValue"));
 
 		// ids
 		co.ver = parseVer(entry.get("ver"));
@@ -394,6 +398,7 @@ public class CukeOrder {
 		state.setOrdType(ordType);
 		state.setTimeInForce(timeInForce);
 		state.setSide(side);
+		state.setPeg(pegPriceType, pegOffsetValue);
 		state.setPrice(price);
 		state.setOrderQty(qty);
 		state.setShownQty(shownQty);
@@ -417,6 +422,11 @@ public class CukeOrder {
         return state;
 	}
 
+	private void setAddRequest(OrderObj order, String clOrdId) {
+		order.setAddRequest(ecn, uid, ordId, ver, clOrdId, instrId, ordType, timeInForce, side, price, qty, shownQty, randomMax);
+		order.setPeg(pegPriceType, pegOffsetValue);
+	}
+
 	public OrderObj adaptRequest(Map<String, OrderObj> orderCache, ICredentialsCache credentialsCache, IInstrumentCache instrumentCache) {
 		if (reqType == ADD) {
 			if (orderCache.containsKey(ordId)) {
@@ -429,7 +439,7 @@ public class CukeOrder {
 	        log.info("added "+ordId+" to cache...");
 
 	    	String clOrdId = ordId + "-" + ver;
-	        order.setAddRequest(ecn, uid, ordId, ver, clOrdId, instrId, ordType, timeInForce, side, price, qty, shownQty, randomMax);
+	        setAddRequest(order, clOrdId);
 	        order.setUseNative(useNative);
 
 	        order.setEcnUid(credentialsCache.getEcnCredentials(uid).getEcnUid());
@@ -442,7 +452,7 @@ public class CukeOrder {
                 log.info("ordId "+ordId+" not in cache...");
                	order = new OrderObj();
     	    	String clOrdId = ordId + "-" + ver;
-    	        order.setAddRequest(ecn, uid, ordId, ver, clOrdId, instrId, ordType, timeInForce, side, price, qty, shownQty, randomMax);
+    	        setAddRequest(order, clOrdId);
     	        order.setUseNative(useNative);
 
     	        order.setEcnUid(credentialsCache.getEcnCredentials(uid).getEcnUid());
@@ -465,7 +475,7 @@ public class CukeOrder {
                 log.info("ordId "+ordId+" not in cache...");
                	order = new OrderObj();
     	    	String clOrdId = ordId + "-" + ver;
-    	        order.setAddRequest(ecn, uid, ordId, ver, clOrdId, instrId, ordType, timeInForce, side, price, qty, shownQty, randomMax);
+    	        setAddRequest(order, clOrdId);
     	        order.setUseNative(useNative);
 
     	        order.setEcnUid(credentialsCache.getEcnCredentials(uid).getEcnUid());
@@ -509,6 +519,8 @@ public class CukeOrder {
 		cukeOrder.ordType = order.getOrdType();
 		cukeOrder.timeInForce = order.getTimeInForce();
 		cukeOrder.side = order.getSide();
+		cukeOrder.pegPriceType = order.getPegPriceType();
+		cukeOrder.pegOffsetValue = order.getPegOffsetValue();
 
 		// ids
 		cukeOrder.ver = order.getVer();
@@ -577,6 +589,8 @@ public class CukeOrder {
 				+ ((ordType == null) ? 0 : ordType.hashCode());
 		result = prime * result
 				+ ((timeInForce == null) ? 0 : timeInForce.hashCode());
+		result = prime * result + ((pegPriceType == null) ? 0 : pegPriceType.hashCode());
+		result = prime * result + pegOffsetValue;
 		result = prime * result + ((uid == null) ? 0 : uid.hashCode());
 		result = prime * result + (ver ^ (ver >>> 32));
 
@@ -673,6 +687,10 @@ public class CukeOrder {
 			return false;
 		if (timeInForce != other.timeInForce)
 			return false;
+		if (pegPriceType != other.pegPriceType)
+			return false;
+		if (pegOffsetValue != other.pegOffsetValue)
+			return false;
 		if (uid == null) {
 			if (other.uid != null)
 				return false;
@@ -721,7 +739,7 @@ public class CukeOrder {
 				reqType+" "+((REQUEST==mode)?(useNative):(status+" "))+
 				ecn+" "+uid+"/"+ecnUid+" "+ordId+"-"+ver+"/"+clOrdId+"/"+ecnOrdId+"/"+fillId+"/"+execId+" "+
 				instrId+"/"+ecnInstrId+" "+
-				ordType+" "+timeInForce+" "+side+" "+price+" "+qty+"/"+shownQty+"/"+randomMax+" "+
+				ordType+"/"+pegPriceType+"/"+pegOffsetValue+" "+timeInForce+" "+side+" "+price+" "+qty+"/"+shownQty+"/"+randomMax+" "+
 				((REQUEST==mode)?(useNative):
 					(lastQty+"@"+lastPx+"/"+leavesQty+"/"+cumQty+"@"+avgPx+" "+text+" "+ftDone+" "+done))+" "+
 				Utils.format("yy-MM-dd HH:mm:ss.SSS", new Date(ts))+" "+Utils.format("yy-MM-dd HH:mm:ss.SSS", new Date(tsx))+

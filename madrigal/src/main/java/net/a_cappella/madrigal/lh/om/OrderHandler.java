@@ -92,6 +92,18 @@ public class OrderHandler implements IOrderHandler {
 
 	private String _latestAckedXClOrdId;
 
+	/**
+	 * What the strategy needs to remember about this order; a strategy is shared by all the orders it handles
+	 * so it cannot keep it itself.
+	 */
+	private Object _strategyState;
+	public Object getStrategyState() {
+		return _strategyState;
+	}
+	public void setStrategyState(Object strategyState) {
+		_strategyState = strategyState;
+	}
+
 
 	public OrderHandler(int parentLevel) {
 		this(null, parentLevel);
@@ -193,6 +205,10 @@ public class OrderHandler implements IOrderHandler {
 			((OrderHandler) _parent).mapChildId2ParentId(request.getClOrdId(), parentClOrdId);
 		}
 		return request;
+	}
+
+	public OrderObj newDelRequest(String parentClOrdId) {
+		return newRequest(DEL, _ordId, _orderState, parentClOrdId);
 	}
 
 	private OrderObj newRequestFromState() {
@@ -380,6 +396,14 @@ public class OrderHandler implements IOrderHandler {
 		String parentClOrdId = _childId2ParentIdMap.remove(childClOrdId);
 		if (log.isTraceEnabled()) log.info("{} ~~~ unmap {} => {}", _level, childClOrdId, parentClOrdId);
 		return parentClOrdId;
+	}
+
+	/**
+	 * Forgets the mapping of a child request that was not sent on behalf of a pending request of this order,
+	 * e.g., the re-pricing of the working order of a simulated pegged order.
+	 */
+	public void unmapChild(String childClOrdId) {
+		unmapChildId(childClOrdId);
 	}
 
 	public EcnPriceObj registerAsPriceListener() {
@@ -687,6 +711,15 @@ public class OrderHandler implements IOrderHandler {
     	return true;
 	}
 
+	/** @return the newest child that is not completed, null if there is none */
+	public OrderHandler getActiveChild() {
+		for (int i=_childrenHandlers.size()-1; i>=0; i--) {
+			OrderHandler childHandler = _childrenHandlers.get(i);
+			if (!childHandler._done) return childHandler;
+		}
+		return null;
+	}
+
 	public boolean anyChildPending() {
 		for (int i=0; i<_childrenHandlers.size(); i++) {
 			OrderHandler childHandler = _childrenHandlers.get(i);
@@ -841,7 +874,7 @@ public class OrderHandler implements IOrderHandler {
 	 */
 	private String _failFastErrorText = null; // initially null, set the first time order goes into FailFast mode and never changes again
 
-	private boolean isInFailFastMode() {
+	public boolean isInFailFastMode() {
 		return _failFastErrorText != null;
 	}
 

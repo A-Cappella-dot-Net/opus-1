@@ -2,7 +2,7 @@
 
 Madrigal gathers together the components of a trading system: order management, market data, users, credentials, instruments, caches, and a web pub-sub tool. It does not contain everything a complete system would want — it is a starting point. Built on [madrigal-common](../madrigal-common/README.md) / [madrigal-aeron](../madrigal-aeron/README.md), so components communicate over presto with SnS semantics.
 
-- **Line handler — order management** (`lh.om`) — the gateway side facing a trading venue. `OrderManagerService` implements tactics at the gateway level that allow more efficient higher-level algo implementations, such as size amend up without losing queue position, or sniper orders. `OrderManagerClient` is how applications submit and track orders. The deployable line handler application lives in the `lh` module.
+- **Line handler — order management** (`lh.om`) — the gateway side facing a trading venue. `OrderManagerService` implements tactics at the gateway level that allow more efficient higher-level algo implementations, such as size amend up without losing queue position, sniper orders, or pegged orders (Market and Primary pegs, with a tick offset and an optional limit) simulated on venues that do not support them natively. `OrderManagerClient` is how applications submit and track orders. The deployable line handler application lives in the `lh` module.
 - **Line handler — market data** (`lh.md`) — `MarketDataService` publishes the venue's prices into the system.
 - **Users and credentials** (`user`, `credentials`) — login/user management for the system and credentials caches for venue sessions.
 - **Instruments** (`instrument`) — the cache of tradeable instruments.

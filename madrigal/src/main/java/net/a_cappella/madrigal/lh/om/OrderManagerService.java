@@ -254,9 +254,11 @@ public class OrderManagerService implements IOrderManagerService {
 		} else {
 			_mdCache.put(instrId, ecnPrice);
 			List<OrderHandler> listeners = _priceListeners.get(instrId);
-			if (listeners != null) for (OrderHandler handler : listeners) {
+			if (listeners != null) for (int i=0; i<listeners.size(); i++) {
 				// notify subscribers
+				OrderHandler handler = listeners.get(i);
 				handler.handleEcnPrice(ecnPrice);
+				if (i<listeners.size() && listeners.get(i)!=handler) i--; // the order was completed, and its handler unregistered, while handling the price
 			}
 		}
 	}

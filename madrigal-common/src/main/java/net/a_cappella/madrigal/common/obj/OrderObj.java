@@ -76,6 +76,8 @@ public class OrderObj extends ObjImpl {
                     new FieldMetaInfo("ver"),
                     new FieldMetaInfo("clOrdId"),
                     new FieldMetaInfo("ordType"),
+                    new FieldMetaInfo("pegPriceType"),
+                    // TODO pegOffsetValue is a byte, a type the meta info does not know about: it is not available to sql and to the generic tools
                     new FieldMetaInfo("timeInForce"),
                     new FieldMetaInfo("side"),
                     new FieldMetaInfo("price"),
@@ -115,9 +117,14 @@ public class OrderObj extends ObjImpl {
     private String _ecnUid;
     private String _instrId;
     private String _ecnInstrId;
-    private MadrigalOrdType _ordType = MadrigalOrdType.NULL_VAL; // {LIMIT, MARKET}
+    private MadrigalOrdType _ordType = MadrigalOrdType.NULL_VAL; // {LIMIT, MARKET, PEGGED}
     private MadrigalTimeInForce _timeInForce = MadrigalTimeInForce.NULL_VAL; // {DAY, IOC, AtOpen, AtClose}
     private MadrigalSide _side = MadrigalSide.NULL_VAL; // {Buy, Sell}
+
+    // pegged orders only (ordType=PEGGED); the peg scope is always local, i.e., the exchange the order is sent to;
+    // the price of a pegged order, if specified (not NaN), is its limit: the order never goes beyond it
+    private MadrigalPegPriceType _pegPriceType = MadrigalPegPriceType.NULL_VAL; // {MARKET, PRIMARY}
+    private byte _pegOffsetValue; // signed number of ticks (min price increments) added to the price the order is pegged to
 
 	// ids
     private int _ver;
@@ -182,6 +189,8 @@ public class OrderObj extends ObjImpl {
 		_ordType = other._ordType;
 		_timeInForce = other._timeInForce;
 		_side = other._side;
+		_pegPriceType = other._pegPriceType;
+		_pegOffsetValue = other._pegOffsetValue;
 
         // ids
 		_ordId = other._ordId;
@@ -233,6 +242,8 @@ public class OrderObj extends ObjImpl {
 		_ordType = MadrigalOrdType.NULL_VAL;
 		_timeInForce = MadrigalTimeInForce.NULL_VAL;
 		_side = MadrigalSide.NULL_VAL;
+		_pegPriceType = MadrigalPegPriceType.NULL_VAL;
+		_pegOffsetValue = 0;
 
 		// ids
 		_ordId = null;
@@ -282,6 +293,8 @@ public class OrderObj extends ObjImpl {
 		_ordType = ordType;
         _timeInForce = timeInForce;
         _side = side;
+        _pegPriceType = MadrigalPegPriceType.NULL_VAL; // see setPeg
+        _pegOffsetValue = 0;
 
         // ids
         _ver = ver;
@@ -296,6 +309,16 @@ public class OrderObj extends ObjImpl {
         // response fields
         _ts = System.currentTimeMillis();
 		_tsx = 0;
+	}
+
+	/**
+	 * The peg instructions of a pegged order (ordType=PEGGED); to be called after setAddRequest.
+	 * @param pegPriceType what the order is pegged to
+	 * @param pegOffsetValue signed number of ticks added to the price the order is pegged to
+	 */
+	public void setPeg(MadrigalPegPriceType pegPriceType, byte pegOffsetValue) {
+		setPegPriceType(pegPriceType);
+		_pegOffsetValue = pegOffsetValue;
 	}
 
 	public void setRwtRequest(int ver, String clOrdId, double price, double orderQty, double shownQty, int randomMax) {
@@ -381,6 +404,8 @@ public class OrderObj extends ObjImpl {
 		_ordType = other._ordType;
 		_timeInForce = other._timeInForce;
 		_side = other._side;
+		_pegPriceType = other._pegPriceType;
+		_pegOffsetValue = other._pegOffsetValue;
 	}
 	public void setIds(String ordId) {
 		_ordId = ordId;
@@ -446,6 +471,9 @@ public class OrderObj extends ObjImpl {
 	}
 	public boolean isIceberg() {
 		return _orderQty > _shownQty;
+	}
+	public boolean isPegged() {
+		return _ordType == MadrigalOrdType.PEGGED;
 	}
 
 
@@ -533,6 +561,18 @@ public class OrderObj extends ObjImpl {
     }
     public void setOrdType(MadrigalOrdType ordType) {
         _ordType = ordType;
+    }
+    public MadrigalPegPriceType getPegPriceType() {
+        return _pegPriceType;
+    }
+    public void setPegPriceType(MadrigalPegPriceType pegPriceType) {
+        _pegPriceType = (pegPriceType == null) ? MadrigalPegPriceType.NULL_VAL : pegPriceType;
+    }
+    public byte getPegOffsetValue() {
+        return _pegOffsetValue;
+    }
+    public void setPegOffsetValue(byte pegOffsetValue) {
+        _pegOffsetValue = pegOffsetValue;
     }
     public MadrigalTimeInForce getTimeInForce() {
         return _timeInForce;
@@ -766,6 +806,7 @@ public class OrderObj extends ObjImpl {
 		if ("reqType".equalsIgnoreCase(fieldName)) return _reqType;
 		if ("status".equalsIgnoreCase(fieldName)) return _status;
 		if ("ordType".equalsIgnoreCase(fieldName)) return _ordType;
+		if ("pegPriceType".equalsIgnoreCase(fieldName)) return _pegPriceType;
 		if ("timeInForce".equalsIgnoreCase(fieldName)) return _timeInForce;
 		if ("side".equalsIgnoreCase(fieldName)) return _side;
 		return super.getEnum(fieldName); // throws exception
@@ -776,6 +817,7 @@ public class OrderObj extends ObjImpl {
 		else if ("reqType".equalsIgnoreCase(fieldName)) _reqType = (MadrigalReqType) value;
 		else if ("status".equalsIgnoreCase(fieldName)) _status = (MadrigalOrdStatus) value;
 		else if ("ordType".equalsIgnoreCase(fieldName)) _ordType = (MadrigalOrdType) value;
+		else if ("pegPriceType".equalsIgnoreCase(fieldName)) setPegPriceType((MadrigalPegPriceType) value);
 		else if ("timeInForce".equalsIgnoreCase(fieldName)) _timeInForce = (MadrigalTimeInForce) value;
 		else if ("side".equalsIgnoreCase(fieldName)) _side = (MadrigalSide) value;
 		else super.setEnum(fieldName, value); // throws exception
@@ -787,7 +829,7 @@ public class OrderObj extends ObjImpl {
 				_reqType+" "+_mode+" "+((REQUEST==_mode)?"":(_status+" "))+
 				_ecn+" "+_uid+"/"+_ecnUid+" "+_ordId+"-"+_ver+"/"+_clOrdId+"=>"+_ecnOrdId+"/"+_fillId+"/"+_execId+" "+
 				_instrId+"/"+_ecnInstrId+" "+
-				_ordType+" "+_timeInForce+" "+_side+" "+_orderQty+"/"+_shownQty+"/"+_randomMax+"@"+_price+" "+
+				_ordType+(isPegged()?("("+_pegPriceType+((_pegOffsetValue<0)?"":"+")+_pegOffsetValue+")"):"")+" "+_timeInForce+" "+_side+" "+_orderQty+"/"+_shownQty+"/"+_randomMax+"@"+_price+" "+
 				((REQUEST==_mode)?(_useNative):
 					(_lastQty+"@"+_lastPx+"/"+_leavesQty+"/"+_cumQty+"@"+_avgPx+" "+_text+" "+_ftDone+" "+_done))+" "+
 				Utils.formatMillis(_ts)+" "+Utils.formatMillis(_tsx)+
